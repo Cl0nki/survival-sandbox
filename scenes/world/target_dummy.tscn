@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/combat/damageable.gd" id="1_damage"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(0.8, 1.5, 0.8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(0.8, 1.5, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.8, 0.22, 0.18, 1)
+roughness = 0.78
+
+[node name="TargetDummy" type="StaticBody3D" groups=["damageable"]]
+collision_layer = 5
+collision_mask = 0
+script = ExtResource("1_damage")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_body")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+billboard = 1
+pixel_size = 0.008
+font_size = 48
+outline_size = 10
+text = "Target"
+modulate = Color(1, 1, 1, 1)
+outline_modulate = Color(0, 0, 0, 1)

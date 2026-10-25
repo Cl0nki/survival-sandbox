@@ -1,0 +1,90 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/camera/orbit_camera.gd" id="2_camera"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/hitscan_pistol.tscn" id="3_weapon"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.2, 0.42, 0.78, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="BoxMesh_weapon"]
+size = Vector3(0.08, 0.08, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_weapon"]
+albedo_color = Color(0.12, 0.12, 0.14, 1)
+roughness = 0.45
+
+[sub_resource type="BoxMesh" id="BoxMesh_visor"]
+size = Vector3(0.24, 0.08, 0.08)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_visor"]
+albedo_color = Color(0.05, 0.07, 0.1, 1)
+roughness = 0.3
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_aim"]
+top_radius = 0.18
+bottom_radius = 0.18
+height = 0.03
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aim"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.35, 0.95, 0.45, 0.9)
+roughness = 1.0
+
+[node name="Player" type="CharacterBody3D" groups=["player"]]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="LeanPivot" type="Node3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+
+[node name="Body" type="MeshInstance3D" parent="VisualRoot/LeanPivot"]
+mesh = SubResource("CapsuleMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="WeaponMesh" type="MeshInstance3D" parent="VisualRoot/LeanPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.3, -0.45)
+mesh = SubResource("BoxMesh_weapon")
+surface_material_override/0 = SubResource("StandardMaterial3D_weapon")
+
+[node name="Muzzle" type="Marker3D" parent="VisualRoot/LeanPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.3, -0.75)
+
+[node name="Visor" type="MeshInstance3D" parent="VisualRoot/LeanPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.34)
+mesh = SubResource("BoxMesh_visor")
+surface_material_override/0 = SubResource("StandardMaterial3D_visor")
+
+[node name="AimMarker" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_aim")
+surface_material_override/0 = SubResource("StandardMaterial3D_aim")
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("2_camera")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+current = true
+fov = 55.0
+near = 0.08
+far = 250.0
+
+[node name="HitscanWeapon" parent="." instance=ExtResource("3_weapon")]
