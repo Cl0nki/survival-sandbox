@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "medical_supplies"
+display_name = "Medical Supplies"
+description = "Bandages and antiseptic."
+max_stack = 5
+weight = 0.25
+category = "medical"
+can_pickup = true
+can_store = true
+swatch = Color(0.82, 0.28, 0.28, 1)

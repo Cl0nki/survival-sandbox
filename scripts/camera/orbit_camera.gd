@@ -23,11 +23,25 @@ var _distance := 13.0
 
 
 func _ready() -> void:
+	if not _presentation_enabled():
+		_camera.current = false
+		set_process(false)
+		set_process_unhandled_input(false)
+		return
 	_camera.current = true
 	_camera.fov = 55.0
 	_camera.near = 0.08
 	_camera.far = 250.0
 	_apply_pose()
+
+
+func _presentation_enabled() -> bool:
+	var parent := get_parent()
+	if parent != null and parent.has_meta(&"suppress_ready"):
+		return false
+	if parent != null and parent.has_method("wants_local_camera"):
+		return bool(parent.call("wants_local_camera"))
+	return true
 
 
 func _unhandled_input(event: InputEvent) -> void:

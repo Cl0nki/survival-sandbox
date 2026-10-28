@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlueprintDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/building/blueprint_definition.gd" id="1_bp"]
+
+[resource]
+script = ExtResource("1_bp")
+id = "dismantle"
+display_name = "Dismantle"
+description = "Removes the piece under the cursor: the nearest wall or opening, otherwise stairs, otherwise the floor slab. Unused corner posts go with their last wall."
+category = "Tools"
+sort_order = 10
+kind = 5
+footprint = Vector2i(1, 1)
+rotatable = false
+openings = []
+restrictions = "A slab that carries stairs cannot be removed before the stairs."

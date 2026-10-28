@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="Survival Sandbox"
-config/description="Milestone 1 local prototype: angled top-down 3D movement, camera, aiming, and hitscan."
+config/description="Top-down 3D survival sandbox. Local prototype plus a dedicated authoritative server."
 config/icon="res://icon.svg"
 run/main_scene="res://scenes/world/test_arena.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
@@ -14,6 +14,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 [autoload]
 
 InputBindings="*res://scripts/core/input_bindings.gd"
+NetSession="*res://scripts/networking/net_session.gd"
 
 [display]
 
@@ -25,6 +26,7 @@ window/size/viewport_height=720
 3d_physics/layer_1="world"
 3d_physics/layer_2="player"
 3d_physics/layer_3="damageable"
+3d_physics/layer_4="building"
 
 [rendering]
 

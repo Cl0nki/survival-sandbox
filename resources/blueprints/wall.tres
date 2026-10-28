@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlueprintDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/building/blueprint_definition.gd" id="1_bp"]
+
+[resource]
+script = ExtResource("1_bp")
+id = "wall"
+display_name = "Wall"
+description = "One wall segment on the boundary nearest the cursor. Posts are added at its ends when missing."
+category = "Walls"
+sort_order = 10
+kind = 1
+footprint = Vector2i(1, 1)
+rotatable = false
+edge_kind = 1
+openings = []
+restrictions = "Snaps to grid edges. Needs a floor / ceiling slab on at least one side. Replaces a doorway or window on that edge."

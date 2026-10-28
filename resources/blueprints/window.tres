@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlueprintDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/building/blueprint_definition.gd" id="1_bp"]
+
+[resource]
+script = ExtResource("1_bp")
+id = "window"
+display_name = "Window"
+description = "A wall segment with an open window between sill and header. Replaces the wall on the targeted boundary."
+category = "Openings"
+sort_order = 20
+kind = 1
+footprint = Vector2i(1, 1)
+rotatable = false
+edge_kind = 3
+openings = []
+restrictions = "Snaps to grid edges. Needs a floor / ceiling slab on at least one side. Replaces the existing wall instead of overlapping it."

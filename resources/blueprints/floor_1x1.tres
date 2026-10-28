@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BlueprintDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/building/blueprint_definition.gd" id="1_bp"]
+
+[resource]
+script = ExtResource("1_bp")
+id = "floor_1x1"
+display_name = "Floor / Ceiling 1x1"
+description = "One slab on the build level. A level higher (PageUp) it is the ceiling of the room below: floor and ceiling are the same slab."
+category = "Floors & Ceilings"
+sort_order = 10
+kind = 2
+footprint = Vector2i(1, 1)
+rotatable = false
+slab_level_offset = 0
+openings = []
+restrictions = "Not over a stairwell. Upper levels need a wall, post, or slab below or beside."

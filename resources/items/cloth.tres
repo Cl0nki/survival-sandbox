@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "cloth"
+display_name = "Cloth"
+description = "Torn cloth. Useful later for bandages."
+max_stack = 20
+weight = 0.1
+category = "material"
+can_pickup = true
+can_store = true
+swatch = Color(0.78, 0.76, 0.66, 1)

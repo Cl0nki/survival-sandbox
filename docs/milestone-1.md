@@ -1,8 +1,8 @@
 # Milestone 1 — playable 3D prototype
 
-Godot **4.7.2.stable**. One local player in a primitive arena. Multiplayer, inventory, crafting, building, fog of war, cutaway, and persistence are intentionally absent.
+Godot **4.7.2.stable**. One local player in a primitive arena. Inventory, crafting, building, fog of war, cutaway, and persistence are intentionally absent. Multiplayer is Milestone 2.
 
-The automated check `tests/milestone1_smoke.gd` passed on this machine against the installed engine: floor contact, camera-relative movement math, screen-center aim on the floor plane, divider collision, tall-cover occlusion, short-cover clearance, lean clamping, camera pull-in, hitscan damage, and the fire cooldown.
+The automated check `tests/milestone1_smoke.gd` passed on this machine against the installed engine: floor contact, camera-relative movement math, screen-center aim on the floor plane, outer-wall collision, wall occlusion, lean clamping, camera pull-in, hitscan damage, and the fire cooldown.
 
 ## Launch
 
@@ -29,12 +29,13 @@ The mouse is never captured. The OS cursor is the aim point.
 | Action | Input |
 | --- | --- |
 | Move | W A S D, or the arrow keys. Direction is the camera's horizontal forward and right. |
-| Aim | Move the mouse. A green marker sits on the floor under the cursor. |
+| Aim | Move the mouse. The shot goes from the muzzle toward the 3D point under the cursor, so it can aim up or down. |
 | Shoot | Left mouse button. One shot per click. |
 | Zoom | Mouse wheel. |
 | Orbit the camera | Hold the middle mouse button and drag, or hold C. Orbit the other way with Z, or with Y so the key labeled Z works on a German QWERTZ keyboard. |
 | Lean | Q left, E right. |
-| Quit | Escape. |
+| Crouch | Hold Ctrl. The capsule and the muzzle drop. Crouch movement is slower. |
+| Inventory | Tab opens it. Escape or Tab closes it. |
 
 WASD, Q, and E are the same physical keys on US QWERTY and German QWERTZ. Bindings use physical key positions.
 
@@ -42,10 +43,10 @@ At startup the camera sits south of the character and looks toward the `NORTH` l
 
 ## What you should see
 
-- A walled yard, a tan center wall, a short crate on the east side, and a tall crate on the west side.
+- An open walled yard. The floor and the four outer walls are the only solid geometry.
 - A blue capsule with a dark visor and a gun. The visor shows facing. Facing follows the mouse, not the camera.
-- A red **Open Dummy** northeast of the spawn, visible immediately.
-- An orange **Covered Dummy** due north, behind the tan wall.
+- A red **Open Dummy** on the east side of the yard.
+- An orange **Covered Dummy** on the west side of the yard.
 - A dark overlay with FPS, position, aim, lean, weapon state, and both health values.
 
 Three hits destroy a dummy (100 HP, 34 damage). It turns dark, the label says `DESTROYED`, and the body still blocks movement and shots.
@@ -53,25 +54,25 @@ Three hits destroy a dummy (100 HP, 34 damage). It turns dark, the label says `D
 ## Manual checklist
 
 1. The game window opens on the arena. The overlay shows a changing FPS and a position near `(0, 0, 8)`.
-2. W A S D move the character. The outer walls, the tan wall, both crates, and both dummies stop the body.
-3. Walk into the tan wall from the south. The character stops on the near side.
+2. W A S D move the character. The outer walls and both dummies stop the body.
+3. Walk into the north wall. The character stops on the near side.
 4. Scroll the wheel. The view moves closer and farther while staying above the character. The closest and farthest distances stop changing at the limits.
 5. Orbit with the middle mouse button, then with Z/Y and C. The character's visor does not spin with the camera.
 6. After a large orbit, W still moves toward the top of the screen (camera-forward), not toward the old north.
-7. Put the cursor over a floor spot and orbit with Z/Y or C while holding the mouse still. The green marker stays under the cursor.
+7. Put the cursor over a floor spot, a wall, or a dummy and orbit with Z/Y or C while holding the mouse still. The green marker stays on that surface under the cursor.
 8. Left-click the red dummy. A short tracer appears, its label and the overlay lose 34 HP, and the body flashes. The fourth click during the cooldown does not add a second hit. Three clicks destroy it.
-9. From the spawn, aim at the orange dummy and shoot. The tracer stops on the tan wall. The overlay says `blocked by Divider`. Orange HP stays at 100.
-10. Walk around either end of the tan wall and shoot the orange dummy. Its HP drops.
-11. Shoot the tall west crate at chest height. The shot stops on it. Shoot over the short east crate at a target beyond it. The tracer clears the crate.
-12. Stand in the open and hold Q or E. The tracer leaves the gun from the leaned position, shifted sideways from a shot fired while standing straight. Stand beside the tall crate and lean into it. The mesh and the muzzle stop on the near side of the crate. The camera stays on the collision body.
+9. From the spawn, aim at the north wall and shoot. The tracer stops on the wall. The overlay says `blocked by WallNorth`.
+10. Shoot the orange dummy on the west side. Its HP drops. The yard between you and the dummy is open.
+11. Shoot the red dummy on the east side. Its HP drops the same way.
+12. Stand in the open and hold Q or E. The tracer leaves the gun from the leaned position, shifted sideways from a shot fired while standing straight. Stand beside the west wall and lean into it. The mesh and the muzzle stop on the near side of the wall. The camera shifts sideways with that same lean.
 13. Walk up to a wall with the camera zoomed out. The camera pulls in to the near side of that wall.
-14. Escape closes the game.
+14. Escape closes the inventory. It does not quit.
 
 ## Decisions
 
-- The aim surface is the flat plane `y = 0` (the arena floor). A physics ray onto arbitrary geometry waits until floors exist at more than one height.
+- The cursor ray hits the arena, so the weapon aims up and down. Pitch is clamped to about 62 degrees. A straight-up or straight-down direction is rejected.
 - The camera pitch is fixed at −52°. Distance changes with the wheel. Orbit input is middle-mouse drag plus Z/Y and C, because Q and E are lean.
-- Hitscan is horizontal from the weapon muzzle toward the aim point. The muzzle is on the lean pivot, so Q and E move the point the shot comes from. Two sideways raycasts keep the body on the near side of cover. If the barrel would start inside a wall, the origin is pulled back to that wall's near face.
+- Hitscan starts at the weapon muzzle and follows that 3D direction. The muzzle is on the lean pivot, so Q and E move it sideways and Ctrl lowers it with the crouch capsule (1.8 m standing, 1.05 m crouched). Two sideways raycasts keep the body on the near side of cover. If the barrel would start inside a wall, the origin is pulled back to that wall's near face. Standing up is blocked when the standing capsule would intersect the world.
 - Dummies use the world layer and the damageable layer, so they stop movement and can be hit. A destroyed dummy keeps its collision.
 - Camera collision is one ray from the chest to the desired camera position. SpringArm3D is available in 4.7.2 and was left unused so the pull-in stays obvious.
 - On this engine build, `CapsuleShape3D.height` and `CapsuleMesh.height` are the full height. The body is 1.8 m tall with a 0.35 m radius.
@@ -79,7 +80,7 @@ Three hits destroy a dummy (100 HP, 34 damage). It turns dark, the label says `D
 
 ## Local-only code
 
-These files decide gameplay on the local machine. Milestone 2 has to replace that authority with the dedicated server:
+With no `--server` or `--client` flag, these files still decide gameplay on the local machine. Milestone 2 runs the same movement and hitscan on the dedicated server when those flags are set:
 
 - `scripts/player/player_controller.gd` — movement, facing, lean clamp, fire trigger
 - `scripts/combat/hitscan_weapon.gd` — ray query and damage application (`resolve_shot` is the piece to move)
@@ -95,11 +96,11 @@ The camera and aim projector stay client presentation. The server must not trust
 - There is no inventory, loot, crafting, or grid building.
 - There is no ammo, reload, recoil, or character animation. Leaning offsets the body and moves the muzzle the shots come from.
 - Aiming ignores slopes and other floors. The test arena is flat.
-- The camera sits high enough that zooming out can show the yard behind the tan wall. Shots stay at chest height, so that wall still stops them. Hiding what the camera can see is Milestone 3 and Milestone 6.
+- The camera sits high enough to see across the open yard. Shots stop on the outer walls. Hiding what the camera can see is Milestone 3 and Milestone 6.
 - Structural collapse and dynamic cutaway are not implemented.
 - The scene is a handful of boxes and a capsule, built to read cover, not to look finished.
 - Player count and server tick cost are not measured. Nothing here is evidence for 100 concurrent players.
 
 ## Next milestone
 
-Milestone 2 is a dedicated server with authoritative movement and combat. Do not start it until this prototype has been played and the milestone is explicitly approved.
+Milestone 2, a dedicated server with authoritative movement and combat, is documented in [milestone-2.md](milestone-2.md). This file stays the record of the local prototype.

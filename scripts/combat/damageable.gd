@@ -1,9 +1,10 @@
 extends StaticBody3D
 class_name Damageable
 
-## LOCAL-ONLY health.
-## Milestone 2: the server owns this value and replicates the result. Clients
-## play the flash from that result. They do not decide when health changes.
+## Health for arena targets.
+## Local play changes it through receive_damage(). Clients in a network game
+## apply the server's absolute value and ignore stale higher values. There is
+## no healing in this milestone, so an older snapshot cannot restore health.
 
 signal health_changed(current: int, maximum: int)
 signal died
@@ -35,19 +36,30 @@ func _ready() -> void:
 
 
 func receive_damage(amount: int, _point: Vector3) -> bool:
-	## LOCAL-ONLY. Returns true only when health actually changes.
 	if _dead or amount <= 0:
 		return false
-	health = maxi(health - amount, 0)
+	var next := maxi(health - amount, 0)
+	if next >= health:
+		return false
+	apply_authoritative_health(next)
+	return true
+
+
+func apply_authoritative_health(current: int) -> void:
+	current = clampi(current, 0, max_health)
+	if current >= health:
+		return
+	health = current
 	health_changed.emit(health, max_health)
-	_refresh_label()
 	if health == 0:
 		_dead = true
-		_material.albedo_color = Color(0.16, 0.15, 0.15, 1)
+		if _material != null:
+			_material.albedo_color = Color(0.16, 0.15, 0.15, 1)
+		_refresh_label()
 		died.emit()
-		return true
+		return
+	_refresh_label()
 	_flash()
-	return true
 
 
 func _flash() -> void:

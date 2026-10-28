@@ -65,26 +65,21 @@ func _body() -> int:
 	var spawn_chest := Vector3(0, 1.2, 8)
 	var covered := arena.get_node("CoveredDummy") as Damageable
 	var open := arena.get_node("OpenDummy") as Damageable
-	var to_covered := Vector3(covered.global_position.x, spawn_chest.y, covered.global_position.z) - spawn_chest
-	var covered_hit := HitscanWeapon.resolve_shot(space, spawn_chest, to_covered)
-	if covered_hit["collider"] == covered:
-		return _fail("covered dummy was hit through the divider")
-	if covered_hit["collider"] == null or str((covered_hit["collider"] as Node).name) != "Divider":
-		return _fail("expected Divider, got %s" % _node_name(covered_hit["collider"]))
+	var into_north := HitscanWeapon.resolve_shot(space, spawn_chest, Vector3(0, 0, -1))
+	if _node_name(into_north["collider"]) != "WallNorth":
+		return _fail("expected WallNorth, got %s" % _node_name(into_north["collider"]))
 
 	var to_open := Vector3(open.global_position.x, spawn_chest.y, open.global_position.z) - spawn_chest
 	var open_hit := HitscanWeapon.resolve_shot(space, spawn_chest, to_open)
 	if open_hit["collider"] != open:
 		return _fail("expected Open Dummy, got %s at %s" % [_node_name(open_hit["collider"]), open_hit["point"]])
 
-	var over_low := HitscanWeapon.resolve_shot(space, Vector3(5, 1.2, 8), Vector3(0, 0, -1))
-	if over_low["collider"] == null or str((over_low["collider"] as Node).name) == "LowCover":
-		return _fail("chest-height ray should clear LowCover, got %s" % _node_name(over_low["collider"]))
-	var into_high := HitscanWeapon.resolve_shot(space, Vector3(-6, 1.2, 8), Vector3(0, 0, -1))
-	if into_high["collider"] == null or str((into_high["collider"] as Node).name) != "HighCover":
-		return _fail("expected HighCover, got %s" % _node_name(into_high["collider"]))
+	var to_covered := Vector3(covered.global_position.x, spawn_chest.y, covered.global_position.z) - spawn_chest
+	var covered_hit := HitscanWeapon.resolve_shot(space, spawn_chest, to_covered)
+	if covered_hit["collider"] != covered:
+		return _fail("expected Covered Dummy in the open yard, got %s" % _node_name(covered_hit["collider"]))
 
-	player.global_position = Vector3(0, 0.2, 1.0)
+	player.global_position = Vector3(0, 0.2, -14.0)
 	player.velocity = Vector3.ZERO
 	await physics_frame
 	for _step in 30:
@@ -92,12 +87,12 @@ func _body() -> int:
 		player.move_and_slide()
 		await physics_frame
 	print("collision_stop=", player.global_position)
-	if player.global_position.z > 0.2:
-		return _fail("player did not move into the divider from %s" % player.global_position)
-	if player.global_position.z < -0.7:
-		return _fail("player walked through the divider to %s" % player.global_position)
+	if player.global_position.z > -16.5:
+		return _fail("player did not move into the north wall from %s" % player.global_position)
+	if player.global_position.z < -17.55:
+		return _fail("player walked through the north wall to %s" % player.global_position)
 
-	player.global_position = Vector3(-4.4, 0.1, 4.0)
+	player.global_position = Vector3(-17.05, 0.1, 0.0)
 	player.velocity = Vector3.ZERO
 	player.rotation = Vector3.ZERO
 	var visual := player.get_node("VisualRoot") as Node3D
@@ -109,7 +104,7 @@ func _body() -> int:
 	if absf(lean_right - 0.45) > 0.02:
 		return _fail("open-side lean should stay 0.45, got %s" % lean_right)
 	if lean_left >= -0.05 or lean_left <= -0.45:
-		return _fail("lean into HighCover was not clamped: %s" % lean_left)
+		return _fail("lean into the west wall was not clamped: %s" % lean_left)
 	player.set_lean_visual(0.0)
 	var neutral_origin := player.shot_origin()
 	player.set_lean_visual(0.45)
@@ -118,20 +113,45 @@ func _body() -> int:
 	print("shot_neutral=", neutral_origin, " shot_leaned=", leaned_origin)
 	if origin_shift.dot(visual.global_basis.x) < 0.35:
 		return _fail("lean did not move the shot origin sideways: %s" % origin_shift)
+	var camera_shift := (player.get_node("CameraRig") as Node3D).position
+	if camera_shift.dot(visual.global_basis.x) < 0.35:
+		return _fail("lean did not move the camera: %s" % camera_shift)
 	player.set_lean_visual(lean_left)
 	var blocked_origin := player.shot_origin()
 	print("shot_into_cover=", blocked_origin)
-	if blocked_origin.x < -5.05:
-		return _fail("leaned shot origin crossed HighCover: %s" % blocked_origin)
+	if blocked_origin.x < -17.72:
+		return _fail("leaned shot origin crossed the west wall: %s" % blocked_origin)
 	player.set_lean_visual(0.0)
+	var standing_origin := player.shot_origin()
+	player.snap_stance_for_shot(1.0)
+	var crouched_origin := player.shot_origin()
+	var body_shape := (player.get_node("CollisionShape3D") as CollisionShape3D).shape as CapsuleShape3D
+	print("crouch_origin=", crouched_origin, " crouch_height=", body_shape.height)
+	if crouched_origin.y > standing_origin.y - 0.25:
+		return _fail("crouch did not lower the muzzle: %s -> %s" % [standing_origin, crouched_origin])
+	if absf(body_shape.height - PlayerController.CROUCH_HEIGHT) > 0.05:
+		return _fail("crouch hitbox is %s" % body_shape.height)
+	var high_aim := player.direction_toward_aim(crouched_origin + Vector3(0.0, 1.6, -3.0))
+	var low_aim := player.direction_toward_aim(Vector3(crouched_origin.x, 0.05, crouched_origin.z - 1.2))
+	if high_aim.y < 0.25:
+		return _fail("high aim stayed flat: %s" % high_aim)
+	if low_aim.y > -0.2:
+		return _fail("low aim stayed flat: %s" % low_aim)
+	var into_wall := HitscanWeapon.resolve_shot(space, Vector3(0.0, 0.75, -14.0), Vector3(0.0, 0.0, -1.0))
+	if _node_name(into_wall["collider"]) != "WallNorth":
+		return _fail("low shot missed the north wall, got %s" % _node_name(into_wall["collider"]))
+	player.snap_stance_for_shot(0.0)
+	player.set_aim_pitch(0.0)
 
-	player.global_position = Vector3(0, 0.1, -0.2)
+	player.global_position = Vector3(0, 0.1, -16.6)
 	await physics_frame
 	rig.set_yaw(PI)
 	var cam_pos := rig.get_camera().global_position
 	print("clipped_camera=", cam_pos)
-	if cam_pos.z < -1.0:
-		return _fail("camera passed through the divider to %s" % cam_pos)
+	if cam_pos.z > -16.7:
+		return _fail("camera did not pull toward the north wall: %s" % cam_pos)
+	if cam_pos.z < -17.9:
+		return _fail("camera passed through the north wall to %s" % cam_pos)
 	if cam_pos.y < 1.5:
 		return _fail("clipped camera is too low: %s" % cam_pos)
 
@@ -147,10 +167,10 @@ func _body() -> int:
 		return _fail("cooldown did not block the second shot")
 	await create_timer(weapon.cooldown_seconds + 0.05).timeout
 	var covered_before := covered.health
-	weapon.try_fire(spawn_chest, to_covered.normalized())
+	weapon.try_fire(spawn_chest, Vector3(0, 0, -1))
 	if covered.health != covered_before:
-		return _fail("covered dummy took damage through the wall")
-	if weapon.last_feedback.find("Divider") < 0:
+		return _fail("covered dummy took damage from a shot into the north wall")
+	if weapon.last_feedback.find("WallNorth") < 0:
 		return _fail("blocked shot feedback was %s" % weapon.last_feedback)
 
 	print("MILESTONE1_SMOKE_OK")

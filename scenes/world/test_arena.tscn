@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/test_arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
@@ -38,36 +38,6 @@ size = Vector3(0.5, 3, 36)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
 size = Vector3(0.5, 3, 36)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_divider"]
-albedo_color = Color(0.72, 0.55, 0.38, 1)
-roughness = 0.9
-
-[sub_resource type="BoxMesh" id="BoxMesh_divider"]
-size = Vector3(7, 3, 0.5)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_divider"]
-size = Vector3(7, 3, 0.5)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_low"]
-albedo_color = Color(0.55, 0.4, 0.26, 1)
-roughness = 0.9
-
-[sub_resource type="BoxMesh" id="BoxMesh_low"]
-size = Vector3(1.8, 1, 1.8)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_low"]
-size = Vector3(1.8, 1, 1.8)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_high"]
-albedo_color = Color(0.38, 0.26, 0.18, 1)
-roughness = 0.88
-
-[sub_resource type="BoxMesh" id="BoxMesh_high"]
-size = Vector3(1.8, 2.3, 1.8)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_high"]
-size = Vector3(1.8, 2.3, 1.8)
 
 [node name="TestArena" type="Node3D"]
 script = ExtResource("1_arena")
@@ -149,52 +119,16 @@ surface_material_override/0 = SubResource("StandardMaterial3D_wall")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Geometry/WallWest"]
 shape = SubResource("BoxShape3D_wall_ew")
 
-[node name="Divider" type="StaticBody3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -1)
-collision_layer = 1
-collision_mask = 0
-
-[node name="Mesh" type="MeshInstance3D" parent="Geometry/Divider"]
-mesh = SubResource("BoxMesh_divider")
-surface_material_override/0 = SubResource("StandardMaterial3D_divider")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Geometry/Divider"]
-shape = SubResource("BoxShape3D_divider")
-
-[node name="LowCover" type="StaticBody3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.5, 4)
-collision_layer = 1
-collision_mask = 0
-
-[node name="Mesh" type="MeshInstance3D" parent="Geometry/LowCover"]
-mesh = SubResource("BoxMesh_low")
-surface_material_override/0 = SubResource("StandardMaterial3D_low")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Geometry/LowCover"]
-shape = SubResource("BoxShape3D_low")
-
-[node name="HighCover" type="StaticBody3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1.15, 4)
-collision_layer = 1
-collision_mask = 0
-
-[node name="Mesh" type="MeshInstance3D" parent="Geometry/HighCover"]
-mesh = SubResource("BoxMesh_high")
-surface_material_override/0 = SubResource("StandardMaterial3D_high")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Geometry/HighCover"]
-shape = SubResource("BoxShape3D_high")
-
 [node name="Player" parent="." instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 8)
 
 [node name="OpenDummy" parent="." instance=ExtResource("3_dummy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.75, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.75, 0)
 display_name = "Open Dummy"
 tint = Color(0.82, 0.18, 0.16, 1)
 
 [node name="CoveredDummy" parent="." instance=ExtResource("3_dummy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.75, 0)
 display_name = "Covered Dummy"
 tint = Color(0.9, 0.48, 0.12, 1)
 

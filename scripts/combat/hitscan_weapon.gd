@@ -1,11 +1,10 @@
 extends Node3D
 class_name HitscanWeapon
 
-## LOCAL-ONLY hit resolution and damage.
-## Milestone 2: the client sends a fire request. The server runs the same ray
-## query, rejects illegal ranges and origins, and is the only caller of
-## receive_damage(). Do not trust a client-reported collider, point, or damage.
-## resolve_shot() is intentionally free of UI so it can move to the server.
+## Hitscan query shared by local play and the dedicated server.
+## Local play still applies damage in try_fire(). Networked clients must not.
+## The server passes an origin it derived itself and is the only networked
+## caller of receive_damage(). A shot event is not damage.
 
 signal shot_resolved(origin: Vector3, end_point: Vector3, did_damage: bool)
 
@@ -26,7 +25,11 @@ func is_ready() -> bool:
 
 
 func try_fire(origin: Vector3, direction: Vector3) -> void:
-	## LOCAL-ONLY. Applies damage immediately. The server replaces this body.
+	## Local prototype only. Networked players send a fire request instead.
+	var body := get_parent()
+	if body != null and body.has_method("allows_local_fire") and not bool(body.call("allows_local_fire")):
+		last_feedback = "rejected local fire"
+		return
 	if not is_ready():
 		return
 	if direction.length_squared() < 0.000001:
@@ -46,7 +49,8 @@ static func resolve_shot(
 	space: PhysicsDirectSpaceState3D,
 	origin: Vector3,
 	direction: Vector3,
-	range_meters: float = 40.0
+	range_meters: float = 40.0,
+	exclude: Array = []
 ) -> Dictionary:
 	var miss := {
 		"collider": null,
@@ -64,6 +68,11 @@ static func resolve_shot(
 	query.collide_with_areas = false
 	query.collide_with_bodies = true
 	query.hit_from_inside = false
+	var skip: Array[RID] = []
+	for item in exclude:
+		if item is RID:
+			skip.append(item)
+	query.exclude = skip
 	var hit := space.intersect_ray(query)
 	if hit.is_empty():
 		return miss
@@ -81,8 +90,13 @@ static func _is_damageable(collider: Object) -> bool:
 	return collider != null and collider.has_method("receive_damage")
 
 
+func note_local_request() -> void:
+	## Presentation cooldown only. The server enforces the real interval.
+	_cooldown = cooldown_seconds
+	last_feedback = "request sent"
+
+
 func _apply_local_damage(result: Dictionary) -> bool:
-	## LOCAL-ONLY damage application.
 	var collider: Object = result["collider"]
 	if not _is_damageable(collider):
 		return false

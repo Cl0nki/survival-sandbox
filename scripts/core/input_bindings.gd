@@ -15,11 +15,24 @@ func _enter_tree() -> void:
 	_bind_key(&"move_right", KEY_RIGHT)
 	_bind_key(&"lean_left", KEY_Q)
 	_bind_key(&"lean_right", KEY_E)
+	_bind_key(&"crouch", KEY_CTRL)
+	_bind_key(&"interact", KEY_F)
+	_bind_key(&"inventory", KEY_TAB)
+	_bind_key(&"debug_toggle", KEY_F1)
+	_bind_key(&"drop_item", KEY_G)
+	for hotbar_index in 9:
+		_bind_key(&"hotbar_%d" % (hotbar_index + 1), (KEY_1 + hotbar_index) as Key)
 	_bind_key(&"camera_yaw_left", KEY_Z)
 	# German QWERTZ prints Z on the US Y key. Binding both makes the labeled Z key orbit.
 	_bind_key(&"camera_yaw_left", KEY_Y)
 	_bind_key(&"camera_yaw_right", KEY_C)
 	_bind_mouse(&"fire", MOUSE_BUTTON_LEFT)
+	_bind_key(&"build_rotate", KEY_R)
+	_bind_key(&"build_level_up", KEY_PAGEUP)
+	_bind_key(&"build_level_down", KEY_PAGEDOWN)
+	_bind_key(&"build_next", KEY_BRACKETRIGHT)
+	_bind_key(&"build_prev", KEY_BRACKETLEFT)
+	_bind_key(&"build_debug", KEY_F3)
 
 
 func _bind_key(action: StringName, keycode: Key) -> void:

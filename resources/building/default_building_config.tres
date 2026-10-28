@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BuildingConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/building/building_config.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+cell_size = 1.0
+floor_height = 3.0
+wall_thickness = 0.15
+slab_thickness = 0.1
+door_height = 2.2
+window_sill_height = 1.0
+window_head_height = 2.1
+max_levels = 4
+grid_origin = Vector3(0, 0, 0)
+build_min_cell = Vector2i(-17, -17)
+build_max_cell = Vector2i(16, 16)
+snap_hysteresis = 0.15
+obstruction_margin = 0.05
+require_resources = false
+cost_item_id = "scrap_metal"
