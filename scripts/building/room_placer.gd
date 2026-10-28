@@ -39,7 +39,7 @@ func _init(grid_system: GridSystem, building_geometry: BuildingGeometry) -> void
 	geometry = building_geometry
 
 
-## size only matters for resizable room blueprints; zero means the default footprint.
+## size matters for resizable rooms and floors; zero means the default footprint.
 static func make_request(blueprint_id: String, anchor: Vector2i, rotation: int = 0, level: int = 0, axis: int = 0, target: int = 0, size := Vector2i.ZERO) -> Dictionary:
 	return {"blueprint": blueprint_id, "anchor": anchor, "rotation": rotation, "level": level, "axis": axis, "target": target, "size": size}
 
@@ -66,7 +66,7 @@ func plan(state: BuildingState, blueprint: BlueprintDefinition, request: Diction
 		BuildTypes.BlueprintKind.EDGE:
 			_plan_edge(result, state, blueprint, anchor, axis, level)
 		BuildTypes.BlueprintKind.SLAB:
-			_plan_slabs(result, state, blueprint, anchor, level)
+			_plan_slabs(result, state, blueprint, size, anchor, level)
 		BuildTypes.BlueprintKind.STAIRS:
 			_plan_stairs(result, state, anchor, rotation, level)
 		BuildTypes.BlueprintKind.SUPPORT:
@@ -172,10 +172,10 @@ func _plan_edge(result: ConstructionPlan, state: BuildingState, blueprint: Bluep
 		result.errors.append("Needs a floor / ceiling slab beside it")
 
 
-func _plan_slabs(result: ConstructionPlan, state: BuildingState, blueprint: BlueprintDefinition, anchor: Vector2i, level: int) -> void:
+func _plan_slabs(result: ConstructionPlan, state: BuildingState, blueprint: BlueprintDefinition, size: Vector2i, anchor: Vector2i, level: int) -> void:
 	var slab_level := level + blueprint.slab_level_offset
 	var cells: Array[Vector2i] = []
-	for local in blueprint.cells():
+	for local in BlueprintDefinition.cells_of(size):
 		cells.append(anchor + local)
 	result.footprint_cells = cells
 	if not _cells_in_bounds(cells):

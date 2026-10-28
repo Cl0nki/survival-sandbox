@@ -8,8 +8,8 @@ class_name BuildTool
 ## hysteresis, so the anchor only changes once the cursor is clearly inside
 ## the next slot. A plan is rebuilt only when the request or the state
 ## revision changes. Equipping is driven by the player's hotbar item.
-## Resizable rooms are dragged: press on one corner cell, release on the
-## opposite one. A click without moving builds the 1x1 room.
+## Resizable rooms and floors are dragged: press on one corner cell, release
+## on the opposite one. A click without moving builds the 1x1 piece.
 
 signal status_changed(text: String)
 
@@ -179,8 +179,8 @@ func is_dragging() -> bool:
 	return _drag_start is Vector2i
 
 
-## Starts sizing a resizable room at the hovered cell. Returns false when the
-## selected blueprint is not resizable or nothing is aimed at.
+## Starts sizing a resizable blueprint at the hovered cell. Returns false when
+## the selected blueprint is not resizable or nothing is aimed at.
 func begin_drag() -> bool:
 	var blueprint := selected_blueprint()
 	if not equipped or blueprint == null or not blueprint.resizable or current_request.is_empty():
@@ -224,7 +224,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if button.button_index == MOUSE_BUTTON_RIGHT and button.pressed:
 			if is_dragging():
 				cancel_drag()
-				_notify("Room sizing cancelled")
+				_notify("Sizing cancelled")
 			else:
 				cancel()
 			get_viewport().set_input_as_handled()
