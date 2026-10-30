@@ -2,6 +2,9 @@ extends CanvasLayer
 
 @onready var _label: Label = $Panel/Label
 
+var _weight_key := ""
+var _weight_cache := PackedStringArray()
+
 
 func _ready() -> void:
 	if has_meta(&"suppress_ready"):
@@ -61,10 +64,9 @@ func _process(_delta: float) -> void:
 			lines.append("P%s %s  %s HP" % [str(node.get("network_id")), who, str(node.get("health"))])
 	for node in _arena_nodes_in_group(&"damageable"):
 		lines.append("%s  %d/%d HP" % [str(node.get("display_name")), int(node.get("health")), int(node.get("max_health"))])
-	lines.append("WASD move   mouse aim   LMB fire   wheel zoom")
-	lines.append("Z/C or middle-mouse orbit   Q/E lean   Ctrl crouch   F interact   Tab inventory   Esc closes inventory   F1 debug")
-	if not networked:
-		lines.append("Hotbar 2 Build Tool: LMB place  RMB cancel  R rotate  PgUp/PgDn level  [ ] (QWERTZ: Ü +) blueprint  F3 building debug")
+	for system in _arena_nodes_in_group(&"building_system"):
+		for row in _weight_rows(system as BuildingSystem):
+			lines.append(row)
 	_label.text = "\n".join(lines)
 
 
@@ -96,6 +98,62 @@ func _arena_nodes_in_group(group_name: StringName) -> Array:
 		if is_instance_valid(node) and (node == arena or arena.is_ancestor_of(node)):
 			found.append(node)
 	return found
+
+
+func _weight_rows(system: BuildingSystem) -> PackedStringArray:
+	var rows := PackedStringArray()
+	if system == null or system.state == null:
+		return rows
+	var key := "%d:%d" % [system.get_instance_id(), system.state.revision]
+	if key != _weight_key:
+		_weight_key = key
+		_weight_cache = _weight_snapshot(system)
+	for row in _weight_cache:
+		rows.append(row)
+	var waiting := system.authority.collapse_waiting() if system.authority != null else 0
+	if waiting > 0:
+		rows.append("Collapse  %d waiting" % waiting)
+	return rows
+
+
+func _weight_snapshot(system: BuildingSystem) -> PackedStringArray:
+	var rows := PackedStringArray()
+	var ids: Array[int] = []
+	var upper := 0
+	for component: BuildComponent in system.state.components.values():
+		ids.append(component.id)
+		if component.kind == BuildTypes.Kind.SLAB and component.level > 0:
+			upper += 1
+	var bearing := system.config.wall_bearing
+	if upper == 0:
+		rows.append("Weight    no upper floors")
+	else:
+		rows.append("Weight    %d upper tiles   bearing %.0f" % [upper, bearing])
+	var loads := StructuralSolver.loads(system.state, ids, system.config)
+	var carriers: Array[Dictionary] = []
+	for component: BuildComponent in system.state.components.values():
+		if component.kind != BuildTypes.Kind.WALL and component.kind != BuildTypes.Kind.DOORWAY:
+			continue
+		var amount := float(loads.get(component.id, 0.0))
+		if amount <= 0.001:
+			continue
+		carriers.append({"id": component.id, "level": component.level, "kind": component.kind, "load": amount})
+	carriers.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if not is_equal_approx(float(a["load"]), float(b["load"])):
+			return float(a["load"]) > float(b["load"])
+		return int(a["id"]) < int(b["id"])
+	)
+	var shown := 0
+	for entry in carriers:
+		if shown >= 12:
+			break
+		var amount := float(entry["load"])
+		var mark := "  OVER" if amount > bearing + 0.001 else ""
+		rows.append("%s L%d #%d  %.2f/%.0f%s" % [BuildTypes.kind_name(int(entry["kind"])), int(entry["level"]), int(entry["id"]), amount, bearing, mark])
+		shown += 1
+	if carriers.size() > shown:
+		rows.append("          + %d more" % (carriers.size() - shown))
+	return rows
 
 
 func _net() -> Node:

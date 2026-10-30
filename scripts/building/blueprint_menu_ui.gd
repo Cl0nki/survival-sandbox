@@ -91,14 +91,21 @@ func refresh() -> void:
 	var lines := PackedStringArray()
 	lines.append("%s  (%s)" % [blueprint.display_name, blueprint.category])
 	lines.append(blueprint.description)
-	if blueprint.resizable:
+	if blueprint.resizable and blueprint.kind == BuildTypes.BlueprintKind.EDGE:
+		lines.append("Length: hold LMB and drag along the edge, up to %d segments" % blueprint.max_size.x)
+	elif blueprint.resizable:
 		lines.append("Size: hold LMB and drag, %d x %d up to %d x %d cells" % [blueprint.footprint.x, blueprint.footprint.y, blueprint.max_size.x, blueprint.max_size.y])
 	elif blueprint.kind == BuildTypes.BlueprintKind.ROOM or blueprint.kind == BuildTypes.BlueprintKind.SLAB or blueprint.kind == BuildTypes.BlueprintKind.STAIRS:
 		lines.append("Footprint %d x %d cells%s" % [blueprint.footprint.x, blueprint.footprint.y, ", rotates" if blueprint.rotatable else ""])
 	lines.append("Rules: %s" % blueprint.restrictions)
 	var full := _full_cost(blueprint)
 	if full > 0:
-		lines.append("Cost %s %d %s%s" % ["for 1x1:" if blueprint.resizable else "up to", full, tool.system.config.cost_item_id, "" if tool.system.config.require_resources else " (not charged)"])
+		var cost_label := "up to"
+		if blueprint.resizable and blueprint.kind == BuildTypes.BlueprintKind.EDGE:
+			cost_label = "for 1 segment:"
+		elif blueprint.resizable:
+			cost_label = "for 1x1:"
+		lines.append("Cost %s %d %s%s" % [cost_label, full, tool.system.config.cost_item_id, "" if tool.system.config.require_resources else " (not charged)"])
 	lines.append("Level %d   Rotation %d deg" % [tool.level, tool.rotation_steps * 90])
 	_details.text = "\n".join(lines)
 

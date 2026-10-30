@@ -38,6 +38,29 @@ class_name BuildingConfig
 	"Post": 1,
 	"Stairs": 6,
 }
+## Blast used by the local explosive key. Damage profiles scale the result.
+@export var blast_radius := 4.0
+@export var blast_damage := 120
+## Visual debris only. The cap is the most chips alive at once.
+@export var debris_lifetime_sec := 1.5
+@export var debris_cap := 24
+## Bullet holes on a separate node, never written into the building mesh.
+@export var impact_lifetime_sec := 8.0
+@export var impact_cap := 32
+## How much one upper floor tile adds to the load. An 8x8 storey has two
+## tiles per wall, so 0.5 adds 1 per storey. Four storeys sit at wall_bearing.
+@export var slab_weight := 0.5
+## How much load one wall or doorway can carry before it buckles.
+## Placement never checks this. It matters only after a wall is destroyed.
+@export var wall_bearing := 4.0
+## Grace before a collapse starts. 0 starts the fall on the same frame.
+## Rebuilding the missing support during the grace cancels it.
+@export var collapse_delay_sec := 0.0
+## Pause after each storey lets go, before the storey under it lets go.
+## The roof drops first. 0 runs the whole chain in one frame.
+@export var collapse_span_sec := 0.4
+## Safety stop for a chain reaction. Each stage visits a piece at most once.
+@export var collapse_max_waves := 32
 
 
 func validate() -> PackedStringArray:
@@ -56,6 +79,14 @@ func validate() -> PackedStringArray:
 		problems.append("max_levels must be at least 1")
 	if build_min_cell.x > build_max_cell.x or build_min_cell.y > build_max_cell.y:
 		problems.append("build bounds are inverted")
+	if blast_radius <= 0.0 or blast_damage < 1:
+		problems.append("blast radius and damage must be positive")
+	if debris_lifetime_sec < 0.0 or debris_cap < 0 or impact_lifetime_sec < 0.0 or impact_cap < 0:
+		problems.append("debris and impact limits must be zero or positive")
+	if slab_weight <= 0.0 or wall_bearing <= 0.0:
+		problems.append("slab weight and wall bearing must be positive")
+	if collapse_delay_sec < 0.0 or collapse_span_sec < 0.0 or collapse_max_waves < 1:
+		problems.append("collapse timing and wave cap must be usable")
 	return problems
 
 

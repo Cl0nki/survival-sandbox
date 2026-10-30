@@ -18,6 +18,12 @@ var cells: Array[Vector3i] = []
 var rooms := PackedInt32Array()
 ## Posts placed explicitly as supports stay when their walls go away.
 var pinned := false
+## Damage profile id copied at creation. Health stays on this record so a hit
+## never needs a second object, and a destroyed piece keeps its id and slot.
+var material := ""
+var max_health := 1
+var health := 1
+var destroyed := false
 
 
 func add_room(room_id: int) -> void:

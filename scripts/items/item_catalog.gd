@@ -11,6 +11,8 @@ const FILES: Array[String] = [
 	"res://resources/items/canned_food.tres",
 	"res://resources/items/debug_weapon.tres",
 	"res://resources/items/build_tool.tres",
+	"res://resources/items/blast_gun.tres",
+	"res://resources/items/repair_tool.tres",
 ]
 
 static var _items: Dictionary = {}

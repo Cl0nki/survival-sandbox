@@ -64,7 +64,7 @@ func plan(state: BuildingState, blueprint: BlueprintDefinition, request: Diction
 		BuildTypes.BlueprintKind.ROOM:
 			_plan_room(result, state, blueprint, size, anchor, rotation, level)
 		BuildTypes.BlueprintKind.EDGE:
-			_plan_edge(result, state, blueprint, anchor, axis, level)
+			_plan_edge(result, state, blueprint, anchor, axis, level, size.x)
 		BuildTypes.BlueprintKind.SLAB:
 			_plan_slabs(result, state, blueprint, size, anchor, level)
 		BuildTypes.BlueprintKind.STAIRS:
@@ -139,7 +139,7 @@ func _plan_room(result: ConstructionPlan, state: BuildingState, blueprint: Bluep
 				continue
 			_want_edge(result, state, key, desired, false)
 	if level > 0 and not _cells_supported(state, world_cells, level):
-		result.errors.append("Needs support: build walls or posts below, or connect to a floor at this level")
+		result.errors.append("Wider than the level below")
 
 
 func _same_room(state: BuildingState, room_id: int, request: Dictionary) -> bool:
@@ -158,17 +158,25 @@ func _same_room(state: BuildingState, room_id: int, request: Dictionary) -> bool
 
 # --- single pieces -----------------------------------------------------------
 
-func _plan_edge(result: ConstructionPlan, state: BuildingState, blueprint: BlueprintDefinition, anchor: Vector2i, axis: int, level: int) -> void:
+func _plan_edge(result: ConstructionPlan, state: BuildingState, blueprint: BlueprintDefinition, anchor: Vector2i, axis: int, level: int, length: int) -> void:
 	if axis != BuildTypes.AXIS_X and axis != BuildTypes.AXIS_Z:
 		result.errors.append("Diagonal boundaries are not supported yet")
 		return
-	var key := Vector4i(anchor.x, anchor.y, level, axis)
-	for vertex in GridSystem.edge_vertices(key):
-		if not _vertex_in_bounds(vertex):
-			result.errors.append("Outside the build area")
-			return
-	_want_edge(result, state, key, blueprint.edge_kind, true)
-	if not state.edge_has_floor(key):
+	var missing_floor := false
+	for step in length:
+		var offset := Vector2i(step, 0) if axis == BuildTypes.AXIS_X else Vector2i(0, step)
+		var at := anchor + offset
+		var key := Vector4i(at.x, at.y, level, axis)
+		for vertex in GridSystem.edge_vertices(key):
+			if not _vertex_in_bounds(vertex):
+				result.errors.append("Outside the build area")
+				return
+		_want_edge(result, state, key, blueprint.edge_kind, true)
+		if not state.edge_has_floor(key):
+			missing_floor = true
+		# The cell this edge bounds on its positive side, so the drag guide follows the run.
+		result.footprint_cells.append(at)
+	if missing_floor:
 		result.errors.append("Needs a floor / ceiling slab beside it")
 
 
@@ -187,7 +195,7 @@ func _plan_slabs(result: ConstructionPlan, state: BuildingState, blueprint: Blue
 	for cell in cells:
 		_want_slab(result, state, GridSystem.slab_key(cell, slab_level), false)
 	if slab_level > 0 and not _cells_supported(state, cells, slab_level):
-		result.errors.append("Needs support: walls or posts below, or a floor beside it")
+		result.errors.append("Wider than the level below")
 
 
 func _plan_support(result: ConstructionPlan, state: BuildingState, vertex: Vector2i, level: int) -> void:
@@ -376,22 +384,15 @@ func _vertex_in_bounds(vertex: Vector2i) -> bool:
 	return vertex.x >= low.x and vertex.y >= low.y and vertex.x <= high.x and vertex.y <= high.y
 
 
-## Upper-level pieces must touch something already built: a slab on the same
-## level in or beside the footprint, or a wall or post on the level below.
+## Every upper cell needs the floor directly under it: a slab, or a stair
+## opening in that floor. A level can be smaller than the one below, and it
+## cannot stick out past it.
 func _cells_supported(state: BuildingState, cells: Array[Vector2i], level: int) -> bool:
 	for cell in cells:
-		if state.slab_at(GridSystem.slab_key(cell, level)) != 0:
-			return true
-		for step in SIDE_STEPS:
-			if state.slab_at(GridSystem.slab_key(cell + step, level)) != 0:
-				return true
-		for edge in GridSystem.cell_edges(cell, level - 1):
-			if state.edges.has_piece(edge):
-				return true
-		for vertex in GridSystem.cell_vertices(cell):
-			if state.post_at(GridSystem.post_key(vertex, level - 1)) != 0:
-				return true
-	return false
+		var below := GridSystem.slab_key(cell, level - 1)
+		if state.slab_at(below) == 0 and state.stairwell_at(below) == 0:
+			return false
+	return true
 
 
 ## A room boundary has a floor when this plan builds or keeps a slab beside it,

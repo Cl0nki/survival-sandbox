@@ -13,10 +13,11 @@ func _init(slot_count: int = 0) -> void:
 
 
 func grant_loadout() -> void:
-	## The starting pistol sits in the first empty hotbar slot. It is not ammo.
-	## The Build Tool takes the next empty hotbar slot.
+	## Pistol, Build Tool, Blast Gun, then Repair Tool, in the first empty hotbar slots.
 	_grant_hotbar_item("debugweapon")
 	_grant_hotbar_item("build_tool")
+	_grant_hotbar_item("blast_gun")
+	_grant_hotbar_item("repair_tool")
 
 
 func _grant_hotbar_item(item_id: String) -> void:

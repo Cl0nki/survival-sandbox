@@ -9,7 +9,8 @@ class_name BuildTool
 ## the next slot. A plan is rebuilt only when the request or the state
 ## revision changes. Equipping is driven by the player's hotbar item.
 ## Resizable rooms and floors are dragged: press on one corner cell, release
-## on the opposite one. A click without moving builds the 1x1 piece.
+## on the opposite one. A wall drag stays on the edge where it started and
+## runs straight along that line. A click without moving builds one piece.
 
 signal status_changed(text: String)
 
@@ -176,7 +177,7 @@ func confirm() -> Dictionary:
 
 
 func is_dragging() -> bool:
-	return _drag_start is Vector2i
+	return _drag_start is Vector2i or _drag_start is Vector3i
 
 
 ## Starts sizing a resizable blueprint at the hovered cell. Returns false when
@@ -185,7 +186,11 @@ func begin_drag() -> bool:
 	var blueprint := selected_blueprint()
 	if not equipped or blueprint == null or not blueprint.resizable or current_request.is_empty():
 		return false
-	_drag_start = current_request["anchor"]
+	var anchor: Vector2i = current_request["anchor"]
+	if blueprint.kind == BuildTypes.BlueprintKind.EDGE:
+		_drag_start = Vector3i(anchor.x, anchor.y, int(current_request.get("axis", 0)))
+	else:
+		_drag_start = anchor
 	_signature = ""
 	update_aim(_aim)
 	return true
@@ -252,6 +257,8 @@ func _request_for(blueprint: BlueprintDefinition, point: Vector3) -> Dictionary:
 	var steps := rotation_steps if blueprint.rotatable else 0
 	match blueprint.kind:
 		BuildTypes.BlueprintKind.EDGE:
+			if blueprint.resizable:
+				return _edge_drag_request(blueprint, g)
 			var edge := _snap_edge(g, "edge")
 			return RoomPlacer.make_request(blueprint.id, Vector2i(edge.x, edge.y), 0, level, edge.z)
 		BuildTypes.BlueprintKind.SUPPORT:
@@ -261,9 +268,44 @@ func _request_for(blueprint: BlueprintDefinition, point: Vector3) -> Dictionary:
 			return RoomPlacer.make_request(blueprint.id, Vector2i(floori(g.x), floori(g.y)), 0, level, 0, target)
 		_:
 			if blueprint.resizable:
-				return _drag_request(blueprint, _snap_cells(g, Vector2i.ONE))
+				var hovered := _snap_cells(g, Vector2i.ONE)
+				if level > 0:
+					hovered = _pull_to_floor_below(g, hovered)
+				return _drag_request(blueprint, hovered)
 			var size := GridSystem.rotated_size(blueprint.footprint, steps)
 			return RoomPlacer.make_request(blueprint.id, _snap_cells(g, size), steps, level)
+
+
+## A straight run along the edge where the drag started. Moving sideways does
+## not turn the corner. Without a drag it is the single hovered edge.
+func _edge_drag_request(blueprint: BlueprintDefinition, g: Vector2) -> Dictionary:
+	if not (_drag_start is Vector3i):
+		var edge := _snap_edge(g, "edge")
+		return RoomPlacer.make_request(blueprint.id, Vector2i(edge.x, edge.y), 0, level, edge.z, 0, Vector2i.ONE)
+	var start: Vector3i = _drag_start
+	var along := g.x if start.z == BuildTypes.AXIS_X else g.y
+	var origin := start.x if start.z == BuildTypes.AXIS_X else start.y
+	var end_index := _run_index(along, start.z)
+	var reach := blueprint.max_size.x - 1
+	end_index = clampi(end_index, origin - reach, origin + reach)
+	var low := mini(origin, end_index)
+	var anchor := Vector2i(low, start.y) if start.z == BuildTypes.AXIS_X else Vector2i(start.x, low)
+	return RoomPlacer.make_request(blueprint.id, anchor, 0, level, start.z, 0, Vector2i(absi(end_index - origin) + 1, 1))
+
+
+## Edge index along a wall run. Holds the current segment until the cursor is
+## clearly past its far end, matching the cell-snap hysteresis.
+func _run_index(along: float, axis: int) -> int:
+	var mode := "run:%d" % axis
+	var h := system.config.snap_hysteresis
+	if mode == _anchor_mode and _anchor is int:
+		var current: int = _anchor
+		if along >= float(current) - h and along <= float(current) + 1.0 + h:
+			return current
+	var candidate := floori(along)
+	_anchor_mode = mode
+	_anchor = candidate
+	return candidate
 
 
 ## The rectangle between the drag start and the hovered cell, clamped to the
@@ -276,6 +318,47 @@ func _drag_request(blueprint: BlueprintDefinition, cell: Vector2i) -> Dictionary
 	var end := cell.clamp(start - reach, start + reach)
 	var low := Vector2i(mini(start.x, end.x), mini(start.y, end.y))
 	return RoomPlacer.make_request(blueprint.id, low, 0, level, 0, 0, (end - start).abs() + Vector2i.ONE)
+
+
+## Aiming at the outside face of a wall lands just past the floor. Pull that
+## cell back onto the floor below so tracing the storey does not count as wider.
+func _pull_to_floor_below(g: Vector2, cell: Vector2i) -> Vector2i:
+	if _floor_below(cell):
+		return cell
+	var margin := system.config.snap_hysteresis + system.config.wall_thickness
+	var best := cell
+	var best_dist := margin
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dz == 0:
+				continue
+			var other := cell + Vector2i(dx, dz)
+			if not _floor_below(other):
+				continue
+			var dist := _distance_to_cell(g, other)
+			if dist < best_dist or (is_equal_approx(dist, best_dist) and other.x + other.y < best.x + best.y):
+				best = other
+				best_dist = dist
+	return best
+
+
+func _floor_below(cell: Vector2i) -> bool:
+	var below := GridSystem.slab_key(cell, level - 1)
+	return system.state.slab_at(below) != 0 or system.state.stairwell_at(below) != 0
+
+
+func _distance_to_cell(g: Vector2, cell: Vector2i) -> float:
+	var dx := 0.0
+	if g.x < float(cell.x):
+		dx = float(cell.x) - g.x
+	elif g.x > float(cell.x) + 1.0:
+		dx = g.x - (float(cell.x) + 1.0)
+	var dz := 0.0
+	if g.y < float(cell.y):
+		dz = float(cell.y) - g.y
+	elif g.y > float(cell.y) + 1.0:
+		dz = g.y - (float(cell.y) + 1.0)
+	return Vector2(dx, dz).length()
 
 
 func _snap_cells(g: Vector2, size: Vector2i) -> Vector2i:
@@ -361,7 +444,12 @@ func _info_line() -> String:
 	var text := "Level %d   Rotation %d deg   Grid (%d, %d)" % [level, rotation_steps * 90, anchor.x, anchor.y]
 	var blueprint := selected_blueprint()
 	if blueprint != null and blueprint.kind == BuildTypes.BlueprintKind.EDGE:
-		text = "Level %d   Edge %s (%d, %d)" % [level, "X" if int(request.get("axis", 0)) == 0 else "Z", anchor.x, anchor.y]
+		var axis_name := "X" if int(request.get("axis", 0)) == 0 else "Z"
+		if blueprint.resizable:
+			var run: Vector2i = request.get("size", Vector2i.ONE)
+			text = "Level %d   %s run of %d   Edge (%d, %d)   %s" % [level, axis_name, run.x, anchor.x, anchor.y, "release to build" if is_dragging() else "hold LMB and drag along the edge"]
+		else:
+			text = "Level %d   Edge %s (%d, %d)" % [level, axis_name, anchor.x, anchor.y]
 	elif blueprint != null and blueprint.resizable:
 		var size: Vector2i = request.get("size", blueprint.footprint)
 		text = "Level %d   Size %d x %d   Grid (%d, %d)   %s" % [level, size.x, size.y, anchor.x, anchor.y, "release to build" if is_dragging() else "hold LMB and drag to size"]

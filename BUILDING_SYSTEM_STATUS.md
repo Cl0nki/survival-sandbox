@@ -2,8 +2,25 @@
 
 ## Current phase
 
-**Phase 1 — Grid, Rooms, Build Tool, Blueprints, Seamless Construction: complete, waiting for approval.**
-Phase 2 (damage and destruction) has not been started. Nothing in Phase 1 applies damage, explosions, collapse, or network replication.
+**Phase 3 — Structural Support and Collapse: complete, waiting for approval.**
+Phases 1 and 2 remain in place. Phase 4 (multiplayer replication) has not been started.
+
+## Phase 2
+
+- **Health.** Every piece stores `health`, `max_health`, a material id, and `destroyed` on its existing `BuildComponent`. Profiles in `resources/building/damage/` set the numbers: wood walls take half of bullet damage, glass windows take full bullet damage and extra blast damage and do not stop a blast.
+- **Shots.** Hotbar 1 is the pistol. It hits a building body and the authority applies that shot once. The same event id a second time does nothing. Bullet holes are separate quads under `Impacts`. Damage only darkens that piece.
+- **Blast Gun.** Hotbar 3. Left click explodes at the aim point. Damage falls off with distance. A solid wall blocks pieces behind it. A window does not.
+- **Destruction.** A piece at zero health is deleted, including its node and its slot. Posts nothing else uses go with a wall. A room is deleted once it has no floor, wall, opening, or stairs left, and the plot can be built on again.
+- **Repair Tool.** Hotbar 4. Left click restores a damaged piece that is still standing. It does not bring back something that was destroyed.
+- **Debris.** A destroyed piece drops a few visual chips under `Debris`. They have no collision, a cap, and a lifetime.
+
+## Phase 3
+
+- **What holds a building up.** Level-0 floors are foundations. The ground carries them. Every higher floor tile weighs 1, plus whatever the walls on it have brought down from above. A connected floor splits that weight equally across the walls and doorways still under it. Windows and posts do not carry floors. A wall or doorway buckles above `wall_bearing` tiles (4). A floor with no wall or doorway left under it falls. So does a wall with no floor beside it, stairs that lose a slab under a step, and a post with nothing left to stand on.
+- **Only the affected part.** The check starts at the pieces that touched the destroyed support and walks their connections. A separate building is not visited.
+- **Stages.** Each stage waits `collapse_delay_sec` (0.2 s) and then removes the failing pieces in id order. The next stage sees the result. A chain stops after `collapse_max_waves` (32). Putting a wall back before the timer fires cancels the stage.
+- **Damage only.** Shooting or blasting a support can bring down what stood on it. The Build Tool still refuses to dismantle a floor that walls stand on, and dismantling a wall does not collapse the floor above it.
+- **Repair.** A damaged wall that is still standing keeps its load. Repair restores the wall. It does not bring back a piece that already fell.
 
 ## Features
 
@@ -84,7 +101,9 @@ All runs on Godot 4.7.2 stable, Windows, 2026-10-27.
 - **Posts are visible** as darker strips at every metre along straight walls (posts own every vertex). This is intentional and seamless; if a continuous wall look is wanted, posts can share the wall material without geometry changes.
 - **45° stairs.** The player's `floor_max_angle` is 50°, so the stairs are walkable (verified with a capsule of the same settings, not the full player). A stricter player angle would need a shallower stair blueprint.
 - **Stairs' bottom entry must stay open.** A doorway there would cut the headroom of a player climbing the first step (found by the walker test). The upper exit allows a doorway.
-- **Support is a placement rule only.** Removing lower pieces does not affect upper ones; structural support and collapse are a later phase. Removal is blocked only for a slab that carries stairs and for a post that still carries walls.
+- **Dismantle does not collapse.** Removing a wall with the Build Tool leaves the floor above it in place. Collapse runs only after a support is destroyed by damage. A floor that still has walls on it cannot be dismantled. A slab that carries stairs, and a post that still carries walls, stay blocked the same way.
+- **Posts and windows carry no floor load.** A wide floor needs walls or doorways. Posts only join those walls. Glass does not hold a floor up.
+- **Four tiles is the buckle point.** A wall or doorway falls when its equal share of the floor above is more than 4. A 1×1 ceiling stays up on its last wall (share 1). Six tiles on one wall buckle it, and the ceiling follows one stage later. A wider intact room has more walls, so the share stays lower until enough of them are destroyed.
 - **Diagonal boundaries** are reserved in the key format (axes 2 and 3) but not implemented.
 - **`line_of_sight.gd`** still checks only the `WORLD` layer, so building walls do not block network visibility yet (multiplayer phase).
 - **F3 debug view** costs a few milliseconds while on (labels and lines without depth test). It is off by default.
@@ -112,6 +131,30 @@ All runs on Godot 4.7.2 stable, Windows, 2026-10-27.
 8. Walk up the stairs in scenario H. Look along floors and wall bases at low camera angles for flicker.
 9. Press F3. The HUD should read "Audit: OK".
 
+## Tests executed
+
+Phase 2, Godot 4.7.2 stable, Windows, 2026-10-28:
+
+| Test | Result |
+|---|---|
+| `tests/building_phase2.gd` | **Pass**: 167 checks, 0 failures, prints `BUILDING_PHASE2_OK` |
+| `tests/building_phase1.gd` | **Pass**: 533 checks, 0 failures, prints `BUILDING_PHASE1_OK`. The stale-plan `ERROR` line is still the one the suite expects |
+| `tests/milestone1_smoke.gd` | **Pass** (`MILESTONE1_SMOKE_OK`) |
+
+Phase 2 checks cover profile loading, falloff math, starting health for every kind, bullet resistance, direct impact, duplicate shot ids, mesh and transform stability, deletion of a killed wall and of a room with no floor, wall, opening, or stairs left, repair of a standing piece, blast falloff, a wall blocking a blast, a window letting one through, repeated blasts, debris and impact caps and cleanup, and a geometry audit after damage, rebuild, blasts, and cleanup.
+
+## Tests executed
+
+Phase 3, Godot 4.7.2 stable, Windows, 2026-10-28:
+
+| Test | Result |
+|---|---|
+| `tests/building_phase3.gd` | **Pass**: 48 checks, 0 failures, prints `BUILDING_PHASE3_OK` |
+| `tests/building_phase2.gd` | **Pass**: 167 checks, 0 failures, prints `BUILDING_PHASE2_OK` |
+| `tests/building_phase1.gd` | **Pass**: 533 checks, 0 failures, prints `BUILDING_PHASE1_OK`. The stale-plan `ERROR` line is still the one the suite expects |
+
+Phase 3 checks cover one missing wall leaving the upper floor up, the last wall dropping the ceiling, six tiles buckling the final wall, a second building staying out of the walk, a destroyed ground floor taking both storeys with it, stairs falling with their slab, repair keeping the load, dismantle not collapsing, and a wall put back during the 0.2 s delay cancelling the fall. An audit runs after each of those.
+
 ## Next steps
 
-Waiting for explicit approval before Phase 2 (damage and destruction). Suggested starting points when approved: per-piece health on `BuildComponent`, hitscan damage routed through `BuildingAuthority`, and replacing a destroyed piece's node without disturbing its neighbours' transforms.
+Waiting for explicit approval before Phase 4 (multiplayer replication and performance). Do not start it until then.

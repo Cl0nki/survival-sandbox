@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "blast_gun"
+display_name = "Blast Gun"
+description = "Test launcher. Left click explodes at the aim point. Closer pieces take more damage, and a solid wall blocks pieces behind it."
+max_stack = 1
+weight = 2.0
+category = "weapon"
+can_pickup = true
+can_store = true
+swatch = Color(0.92, 0.42, 0.12, 1)

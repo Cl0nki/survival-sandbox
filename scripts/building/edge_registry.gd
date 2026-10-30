@@ -39,7 +39,20 @@ func release(key: Vector4i, component_id: int) -> bool:
 	if component_at(key) != component_id:
 		return false
 	_owner.erase(key)
+	_room_refs.erase(key)
 	return true
+
+
+func drop_room_ref(key: Vector4i, room_id: int) -> void:
+	var refs := rooms_for(key)
+	var kept := PackedInt32Array()
+	for existing in refs:
+		if int(existing) != room_id:
+			kept.append(int(existing))
+	if kept.is_empty():
+		_room_refs.erase(key)
+	else:
+		_room_refs[key] = kept
 
 
 func add_room_ref(key: Vector4i, room_id: int) -> void:
@@ -88,3 +101,14 @@ func keys() -> Array:
 
 func size() -> int:
 	return _owner.size()
+
+
+func fork() -> EdgeRegistry:
+	var copy := EdgeRegistry.new()
+	copy._owner = _owner.duplicate()
+	copy.rejected_claims = rejected_claims
+	for key in _room_refs.keys():
+		copy._room_refs[key] = (_room_refs[key] as PackedInt32Array).duplicate()
+	for key in _rules.keys():
+		copy._rules[key] = (_rules[key] as Dictionary).duplicate()
+	return copy

@@ -16,6 +16,7 @@ class_name BlueprintDefinition
 @export var footprint := Vector2i(1, 1)
 @export var rotatable := true
 ## Rooms and floors: the player drags the footprint, from 1x1 up to max_size.
+## Walls: the player drags a straight run, and max_size.x is the longest run.
 ## footprint is then only the size of a plain click.
 @export var resizable := false
 @export var max_size := Vector2i(8, 8)
@@ -61,9 +62,9 @@ func validate() -> PackedStringArray:
 		problems.append("blueprint without id")
 	if footprint.x < 1 or footprint.y < 1:
 		problems.append("%s footprint must be at least 1x1" % id)
-	var can_resize := kind == BuildTypes.BlueprintKind.ROOM or kind == BuildTypes.BlueprintKind.SLAB
+	var can_resize := kind == BuildTypes.BlueprintKind.ROOM or kind == BuildTypes.BlueprintKind.SLAB or kind == BuildTypes.BlueprintKind.EDGE
 	if resizable and (not can_resize or max_size.x < footprint.x or max_size.y < footprint.y or not openings.is_empty()):
-		problems.append("%s: only rooms and floors without openings resize, and max_size must hold the footprint" % id)
+		problems.append("%s: only rooms, floors, and straight edge runs resize, and max_size must hold the footprint" % id)
 	var seen := {}
 	for item in openings:
 		var opening := item as BlueprintOpening

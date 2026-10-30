@@ -170,8 +170,10 @@ func _run_local_frame(delta: float) -> void:
 	_show_aim_marker(aim, aim_info["normal"])
 	_try_interact()
 	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
-		if holds_build_tool():
+		if holds_build_tool() or holds_repair_tool():
 			pass
+		elif holds_blast_gun():
+			_try_local_blast()
 		elif not holds_debug_weapon():
 			show_item_notice("No weapon in hand.")
 		else:
@@ -200,7 +202,7 @@ func _run_owner_frame(_delta: float) -> void:
 	_session.call("send_owner_input", input_2d, _camera.get_yaw(), aim_yaw, lean, _owner_crouch, _owner_pitch)
 	_try_interact()
 	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
-		if holds_build_tool():
+		if holds_build_tool() or holds_repair_tool() or holds_blast_gun():
 			show_item_notice("Building runs in local play only until multiplayer building lands.")
 		elif not holds_debug_weapon():
 			show_item_notice("No weapon in hand.")
@@ -211,6 +213,16 @@ func _run_owner_frame(_delta: float) -> void:
 
 func get_aim_point() -> Vector3:
 	return _cursor_aim()["point"]
+
+
+func _hidden_building_pieces() -> Callable:
+	var nodes := get_tree().get_nodes_in_group(&"building_system")
+	if nodes.is_empty():
+		return Callable()
+	var system := nodes[0] as BuildingSystem
+	if system == null or system.world == null:
+		return Callable()
+	return Callable(system.world, &"collider_is_hidden")
 
 
 func apply_confirmed_inventory(item_ids: PackedStringArray, item_qtys: PackedInt32Array) -> void:
@@ -383,6 +395,7 @@ func _setup_inventory_ui() -> void:
 	_item_ui.bind_player(self)
 	if net_role == NetRole.LOCAL:
 		_attach_build_tool.call_deferred()
+		_attach_repair_tool.call_deferred()
 
 
 ## Local play only. The tool finds the arena's BuildingSystem by group.
@@ -391,6 +404,15 @@ func _attach_build_tool() -> void:
 	if system == null or get_node_or_null("BuildTool") != null:
 		return
 	var tool := BuildTool.new()
+	add_child(tool)
+	tool.setup(system, self)
+
+
+func _attach_repair_tool() -> void:
+	var system := get_tree().get_first_node_in_group(&"building_system") as BuildingSystem
+	if system == null or get_node_or_null("RepairTool") != null:
+		return
+	var tool := RepairTool.new()
 	add_child(tool)
 	tool.setup(system, self)
 
@@ -530,7 +552,7 @@ func _cursor_aim() -> Dictionary:
 	var world := get_world_3d()
 	if world != null:
 		space = world.direct_space_state
-	return AimProjector.query(camera, get_viewport().get_mouse_position(), space, [get_rid()])
+	return AimProjector.query(camera, get_viewport().get_mouse_position(), space, [get_rid()], _hidden_building_pieces())
 
 
 func get_lean_offset() -> float:
@@ -541,18 +563,43 @@ func get_crouch() -> float:
 	return _crouch
 
 
+func _try_local_blast() -> void:
+	var nodes := get_tree().get_nodes_in_group(&"building_system")
+	if nodes.is_empty():
+		return
+	var system := nodes[0] as BuildingSystem
+	if system == null:
+		return
+	var aim: Vector3 = _cursor_aim()["point"]
+	var result: Dictionary = system.authority.apply_explosion(aim, system.config.blast_radius, system.config.blast_damage)
+	var hits: Array = result.get("hits", [])
+	if hits.is_empty():
+		show_item_notice("Blast hit nothing.")
+	else:
+		show_item_notice("Blast hit %d piece%s." % [hits.size(), "" if hits.size() == 1 else "s"])
+
+
+func holds_blast_gun() -> bool:
+	return _hotbar_is("blast_gun")
+
+
+func holds_repair_tool() -> bool:
+	return _hotbar_is("repair_tool")
+
+
 func holds_debug_weapon() -> bool:
+	return _hotbar_is("debugweapon")
+
+
+func _hotbar_is(item_id: String) -> bool:
 	if inventory == null or hotbar_index < 0 or hotbar_index >= inventory.capacity:
 		return false
 	var slot: Dictionary = inventory.slots[hotbar_index]
-	return str(slot["id"]) == "debugweapon" and int(slot["qty"]) > 0
+	return str(slot["id"]) == item_id and int(slot["qty"]) > 0
 
 
 func holds_build_tool() -> bool:
-	if inventory == null or hotbar_index < 0 or hotbar_index >= inventory.capacity:
-		return false
-	var slot: Dictionary = inventory.slots[hotbar_index]
-	return str(slot["id"]) == "build_tool" and int(slot["qty"]) > 0
+	return _hotbar_is("build_tool")
 
 
 func select_hotbar(index: int) -> void:
@@ -571,7 +618,15 @@ func set_weapon_drawn(drawn: bool) -> void:
 func refresh_weapon_visual() -> void:
 	if net_role == NetRole.PUPPET:
 		return
-	set_weapon_drawn(holds_debug_weapon())
+	set_weapon_drawn(holds_debug_weapon() or holds_blast_gun())
+	if _weapon_mesh == null:
+		return
+	var material := _weapon_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if material == null:
+		return
+	if not _weapon_mesh.has_meta(&"pistol_color"):
+		_weapon_mesh.set_meta(&"pistol_color", material.albedo_color)
+	material.albedo_color = Color(0.95, 0.42, 0.12) if holds_blast_gun() else _weapon_mesh.get_meta(&"pistol_color")
 
 
 func get_aim_pitch() -> float:

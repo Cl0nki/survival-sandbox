@@ -17,4 +17,4 @@ max_size = Vector2i(8, 8)
 has_floor = true
 has_ceiling = true
 openings = []
-restrictions = "Cells must be free of other rooms. Upper levels need support below or beside. The ceiling is the floor of the level above."
+restrictions = "Cells must be free of other rooms. An upper floor cannot stick out past the floor under it. Stair openings in that floor still count. The ceiling is the floor of the level above."

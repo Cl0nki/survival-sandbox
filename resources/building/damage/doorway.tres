@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DamageProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/building/damage_profile.gd" id="1_prof"]
+
+[resource]
+script = ExtResource("1_prof")
+id = "wood_doorway"
+max_health = 70
+bullet_factor = 0.5
+direct_factor = 1.0
+blast_factor = 1.0
+obstructs_blast = true
+debris_count = 3
