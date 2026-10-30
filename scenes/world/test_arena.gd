@@ -37,8 +37,8 @@ func _ready() -> void:
 	_sun.light_energy = 1.15
 	_sun.directional_shadow_max_distance = 70.0
 	var mode := _resolved_mode()
+	_add_building()
 	if mode == NetConfig.MODE_LOCAL:
-		_add_building()
 		return
 	_discard("Player")
 	if mode == NetConfig.MODE_SERVER:
@@ -48,7 +48,7 @@ func _ready() -> void:
 	add_child(net)
 
 
-## Local play builds through BuildingSystem. Networked building is not wired yet.
+## Local play and the server both own a BuildingSystem. Clients keep a replica.
 func _add_building() -> void:
 	if get_node_or_null("BuildingSystem") != null:
 		return

@@ -1,10 +1,11 @@
 extends Node3D
 class_name BuildingSystem
 
-## Composition root for local building. Owns the logical state and wires the
-## authority, the committed-geometry presentation, the preview root, and the
-## debug view. The Build Tool finds this node through the "building_system"
-## group. Preview nodes live under PreviewRoot and never under World.
+## Composition root. Owns the logical state and wires the authority, the
+## committed geometry, the preview, and replication. The Build Tool finds the
+## authoritative or client copy through the "building_system" group. A replica
+## used only to compare state stays out of that group. Preview nodes live
+## under PreviewRoot and never under World.
 
 const DEFAULT_CONFIG := preload("res://resources/building/default_building_config.tres")
 
@@ -19,6 +20,11 @@ var preview_root: Node3D
 var debug_view: BuildingDebugView
 var debris: DebrisSystem
 var impacts: ImpactMarks
+var relay: BuildingRelay
+## True in local play and on the server. Clients only apply replicated state.
+var authoritative := true
+## Set before the node enters the tree to keep a comparison copy from writing.
+var force_replica := false
 ## Set by the Build Tool while it is equipped; -2 lets the system decide.
 var cut_override := -2
 
@@ -28,7 +34,9 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	add_to_group(&"building_system")
+	authoritative = _server_owns_state()
+	if not force_replica:
+		add_to_group(&"building_system")
 	if config == null:
 		config = DEFAULT_CONFIG
 	var problems := config.validate()
@@ -56,8 +64,13 @@ func _ready() -> void:
 	authority.name = "Authority"
 	add_child(authority)
 	authority.setup(state, grid, geometry, self)
+	authority.writes_enabled = authoritative
 	authority.impacts = impacts
 	authority.debris = debris
+	relay = BuildingRelay.new()
+	relay.name = "Relay"
+	add_child(relay)
+	relay.setup(self)
 	debug_view = BuildingDebugView.new()
 	debug_view.name = "DebugView"
 	add_child(debug_view)
@@ -84,6 +97,15 @@ func _indoor_cut_level() -> int:
 		if state.slab_at(GridSystem.slab_key(cell, above)) != 0:
 			return level
 	return -1
+
+
+func _server_owns_state() -> bool:
+	if force_replica:
+		return false
+	var peer := multiplayer.multiplayer_peer
+	if peer == null:
+		return true
+	return multiplayer.is_server()
 
 
 func _local_player() -> Node3D:

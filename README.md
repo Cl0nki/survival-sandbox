@@ -50,7 +50,7 @@ Line-of-sight filtering is [docs/milestone-3.md](docs/milestone-3.md). Inventori
 
 ## Building
 
-Local play only for now: press F5, or use **Play local (building)** in `tools\launcher.vbs`. Select hotbar slot 2 (Build Tool), pick a blueprint from the right-hand menu, left-click to place. `scenes/world/building_test.tscn` is the arena with every Phase 1 scenario prebuilt. Building regression suite:
+Press F5, or use **Play local (building)** in `tools\launcher.vbs`. Select hotbar slot 2 (Build Tool), pick a blueprint from the right-hand menu, left-click to place. In a server game the same tool sends a request; the server places, damages, and collapses, and clients receive the result. `scenes/world/building_test.tscn` is the arena with every Phase 1 scenario prebuilt. Building regression suite:
 
 ```powershell
 & "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe" --headless --path "C:\Users\Admin\Documents\VSC\survival-sandbox" --script res://tests/building_phase1.gd

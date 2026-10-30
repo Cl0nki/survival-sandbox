@@ -142,6 +142,7 @@ func commit(plan: ConstructionPlan) -> Dictionary:
 		}
 		for cell in plan.room_cells:
 			room_claims[cell] = room_id
+		(change["rooms_added"] as Array).append(room_id)
 	var inherited: Dictionary = {}
 	for entry in plan.entries:
 		var action := int(entry["action"])
@@ -156,12 +157,12 @@ func commit(plan: ConstructionPlan) -> Dictionary:
 			var created := _create(entry, change)
 			for kept in inherited.get(str(entry["key"]), PackedInt32Array()):
 				created.add_room(int(kept))
-			_reference(created, room_id)
+			_reference(created, room_id, change)
 		elif action == BuildTypes.Action.REUSE:
 			var existing := get_component(int(entry["existing"]))
 			if existing == null:
 				continue
-			_reference(existing, room_id)
+			_reference(existing, room_id, change)
 			if bool(entry.get("pinned", false)):
 				existing.pinned = true
 	_finish(change)
@@ -367,7 +368,7 @@ func _erase_empty_rooms(change: Dictionary, removed: Array, seeds: Array[int]) -
 				_remember_seeds(component.id, seeds)
 				_force_remove(component, change, removed)
 			else:
-				_forget_room(component, room_id)
+				_forget_room(component, room_id, change)
 		var cells: Array = []
 		for cell in room_claims.keys():
 			if int(room_claims[cell]) == room_id:
@@ -375,6 +376,7 @@ func _erase_empty_rooms(change: Dictionary, removed: Array, seeds: Array[int]) -
 		for cell in cells:
 			room_claims.erase(cell)
 		rooms.erase(room_id)
+		(change["rooms_removed"] as Array).append(room_id)
 
 
 func _room_has_structure(room_id: int) -> bool:
@@ -384,7 +386,7 @@ func _room_has_structure(room_id: int) -> bool:
 	return false
 
 
-func _forget_room(component: BuildComponent, room_id: int) -> void:
+func _forget_room(component: BuildComponent, room_id: int, change: Dictionary) -> void:
 	var kept := PackedInt32Array()
 	for existing in component.rooms:
 		if int(existing) != room_id:
@@ -392,6 +394,7 @@ func _forget_room(component: BuildComponent, room_id: int) -> void:
 	component.rooms = kept
 	if BuildTypes.is_edge_kind(component.kind):
 		edges.drop_room_ref(component.key, room_id)
+	_note_retouch(change, component.id)
 
 
 ## Restores a destroyed piece in its existing slot. Refuses a piece that is
@@ -486,6 +489,11 @@ func _remove_internal(component_id: int, change: Dictionary) -> void:
 	var component := get_component(component_id)
 	if component == null:
 		return
+	(change["gone"] as Array).append({
+		"id": component.id,
+		"kind": component.kind,
+		"key": component.key,
+	})
 	graph.remove_component(component_id)
 	match component.kind:
 		BuildTypes.Kind.SLAB:
@@ -507,19 +515,254 @@ func _remove_internal(component_id: int, change: Dictionary) -> void:
 	(change["removed"] as Array).append(component_id)
 
 
-func _reference(component: BuildComponent, room_id: int) -> void:
+func _reference(component: BuildComponent, room_id: int, change: Dictionary = {}) -> void:
 	if room_id <= 0:
 		return
+	var before := component.rooms.size()
 	component.add_room(room_id)
 	if BuildTypes.is_edge_kind(component.kind):
 		edges.add_room_ref(component.key, room_id)
+	if component.rooms.size() != before:
+		_note_retouch(change, component.id)
+
+
+func _note_retouch(change: Dictionary, component_id: int) -> void:
+	if not change.has("retouched"):
+		return
+	var listed: Array = change["retouched"]
+	if not listed.has(component_id):
+		listed.append(component_id)
 
 
 func _new_change() -> Dictionary:
-	return {"ok": true, "added": [], "removed": [], "slab_cells": [], "revision": revision}
+	return {
+		"ok": true,
+		"added": [],
+		"removed": [],
+		"gone": [],
+		"retouched": [],
+		"rooms_added": [],
+		"rooms_removed": [],
+		"slab_cells": [],
+		"revision": revision,
+	}
 
 
 func _finish(change: Dictionary) -> void:
 	revision += 1
 	change["revision"] = revision
 	changed.emit(change)
+
+
+## Applies one server packet. Ids, slots, and health come from the server.
+## This does not plan, charge, damage, or collapse; it only records the result.
+func apply_remote(packet: Dictionary) -> void:
+	var falling_ids := {}
+	for id in packet.get("falling", []):
+		falling_ids[int(id)] = true
+	var plain: Array[int] = []
+	var falling: Array[int] = []
+	for id in packet.get("removed", []):
+		var component_id := int(id)
+		if get_component(component_id) == null:
+			continue
+		if falling_ids.has(component_id):
+			falling.append(component_id)
+		else:
+			plain.append(component_id)
+	for id in packet.get("quiet_removed", []):
+		var component_id := int(id)
+		if get_component(component_id) != null:
+			plain.append(component_id)
+	if not plain.is_empty():
+		var change := _new_change()
+		for component_id in plain:
+			_remove_internal(component_id, change)
+		_emit_remote(change, packet, false, 0.0)
+	if not falling.is_empty():
+		var change := _new_change()
+		for component_id in falling:
+			_remove_internal(component_id, change)
+		_emit_remote(change, packet, true, float(packet.get("step_sec", 0.14)))
+	for room_id in packet.get("rooms_removed", []):
+		_drop_room(int(room_id))
+	var fresh: Array[int] = []
+	for record in packet.get("upserts", []):
+		if record is not Dictionary:
+			continue
+		var component_id := int(record.get("id", 0))
+		if component_id <= 0:
+			continue
+		var existing := get_component(component_id)
+		if existing == null:
+			_insert_remote(record)
+			fresh.append(component_id)
+		else:
+			_update_remote(existing, record)
+	if not fresh.is_empty():
+		for component_id in fresh:
+			var component := get_component(component_id)
+			if component != null:
+				graph.add_component(self, component)
+		var change := _new_change()
+		for component_id in fresh:
+			(change["added"] as Array).append(component_id)
+			var component := get_component(component_id)
+			if component != null and component.kind == BuildTypes.Kind.SLAB:
+				(change["slab_cells"] as Array).append(component.key)
+		_emit_remote(change, packet, false, 0.0)
+	for record in packet.get("rooms", []):
+		if record is Dictionary:
+			_install_room(record)
+	var next_component := int(packet.get("next_component", 0))
+	if next_component > _next_component:
+		_next_component = next_component
+	var next_room := int(packet.get("next_room", 0))
+	if next_room > _next_room:
+		_next_room = next_room
+	var remote_revision := int(packet.get("revision", revision))
+	if remote_revision > revision:
+		revision = remote_revision
+	for pair in packet.get("health", []):
+		if pair is not Array or (pair as Array).size() < 2:
+			continue
+		var component := get_component(int(pair[0]))
+		if component == null or component.health == int(pair[1]):
+			continue
+		component.health = int(pair[1])
+		integrity_changed.emit(component.id)
+
+
+func _emit_remote(change: Dictionary, packet: Dictionary, falling: bool, step_sec: float) -> void:
+	if (change["added"] as Array).is_empty() and (change["removed"] as Array).is_empty():
+		return
+	if falling:
+		change["falling"] = true
+		change["step_sec"] = step_sec
+	change["revision"] = int(packet.get("revision", revision))
+	changed.emit(change)
+
+
+func _insert_remote(record: Dictionary) -> void:
+	var component := BuildComponent.new()
+	component.id = int(record["id"])
+	component.kind = int(record["kind"])
+	component.health = int(record.get("health", 1))
+	component.max_health = int(record.get("max_health", component.health))
+	component.material = str(record.get("material", ""))
+	component.pinned = bool(record.get("pinned", false))
+	component.destroyed = false
+	if int(record.get("rank", 4)) == 3:
+		component.key = Vector3i(int(record["kx"]), int(record["ky"]), int(record["kz"]))
+	else:
+		component.key = Vector4i(int(record["kx"]), int(record["ky"]), int(record["kz"]), int(record["kw"]))
+	var rooms := PackedInt32Array()
+	for room_id in record.get("rooms", []):
+		rooms.append(int(room_id))
+	component.rooms = rooms
+	match component.kind:
+		BuildTypes.Kind.SLAB:
+			var key: Vector3i = component.key
+			component.level = key.y
+			slabs[key] = component.id
+		BuildTypes.Kind.POST:
+			var key: Vector3i = component.key
+			component.level = key.y
+			posts[key] = component.id
+		BuildTypes.Kind.STAIRS:
+			var key: Vector4i = component.key
+			component.level = key.z
+			component.rotation = key.w
+			_read_cells(record.get("cells", PackedInt32Array()), component)
+			for cell in component.cells:
+				stairs_cells[cell] = component.id
+				stairwells[Vector3i(cell.x, cell.y + 1, cell.z)] = component.id
+			var exit := _read_vec3(record.get("exit", PackedInt32Array()))
+			if exit != Vector3i(1 << 30, 0, 0):
+				stair_exits[exit] = component.id
+			for rule in record.get("rules", []):
+				if rule is PackedInt32Array and (rule as PackedInt32Array).size() >= 5:
+					var packed: PackedInt32Array = rule
+					edges.set_rule(Vector4i(packed[0], packed[1], packed[2], packed[3]), component.id, packed[4])
+		_:
+			var key: Vector4i = component.key
+			component.level = key.z
+			edges.claim(key, component.id)
+			for room_id in rooms:
+				edges.add_room_ref(key, int(room_id))
+	if component.id >= _next_component:
+		_next_component = component.id + 1
+	components[component.id] = component
+
+
+func _update_remote(component: BuildComponent, record: Dictionary) -> void:
+	var health := int(record.get("health", component.health))
+	var changed_health := health != component.health
+	component.health = health
+	component.max_health = int(record.get("max_health", component.max_health))
+	component.material = str(record.get("material", component.material))
+	component.pinned = bool(record.get("pinned", component.pinned))
+	var rooms := PackedInt32Array()
+	for room_id in record.get("rooms", []):
+		rooms.append(int(room_id))
+	component.rooms = rooms
+	if BuildTypes.is_edge_kind(component.kind):
+		edges.set_room_refs(component.key, rooms)
+	if changed_health:
+		integrity_changed.emit(component.id)
+
+
+func _install_room(record: Dictionary) -> void:
+	var room_id := int(record.get("id", 0))
+	if room_id <= 0:
+		return
+	_drop_room(room_id)
+	var cells: Array = []
+	var packed: PackedInt32Array = record.get("cells", PackedInt32Array())
+	var index := 0
+	while index + 2 < packed.size():
+		var cell := Vector3i(int(packed[index]), int(packed[index + 1]), int(packed[index + 2]))
+		cells.append(cell)
+		room_claims[cell] = room_id
+		index += 3
+	rooms[room_id] = {
+		"id": room_id,
+		"blueprint": str(record.get("blueprint", "")),
+		"request": RoomPlacer.make_request(
+			str(record.get("blueprint", "")),
+			Vector2i(int(record.get("ax", 0)), int(record.get("ay", 0))),
+			int(record.get("rotation", 0)),
+			int(record.get("level", 0)),
+			int(record.get("axis", 0)),
+			int(record.get("target", 0)),
+			Vector2i(int(record.get("sx", 0)), int(record.get("sy", 0)))
+		),
+		"cells": cells,
+	}
+	if room_id >= _next_room:
+		_next_room = room_id + 1
+
+
+func _drop_room(room_id: int) -> void:
+	if room_id <= 0:
+		return
+	var cells: Array = []
+	for cell in room_claims.keys():
+		if int(room_claims[cell]) == room_id:
+			cells.append(cell)
+	for cell in cells:
+		room_claims.erase(cell)
+	rooms.erase(room_id)
+
+
+func _read_cells(packed: PackedInt32Array, component: BuildComponent) -> void:
+	var index := 0
+	while index + 2 < packed.size():
+		component.cells.append(Vector3i(int(packed[index]), int(packed[index + 1]), int(packed[index + 2])))
+		index += 3
+
+
+func _read_vec3(packed: PackedInt32Array) -> Vector3i:
+	if packed.size() < 3:
+		return Vector3i(1 << 30, 0, 0)
+	return Vector3i(int(packed[0]), int(packed[1]), int(packed[2]))

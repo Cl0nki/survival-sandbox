@@ -2,8 +2,8 @@ extends RefCounted
 class_name LineOfSight
 
 ## Server-only sight test. A ray between the two eye points must reach the
-## target without hitting world geometry, and the eyes must be inside the
-## configured distance. If that center ray hits a wall, two more rays check
+## target without hitting world or building geometry, and the eyes must be
+## inside the configured distance. If that center ray hits a wall, two more rays check
 ## points beside the target, offset by VISIBILITY_EDGE_MARGIN of the
 ## distance. A player only slightly past a corner stays visible. A player
 ## standing fully behind a wall does not. Clients never call this to decide
@@ -45,7 +45,7 @@ static func _reaches(
 	to_eye: Vector3
 ) -> bool:
 	var query := PhysicsRayQueryParameters3D.create(from_eye, to_eye)
-	query.collision_mask = PhysicsLayers.WORLD
+	query.collision_mask = PhysicsLayers.WORLD | PhysicsLayers.BUILDING
 	query.collide_with_areas = false
 	query.collide_with_bodies = true
 	query.hit_from_inside = false

@@ -41,6 +41,10 @@ func _repair_aimed() -> void:
 	if component == null:
 		_notify("No piece to repair")
 		return
+	if system.relay != null and not system.authoritative:
+		system.relay.request_repair(component_id)
+		_notify("Sending repair...")
+		return
 	var result := system.authority.repair(component_id)
 	var label := BuildTypes.kind_name(component.kind)
 	if bool(result.get("ok", false)):

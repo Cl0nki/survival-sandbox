@@ -160,6 +160,11 @@ func update_aim(point: Variant) -> void:
 func confirm() -> Dictionary:
 	if not equipped or current_plan == null or current_request.is_empty():
 		return {}
+	if system.relay != null and not system.authoritative:
+		system.relay.request_place(current_request)
+		var pending_name := selected_blueprint().display_name if selected_blueprint() != null else "piece"
+		_notify("Sending %s..." % pending_name)
+		return {"ok": true, "pending": true, "changed": false, "reason": ""}
 	var requester := player.network_id if player != null else 0
 	var result := system.authority.request_place(current_request, requester)
 	last_result = result

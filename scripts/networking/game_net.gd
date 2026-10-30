@@ -925,6 +925,9 @@ func _spawn_authority(peer_id: int) -> void:
 	_refresh_visibility()
 	_sync_world_to(peer_id)
 	_push_inventory(peer_id)
+	var building := _building()
+	if building != null and building.relay != null:
+		building.relay.sync_peer(peer_id)
 
 
 func _sync_world_to(peer_id: int) -> void:
@@ -1012,6 +1015,9 @@ func _release_player(peer_id: int) -> void:
 		var row: Dictionary = _seen[seen_key]
 		row.erase(peer_id)
 	_clear_peer_limits(peer_id)
+	var building := _building()
+	if building != null and building.relay != null:
+		building.relay.forget_peer(peer_id)
 	if player != null and is_instance_valid(player):
 		player.queue_free()
 	if multiplayer.get_peers().is_empty():
@@ -1596,6 +1602,17 @@ func _push_container(crate: LootContainer) -> void:
 
 func _flat_distance(from_pos: Vector3, to_pos: Vector3) -> float:
 	return Vector2(from_pos.x - to_pos.x, from_pos.z - to_pos.z).length()
+
+
+func authority_players() -> Dictionary:
+	return _players
+
+
+func _building() -> BuildingSystem:
+	var arena := get_parent()
+	if arena == null:
+		return null
+	return arena.get_node_or_null("BuildingSystem") as BuildingSystem
 
 
 func debug_inventory(peer_id: int) -> Inventory:

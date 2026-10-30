@@ -72,6 +72,23 @@ func set_rule(key: Vector4i, stairs_id: int, allowed_mask: int) -> void:
 	_rules[key] = rules
 
 
+func set_room_refs(key: Vector4i, room_ids: PackedInt32Array) -> void:
+	if room_ids.is_empty():
+		_room_refs.erase(key)
+		return
+	_room_refs[key] = room_ids.duplicate()
+
+
+## Rules this flight registered, as [edge key, allowed mask] pairs.
+func rules_for(stairs_id: int) -> Array:
+	var found: Array = []
+	for key in _rules.keys():
+		var rules: Dictionary = _rules[key]
+		if rules.has(stairs_id):
+			found.append([key, int(rules[stairs_id])])
+	return found
+
+
 func clear_rules_for(stairs_id: int) -> void:
 	for key in _rules.keys():
 		var rules: Dictionary = _rules[key]

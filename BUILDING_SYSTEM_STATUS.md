@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 3 — Structural Support and Collapse: complete, waiting for approval.**
-Phases 1 and 2 remain in place. Phase 4 (multiplayer replication) has not been started.
+**Phase 4 — Multiplayer, Replication, and Performance: complete, waiting for approval.**
+Phases 1, 2, and 3 remain in place. There is no later building phase in the original plan.
 
 ## Phase 2
 
@@ -21,6 +21,17 @@ Phases 1 and 2 remain in place. Phase 4 (multiplayer replication) has not been s
 - **Stages.** Each stage waits `collapse_delay_sec` (0.2 s) and then removes the failing pieces in id order. The next stage sees the result. A chain stops after `collapse_max_waves` (32). Putting a wall back before the timer fires cancels the stage.
 - **Damage only.** Shooting or blasting a support can bring down what stood on it. The Build Tool still refuses to dismantle a floor that walls stand on, and dismantling a wall does not collapse the floor above it.
 - **Repair.** A damaged wall that is still standing keeps its load. Repair restores the wall. It does not bring back a piece that already fell.
+
+## Phase 4
+
+- **Who decides.** The server `BuildingAuthority` is the only writer in a network game. A client can preview and send a request. It cannot commit, damage, repair, explode, or collapse on its own. Local play is unchanged: the same authority runs in-process, with no packets.
+- **Requests.** Place, repair, and blast are reliable RPCs with a per-player sequence number. A repeated sequence is ignored. More than 8 building requests in one second are refused. The server checks that the sender has a living player, is holding the matching hotbar item, and is within 15 m of the point. Placement is re-planned on the server. When costs are enabled, scrap is counted and spent from that player's server inventory.
+- **What is sent.** A change is a batch of piece records, room records, health values, bullet-hole points, and debris origins. Stable component ids travel with the records. Unchanged chunks are left out. Pieces are grouped into 8 m chunks. A player receives a chunk while they stand within two chunks of it, gets a snapshot of a chunk when they walk into range or join late, and is told to drop a chunk when they leave. Dropping a chunk does not delete it on the server.
+- **Damage and collapse.** Server hitscan already calls `receive_damage` on the body it hits. That applies bullet damage once. The same shot id a second time does nothing. Blasts and collapse run only on the server. Clients apply the resulting removals, including the falling flag, and do not run the structural solver.
+- **Sight.** Line of sight now includes the building layer, so a wall blocks network visibility the same way the arena walls do.
+- **Rendering.** Piece meshes and materials were already cached and are still one mesh per kind and bottom mask. Destructible pieces stay separate bodies so each can be damaged. Break chips and collapse dust are two `MultiMeshInstance3D` nodes with a cap and a lifetime.
+
+New files: `scripts/building/building_codec.gd` (piece and room records), `scripts/building/building_relay.gd` (requests, chunks, batches), `tests/building_phase4.gd`. The relay is a child of `BuildingSystem`. `GameNet` tells it when a player spawns or leaves. The arena creates a `BuildingSystem` for the server and for clients, not only for local play.
 
 ## Features
 
@@ -96,7 +107,7 @@ All runs on Godot 4.7.2 stable, Windows, 2026-10-27.
 
 ## Known issues and limitations
 
-- **Local play only.** Server and client modes do not create a `BuildingSystem`. Holding the Build Tool in a networked session shows a notice. Replication belongs to a later phase; the authority already takes requests rather than plans.
+- **Build reach is 15 m.** A request farther from the player than that is refused. Chunks outside that neighbourhood are not sent until the player walks up to them.
 - **Costs are shown, not charged, by default.** `require_resources` is off and the authority's wallet hooks are not yet connected to the player inventory. The charging path is covered by the suite with a test wallet.
 - **Posts are visible** as darker strips at every metre along straight walls (posts own every vertex). This is intentional and seamless; if a continuous wall look is wanted, posts can share the wall material without geometry changes.
 - **45° stairs.** The player's `floor_max_angle` is 50°, so the stairs are walkable (verified with a capsule of the same settings, not the full player). A stricter player angle would need a shallower stair blueprint.
@@ -105,7 +116,7 @@ All runs on Godot 4.7.2 stable, Windows, 2026-10-27.
 - **Posts and windows carry no floor load.** A wide floor needs walls or doorways. Posts only join those walls. Glass does not hold a floor up.
 - **Four tiles is the buckle point.** A wall or doorway falls when its equal share of the floor above is more than 4. A 1×1 ceiling stays up on its last wall (share 1). Six tiles on one wall buckle it, and the ceiling follows one stage later. A wider intact room has more walls, so the share stays lower until enough of them are destroyed.
 - **Diagonal boundaries** are reserved in the key format (axes 2 and 3) but not implemented.
-- **`line_of_sight.gd`** still checks only the `WORLD` layer, so building walls do not block network visibility yet (multiplayer phase).
+- **`line_of_sight.gd`** includes the building layer. A wall between two players hides them from each other. A chunk the player has not been sent yet has no collision on that client, so it cannot block sight until it arrives.
 - **F3 debug view** costs a few milliseconds while on (labels and lines without depth test). It is off by default.
 - **`tests/milestone4_inventory.gd`** does not parse (pre-existing, see above).
 
@@ -155,6 +166,22 @@ Phase 3, Godot 4.7.2 stable, Windows, 2026-10-28:
 
 Phase 3 checks cover one missing wall leaving the upper floor up, the last wall dropping the ceiling, six tiles buckling the final wall, a second building staying out of the walk, a destroyed ground floor taking both storeys with it, stairs falling with their slab, repair keeping the load, dismantle not collapsing, and a wall put back during the 0.2 s delay cancelling the fall. An audit runs after each of those.
 
+## Tests executed
+
+Phase 4, Godot 4.7.2 stable, Windows, 2026-10-30:
+
+| Test | Result |
+|---|---|
+| `tests/building_phase4.gd` | **Pass**: 87 checks, 0 failures, prints `BUILDING_PHASE4_OK` |
+| `tests/building_phase3.gd` | **Pass**: 96 checks, 0 failures, prints `BUILDING_PHASE3_OK` |
+| `tests/building_phase2.gd` | **Pass**: 167 checks, 0 failures, prints `BUILDING_PHASE2_OK` |
+| `tests/building_phase1.gd` | **1 failure**, 556 checks. `6c rooms sized by dragging` expects a doorway not to start a drag. `resources/blueprints/doorway.tres` has `resizable = true` (a doorway run). That check was already out of date with the blueprint. The stale-plan `ERROR` line is still the one the suite expects. Not introduced by Phase 4 |
+| `tests/milestone1_smoke.gd` | **Pass** (`MILESTONE1_SMOKE_OK`) |
+| `tests/milestone2_net.gd` | **Pass** (`MILESTONE2_NET_OK`) |
+| `tests/milestone3_visibility.gd` | **Pass** (`MILESTONE3_VISIBILITY_OK`) |
+
+Phase 4 checks cover two peers placing adjacent rooms that share one wall, duplicate and invalid requests, the request rate, bullet damage with a repeated shot id, repair, a blast that hits more than one piece, a flush that sends nothing when nothing changed, collapse that the client does not apply until the server packet arrives, falling meshes, stairs, a distant chunk withheld until the player walks up to it and dropped again when they leave, a late joiner, a disconnect that keeps the building and rejects the peer, server-side scrap costs, a server hitscan shot into a wall, building walls blocking sight, and a geometry audit after damage and collapse. Replica nodes use the same ids and canonical transforms, and applying a packet twice does not add a second copy.
+
 ## Next steps
 
-Waiting for explicit approval before Phase 4 (multiplayer replication and performance). Do not start it until then.
+The four planned building phases are in place. A follow-up is to update the doorway drag check in `tests/building_phase1.gd` so it matches a resizable doorway, and to try a two-process session from `tools\launcher.vbs` (the headless suite drives the server directly, the same way Milestone 2 does).

@@ -10,7 +10,7 @@ var display_name := "Piece"
 
 func receive_damage(amount: int, point: Vector3) -> bool:
 	var system := _system()
-	if system == null or amount <= 0 or not has_meta(&"component_id"):
+	if system == null or not system.authoritative or amount <= 0 or not has_meta(&"component_id"):
 		return false
 	var result: Dictionary = system.authority.apply_bullet(int(get_meta(&"component_id")), amount, point)
 	return bool(result.get("changed", false))

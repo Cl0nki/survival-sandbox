@@ -133,6 +133,9 @@ func _ready() -> void:
 		_setup_network_presentation()
 	if wants_local_camera():
 		_setup_inventory_ui()
+		if net_role == NetRole.OWNER:
+			_attach_build_tool.call_deferred()
+			_attach_repair_tool.call_deferred()
 
 
 func _physics_process(delta: float) -> void:
@@ -202,8 +205,10 @@ func _run_owner_frame(_delta: float) -> void:
 	_session.call("send_owner_input", input_2d, _camera.get_yaw(), aim_yaw, lean, _owner_crouch, _owner_pitch)
 	_try_interact()
 	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
-		if holds_build_tool() or holds_repair_tool() or holds_blast_gun():
-			show_item_notice("Building runs in local play only until multiplayer building lands.")
+		if holds_build_tool() or holds_repair_tool():
+			pass
+		elif holds_blast_gun():
+			_try_network_blast()
 		elif not holds_debug_weapon():
 			show_item_notice("No weapon in hand.")
 		else:
@@ -398,7 +403,8 @@ func _setup_inventory_ui() -> void:
 		_attach_repair_tool.call_deferred()
 
 
-## Local play only. The tool finds the arena's BuildingSystem by group.
+## The tool finds the arena's BuildingSystem by group. Local play commits
+## directly. A network owner sends the same request to the server.
 func _attach_build_tool() -> void:
 	var system := get_tree().get_first_node_in_group(&"building_system") as BuildingSystem
 	if system == null or get_node_or_null("BuildTool") != null:
@@ -561,6 +567,16 @@ func get_lean_offset() -> float:
 
 func get_crouch() -> float:
 	return _crouch
+
+
+func _try_network_blast() -> void:
+	var nodes := get_tree().get_nodes_in_group(&"building_system")
+	if nodes.is_empty():
+		return
+	var building := nodes[0] as BuildingSystem
+	if building == null or building.relay == null:
+		return
+	building.relay.request_blast(_cursor_aim()["point"])
 
 
 func _try_local_blast() -> void:

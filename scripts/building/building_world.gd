@@ -11,6 +11,10 @@ class_name BuildingWorld
 var state: BuildingState
 var grid: GridSystem
 var geometry: BuildingGeometry
+## A comparison replica in the same physics world turns this off so it does
+## not add a second collider on top of the server pieces. Real clients leave
+## it on: they are the only copy in their world.
+var collision_enabled := true
 ## Last level shown when cutting away upper floors, or -1 for everything.
 var cut_level := -1
 
@@ -103,7 +107,7 @@ func _spawn(component_id: int) -> void:
 	var body := BuildingPieceBody.new()
 	body.name = "Body"
 	body.display_name = BuildTypes.kind_name(component.kind)
-	body.collision_layer = PhysicsLayers.BUILDING
+	body.collision_layer = PhysicsLayers.BUILDING if collision_enabled else 0
 	body.collision_mask = 0
 	body.set_meta(&"component_id", component_id)
 	for pair in geometry.collision_shapes(component.kind):
@@ -258,7 +262,10 @@ func _apply_appearance(component: BuildComponent, node: Node3D) -> void:
 		_apply_tint(mesh, component)
 	var body := node.get_node_or_null("Body") as StaticBody3D
 	if body != null:
-		body.collision_layer = 0 if component.destroyed else PhysicsLayers.BUILDING
+		if not collision_enabled or component.destroyed:
+			body.collision_layer = 0
+		else:
+			body.collision_layer = PhysicsLayers.BUILDING
 
 
 func _apply_tint(mesh: MeshInstance3D, component: BuildComponent) -> void:

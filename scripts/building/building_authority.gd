@@ -8,6 +8,12 @@ class_name BuildingAuthority
 ## directly; the multiplayer phase routes the same requests through RPCs.
 
 signal request_finished(result: Dictionary)
+## Visuals the server already applied and clients should copy. Logical
+## destruction stays on the state signals; this is only bullet holes.
+signal presentation(event_name: String, data: Dictionary)
+
+## Clients plan previews locally. Only the server (or local play) commits.
+var writes_enabled := true
 
 var state: BuildingState
 var grid: GridSystem
@@ -70,6 +76,8 @@ func make_plan(request: Dictionary) -> ConstructionPlan:
 
 
 func request_place(request: Dictionary, requester: int = 0) -> Dictionary:
+	if not writes_enabled:
+		return _finish({"ok": false, "changed": false, "reason": "Not the authority", "plan": ConstructionPlan.new(), "requester": requester, "change": {}})
 	var plan := make_plan(request)
 	var result := {"ok": false, "changed": false, "reason": "", "plan": plan, "requester": requester, "change": {}}
 	if plan.blueprint != null and plan.blueprint.kind == BuildTypes.BlueprintKind.DISMANTLE:
@@ -107,17 +115,23 @@ func request_remove(component_id: int, requester: int = 0) -> Dictionary:
 ## Bullet damage. `event_id` empty means a fresh shot. The same id a second
 ## time is ignored, even if the first shot destroyed the piece.
 func apply_bullet(component_id: int, raw: int, point: Vector3 = Vector3.ZERO, event_id: String = "") -> Dictionary:
+	if not writes_enabled:
+		return {"ok": false, "changed": false, "reason": "Not the authority"}
 	return _apply_scaled(component_id, raw, point, event_id, "bullet")
 
 
 ## Direct impact uses the profile's direct factor instead of the bullet factor.
 func apply_direct(component_id: int, raw: int, point: Vector3 = Vector3.ZERO, event_id: String = "") -> Dictionary:
+	if not writes_enabled:
+		return {"ok": false, "changed": false, "reason": "Not the authority"}
 	return _apply_scaled(component_id, raw, point, event_id, "direct")
 
 
 ## One blast. Obstruction is decided before any piece loses health, and the
 ## whole blast is refused when `event_id` was already used.
 func apply_explosion(origin: Vector3, radius: float, base_damage: int, event_id: String = "") -> Dictionary:
+	if not writes_enabled:
+		return {"ok": false, "changed": false, "reason": "Not the authority", "hits": []}
 	var id := _fresh_event(event_id, "x")
 	var result := {"ok": true, "changed": false, "reason": "", "event_id": id, "hits": []}
 	if not _damage.claim(id):
@@ -159,11 +173,15 @@ func apply_explosion(origin: Vector3, radius: float, base_damage: int, event_id:
 
 
 func repair(component_id: int) -> Dictionary:
+	if not writes_enabled:
+		return {"ok": false, "changed": false, "reason": "Not the authority"}
 	var result := state.repair_component(component_id)
 	return _finish_integrity(result)
 
 
 func rebuild(component_id: int) -> Dictionary:
+	if not writes_enabled:
+		return {"ok": false, "changed": false, "reason": "Not the authority"}
 	var result := state.rebuild_component(component_id)
 	return _finish_integrity(result)
 
@@ -257,7 +275,9 @@ func _apply_scaled(component_id: int, raw: int, point: Vector3, event_id: String
 	_spawn_debris(applied)
 	note_structural_seeds(applied.get("seeds", []))
 	if result["changed"] and channel == "bullet" and impacts != null and not bool(applied.get("destroyed", false)):
-		impacts.add_hole(point, _surface_normal(component, point))
+		var normal := _surface_normal(component, point)
+		impacts.add_hole(point, normal)
+		presentation.emit("impact", {"point": point, "normal": normal, "id": component.id})
 	return result
 
 
