@@ -31,6 +31,7 @@ The mouse is never captured. The OS cursor is the aim point.
 | Move | W A S D, or the arrow keys. Direction is the camera's horizontal forward and right. |
 | Aim | Move the mouse. The shot goes from the muzzle toward the 3D point under the cursor, so it can aim up or down. |
 | Shoot | Left mouse button. One shot per click. |
+| Deploy | Select a deployable on the hotbar. A blueprint shows the footprint (2x1 for a chest). Left click places it within 5 m. R rotates it. |
 | Zoom | Mouse wheel. |
 | Orbit the camera | Hold the middle mouse button and drag, or hold C. Orbit the other way with Z, or with Y so the key labeled Z works on a German QWERTZ keyboard. |
 | Lean | Q left, E right. |
@@ -39,34 +40,41 @@ The mouse is never captured. The OS cursor is the aim point.
 
 WASD, Q, and E are the same physical keys on US QWERTY and German QWERTZ. Bindings use physical key positions.
 
-At startup the camera sits south of the character and looks toward the `NORTH` label. W walks toward that label.
+At startup the camera sits south of the character and looks toward the north wall. W walks toward that wall.
 
 ## What you should see
 
-- An open walled yard. The floor and the four outer walls are the only solid geometry.
-- A blue capsule with a dark visor and a gun. The visor shows facing. Facing follows the mouse, not the camera.
-- A red **Open Dummy** on the east side of the yard.
-- An orange **Covered Dummy** on the west side of the yard.
-- A dark overlay with FPS, position, aim, lean, weapon state, and both health values.
+- A 3 by 3 grid of **10x10** tiles. A blue capsule with a dark visor and a gun stands on **DEPLOYABLES**.
+- **WOODS** north-west: Oak, Birch, and Spruce, tall enough to walk under the canopy. A pickup of each yield sits beside the trunk. Hatchets on the south edge, and a **Woods** chest in the south-east corner.
+- **SCAVENGE** north: Broken Down Car, Scrap Pile, Rubble Pile, and Tire Pile, still cubes, each with its yield pickups beside it. Crowbars on the south edge. A **Scavenge** chest on the east side.
+- **GROUND** north-east: Sand, Clay, Gravel, Ground Water, Natural Gas, and Crude Oil, each with a pickup. Sand, clay, and gravel take a shovel. The fluids wait for a well or pump. A **Ground** chest on the east side.
+- **MINE** west: nine ore nodes, each with a pickup. Pickaxes on the south edge. A **Mine** chest on the north edge.
+- **BUILDING** in the middle: one chest per tier (Scrap, Wood, Brick, Stone, Concrete, Composite), stocked with that tier's materials. A gap down the middle stays open to walk through.
+- **RANGE** east: red **Open Dummy**, orange **Covered Dummy**, and the **Military** chest on the south-west corner.
+- **CRAFTING** south-west: Refining and Parts chests.
+- **DEPLOYABLES** south: spawn pads, a **Deployables** chest (Chest and Workbench at 100 HP, plus the Scrap Furnace, Iron Smelter, Steel Smelter, and Foundry), and a **Doors and Windows** chest with one door and one set of window bars for every building tier, at half that tier's health. Put one on the hotbar and a blueprint shows where it will sit. Left click places it within 5 m. R rotates a footprint. Doors and window bars fit the matching opening. **F** opens and closes a door, and opens a furnace. A furnace runs one batch at a time: load input and coal (the Foundry also takes fuel) and the ingots land in the output slot. A shot that spends the last HP destroys the piece. A deployable on an upper floor is also destroyed when that floor falls.
+- **SUPPLIES** south-east: the Collectables chest, plus cloth, food, scrap, and medical pickups.
+- Resource and ground labels stay hidden until **F1**. Chests are solid. A standing shot still passes over a chest.
 
 Three hits destroy a dummy (100 HP, 34 damage). It turns dark, the label says `DESTROYED`, and the body still blocks movement and shots.
 
 ## Manual checklist
 
-1. The game window opens on the arena. The overlay shows a changing FPS and a position near `(0, 0, 8)`.
+1. The game window opens on the arena. The character stands near `(0, 0, 8)`, looking north. No debug panel is on screen.
 2. W A S D move the character. The outer walls and both dummies stop the body.
-3. Walk into the north wall. The character stops on the near side.
+3. Walk into the north wall. The character stops on the near side. The wall has no NORTH label.
 4. Scroll the wheel. The view moves closer and farther while staying above the character. The closest and farthest distances stop changing at the limits.
 5. Orbit with the middle mouse button, then with Z/Y and C. The character's visor does not spin with the camera.
 6. After a large orbit, W still moves toward the top of the screen (camera-forward), not toward the old north.
 7. Put the cursor over a floor spot, a wall, or a dummy and orbit with Z/Y or C while holding the mouse still. The green marker stays on that surface under the cursor.
-8. Left-click the red dummy. A short tracer appears, its label and the overlay lose 34 HP, and the body flashes. The fourth click during the cooldown does not add a second hit. Three clicks destroy it.
-9. From the spawn, aim at the north wall and shoot. The tracer stops on the wall. The overlay says `blocked by WallNorth`.
-10. Shoot the orange dummy on the west side. Its HP drops. The yard between you and the dummy is open.
-11. Shoot the red dummy on the east side. Its HP drops the same way.
+8. Left-click the red dummy. A short tracer appears, its label loses 34 HP, and the body flashes. The fourth click during the cooldown does not add a second hit. Three clicks destroy it.
+9. From the spawn, aim at the north wall and shoot. The tracer stops on the wall.
+10. Walk to the east **RANGE**. Shoot the red open dummy from its FIRE pad. Its HP drops.
+11. From the covered FIRE pad the orange dummy is behind COVER. Step beside the lane and shoot it. Its HP drops.
 12. Stand in the open and hold Q or E. The tracer leaves the gun from the leaned position, shifted sideways from a shot fired while standing straight. Stand beside the west wall and lean into it. The mesh and the muzzle stop on the near side of the wall. The camera shifts sideways with that same lean.
 13. Walk up to a wall with the camera zoomed out. The camera pulls in to the near side of that wall.
-14. Escape closes the inventory. It does not quit.
+14. Press **F1**. White health and yield labels appear on the resource nodes and ground patches. Press **F1** again and they hide.
+15. Escape closes the inventory. It does not quit.
 
 ## Decisions
 

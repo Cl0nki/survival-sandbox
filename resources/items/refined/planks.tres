@@ -4,12 +4,12 @@
 
 [resource]
 script = ExtResource("1_item")
-id = "ammunition"
-display_name = "Ammunition"
-description = "Loose rounds. The debug weapon does not use them."
-max_stack = 60
-weight = 0.02
-category = "ammo"
+id = "planks"
+display_name = "Planks"
+description = "Sawn from logs. Ready to build with."
+max_stack = 50
+weight = 0.3
+category = "refined"
 can_pickup = true
 can_store = true
-swatch = Color(0.78, 0.62, 0.22, 1)
+swatch = Color(0.7, 0.52, 0.3, 1)

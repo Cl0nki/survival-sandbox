@@ -20,6 +20,7 @@ var blueprints: Array[BlueprintDefinition] = []
 var selected := 0
 var rotation_steps := 0
 var level := 0
+var build_tier := BuildingTier.MIN
 var equipped := false
 var current_plan: ConstructionPlan
 var current_request: Dictionary = {}
@@ -33,6 +34,7 @@ var _anchor_mode := ""
 var _aim: Variant = null
 var _signature := ""
 var _drag_start: Variant = null
+var _stand_level := -1
 
 
 func setup(building_system: BuildingSystem, owner_player: PlayerController = null) -> void:
@@ -54,6 +56,7 @@ func setup(building_system: BuildingSystem, owner_player: PlayerController = nul
 func _exit_tree() -> void:
 	if system != null and is_instance_valid(system):
 		system.cut_override = -2
+		system.cut_aim_cell = Vector2i(1 << 20, 1 << 20)
 		if preview != null and is_instance_valid(preview):
 			preview.queue_free()
 
@@ -63,6 +66,7 @@ func _process(_delta: float) -> void:
 		return
 	set_equipped(player.holds_build_tool())
 	if equipped:
+		follow_stand_from_height(player.global_position.y)
 		update_aim(_mouse_aim())
 
 
@@ -74,10 +78,12 @@ func set_equipped(on: bool) -> void:
 	_drag_start = null
 	if on:
 		if player != null:
-			level = clampi(system.grid.level_for_height(player.global_position.y), 0, system.config.max_levels - 1)
+			_stand_level = clampi(system.grid.level_for_height(player.global_position.y), 0, system.config.max_levels - 1)
+			level = _stand_level
 	else:
 		_clear_preview()
 		system.cut_override = -2
+		system.cut_aim_cell = Vector2i(1 << 20, 1 << 20)
 	if menu != null:
 		menu.refresh()
 
@@ -128,6 +134,31 @@ func change_level(delta: int) -> void:
 	update_aim(_aim)
 
 
+func select_build_tier(tier: int) -> void:
+	build_tier = BuildingTier.clamp_tier(tier)
+	_signature = ""
+	if menu != null:
+		menu.refresh()
+	update_aim(_aim)
+
+
+## When the player walks onto another storey the tool and the cut follow.
+## PageUp / PageDown still hold until the feet change floor.
+func follow_stand_from_height(y: float) -> void:
+	if system == null or is_dragging():
+		return
+	var stand := clampi(system.grid.level_for_height(y), 0, system.config.max_levels - 1)
+	if stand == _stand_level:
+		return
+	_stand_level = stand
+	if level == stand:
+		return
+	level = stand
+	_anchor = null
+	if menu != null:
+		menu.refresh()
+
+
 ## Drops the current blueprint. Nothing was written, so nothing is undone.
 func cancel() -> void:
 	selected = -1
@@ -140,6 +171,9 @@ func cancel() -> void:
 
 func update_aim(point: Variant) -> void:
 	_aim = point
+	if equipped and point is Vector3:
+		system.cut_override = level
+		system.cut_aim_cell = system.grid.world_to_cell(point)
 	var blueprint := selected_blueprint()
 	if not equipped or blueprint == null or not (point is Vector3):
 		_clear_preview()
@@ -154,7 +188,6 @@ func update_aim(point: Variant) -> void:
 		if menu != null:
 			menu.show_plan(current_plan)
 	preview.show_plan(current_plan, signature, _info_line())
-	system.cut_override = level
 
 
 func confirm() -> Dictionary:
@@ -265,12 +298,12 @@ func _request_for(blueprint: BlueprintDefinition, point: Vector3) -> Dictionary:
 			if blueprint.resizable:
 				return _edge_drag_request(blueprint, g)
 			var edge := _snap_edge(g, "edge")
-			return RoomPlacer.make_request(blueprint.id, Vector2i(edge.x, edge.y), 0, level, edge.z)
+			return _req(blueprint.id, Vector2i(edge.x, edge.y), 0, edge.z)
 		BuildTypes.BlueprintKind.SUPPORT:
-			return RoomPlacer.make_request(blueprint.id, _snap_vertex(g), 0, level)
+			return _req(blueprint.id, _snap_vertex(g))
 		BuildTypes.BlueprintKind.DISMANTLE:
 			var target := _pick_target(g)
-			return RoomPlacer.make_request(blueprint.id, Vector2i(floori(g.x), floori(g.y)), 0, level, 0, target)
+			return _req(blueprint.id, Vector2i(floori(g.x), floori(g.y)), 0, 0, target)
 		_:
 			if blueprint.resizable:
 				var hovered := _snap_cells(g, Vector2i.ONE)
@@ -278,7 +311,7 @@ func _request_for(blueprint: BlueprintDefinition, point: Vector3) -> Dictionary:
 					hovered = _pull_to_floor_below(g, hovered)
 				return _drag_request(blueprint, hovered)
 			var size := GridSystem.rotated_size(blueprint.footprint, steps)
-			return RoomPlacer.make_request(blueprint.id, _snap_cells(g, size), steps, level)
+			return _req(blueprint.id, _snap_cells(g, size), steps)
 
 
 ## A straight run along the edge where the drag started. Moving sideways does
@@ -286,7 +319,7 @@ func _request_for(blueprint: BlueprintDefinition, point: Vector3) -> Dictionary:
 func _edge_drag_request(blueprint: BlueprintDefinition, g: Vector2) -> Dictionary:
 	if not (_drag_start is Vector3i):
 		var edge := _snap_edge(g, "edge")
-		return RoomPlacer.make_request(blueprint.id, Vector2i(edge.x, edge.y), 0, level, edge.z, 0, Vector2i.ONE)
+		return _req(blueprint.id, Vector2i(edge.x, edge.y), 0, edge.z, 0, Vector2i.ONE)
 	var start: Vector3i = _drag_start
 	var along := g.x if start.z == BuildTypes.AXIS_X else g.y
 	var origin := start.x if start.z == BuildTypes.AXIS_X else start.y
@@ -295,7 +328,7 @@ func _edge_drag_request(blueprint: BlueprintDefinition, g: Vector2) -> Dictionar
 	end_index = clampi(end_index, origin - reach, origin + reach)
 	var low := mini(origin, end_index)
 	var anchor := Vector2i(low, start.y) if start.z == BuildTypes.AXIS_X else Vector2i(start.x, low)
-	return RoomPlacer.make_request(blueprint.id, anchor, 0, level, start.z, 0, Vector2i(absi(end_index - origin) + 1, 1))
+	return _req(blueprint.id, anchor, 0, start.z, 0, Vector2i(absi(end_index - origin) + 1, 1))
 
 
 ## Edge index along a wall run. Holds the current segment until the cursor is
@@ -317,12 +350,16 @@ func _run_index(along: float, axis: int) -> int:
 ## blueprint's max_size. Without a drag it is the single hovered cell.
 func _drag_request(blueprint: BlueprintDefinition, cell: Vector2i) -> Dictionary:
 	if not (_drag_start is Vector2i):
-		return RoomPlacer.make_request(blueprint.id, cell, 0, level, 0, 0, blueprint.footprint)
+		return _req(blueprint.id, cell, 0, 0, 0, blueprint.footprint)
 	var start: Vector2i = _drag_start
 	var reach := blueprint.max_size - Vector2i.ONE
 	var end := cell.clamp(start - reach, start + reach)
 	var low := Vector2i(mini(start.x, end.x), mini(start.y, end.y))
-	return RoomPlacer.make_request(blueprint.id, low, 0, level, 0, 0, (end - start).abs() + Vector2i.ONE)
+	return _req(blueprint.id, low, 0, 0, 0, (end - start).abs() + Vector2i.ONE)
+
+
+func _req(blueprint_id: String, anchor: Vector2i, rotation: int = 0, axis: int = 0, target: int = 0, size := Vector2i.ZERO) -> Dictionary:
+	return RoomPlacer.make_request(blueprint_id, anchor, rotation, level, axis, target, size, build_tier)
 
 
 ## Aiming at the outside face of a wall lands just past the floor. Pull that
@@ -446,7 +483,7 @@ func _mouse_aim() -> Variant:
 func _info_line() -> String:
 	var request := current_request
 	var anchor: Vector2i = request.get("anchor", Vector2i.ZERO)
-	var text := "Level %d   Rotation %d deg   Grid (%d, %d)" % [level, rotation_steps * 90, anchor.x, anchor.y]
+	var text := "%s   Level %d   Rotation %d deg   Grid (%d, %d)" % [BuildingTier.label(build_tier), level, rotation_steps * 90, anchor.x, anchor.y]
 	var blueprint := selected_blueprint()
 	if blueprint != null and blueprint.kind == BuildTypes.BlueprintKind.EDGE:
 		var axis_name := "X" if int(request.get("axis", 0)) == 0 else "Z"

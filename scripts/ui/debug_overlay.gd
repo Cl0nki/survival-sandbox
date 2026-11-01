@@ -64,6 +64,16 @@ func _process(_delta: float) -> void:
 			lines.append("P%s %s  %s HP" % [str(node.get("network_id")), who, str(node.get("health"))])
 	for node in _arena_nodes_in_group(&"damageable"):
 		lines.append("%s  %d/%d HP" % [str(node.get("display_name")), int(node.get("health")), int(node.get("max_health"))])
+	for node in _arena_nodes_in_group(&"resource_node"):
+		if bool(node.get("depleted")):
+			lines.append("%s  DEPLETED" % str(node.get("display_name")))
+		else:
+			lines.append("%s  %d/%d HP" % [str(node.get("display_name")), int(node.get("health")), int(node.get("max_health"))])
+	for node in _arena_nodes_in_group(&"ground_deposit"):
+		if bool(node.get("depleted")):
+			lines.append("%s  DEPLETED" % str(node.get("display_name")))
+		else:
+			lines.append("%s  %d/%d  resist %s" % [str(node.get("display_name")), int(node.get("remaining")), int(node.get("yield_amount")), str(node.get("resistance"))])
 	for system in _arena_nodes_in_group(&"building_system"):
 		for row in _weight_rows(system as BuildingSystem):
 			lines.append(row)

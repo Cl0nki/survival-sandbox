@@ -27,6 +27,12 @@ var authoritative := true
 var force_replica := false
 ## Set by the Build Tool while it is equipped; -2 lets the system decide.
 var cut_override := -2
+## Cell the Build Tool is aiming at. Used when the player is not inside a building.
+var cut_aim_cell := Vector2i(1 << 20, 1 << 20)
+var _cut_cell := Vector2i(1 << 20, 1 << 20)
+var _cut_level := -999
+var _cut_revision := -1
+var _cut_ids: Dictionary = {}
 
 
 func _init() -> void:
@@ -78,25 +84,43 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if cut_override != -2:
-		world.set_cut_level(cut_override)
-		return
-	world.set_cut_level(_indoor_cut_level())
+	var cut := active_cut()
+	world.set_cut_level(int(cut[0]), cut[1])
 
 
-## When the local player stands under a slab, hide everything above their
-## level so the top-down camera can see inside. Those pieces still collide
-## with the player. Aim skips them, so the cursor hits the room, not the roof.
-func _indoor_cut_level() -> int:
+## Indoor walk and the Build Tool share this. Only the focused building
+## opens, at the walk level or the build level.
+func active_cut() -> Array:
 	var player := _local_player()
-	if player == null:
-		return -1
-	var level := grid.level_for_height(player.global_position.y)
-	var cell := grid.world_to_cell(player.global_position)
+	var stand_cell := Vector2i.ZERO
+	var stand_level := 0
+	if player != null:
+		stand_cell = grid.world_to_cell(player.global_position)
+		stand_level = grid.level_for_height(player.global_position.y)
+	var level := cut_override if cut_override != -2 else stand_level
+	var cell := stand_cell
+	if player == null or not state.column_has_room(stand_cell):
+		if cut_override != -2 and cut_aim_cell.x < 1 << 19:
+			cell = cut_aim_cell
+		elif cut_override == -2:
+			return [-1, {}]
+	if cut_override == -2 and not _has_cover(stand_cell, stand_level):
+		return [-1, {}]
+	if cell != _cut_cell or level != _cut_level or state.revision != _cut_revision:
+		_cut_cell = cell
+		_cut_level = level
+		_cut_revision = state.revision
+		_cut_ids = state.building_ids_at(cell, level)
+	if _cut_ids.is_empty():
+		return [-1, {}]
+	return [level, _cut_ids]
+
+
+func _has_cover(cell: Vector2i, level: int) -> bool:
 	for above in range(level + 1, config.max_levels + 1):
 		if state.slab_at(GridSystem.slab_key(cell, above)) != 0:
-			return level
-	return -1
+			return true
+	return false
 
 
 func _server_owns_state() -> bool:

@@ -2,8 +2,8 @@ extends Node3D
 class_name BuildingWorld
 
 ## Presentation of committed pieces: one Node3D per logical component with a
-## MeshInstance3D and a StaticBody3D on the BUILDING layer. Nodes are created
-## and freed only for the ids a change reports. Neighbouring walls and posts
+## MeshInstance3D and a StaticBody3D on the BUILDING layer. Nodes are taken
+## from a pool and returned when a piece leaves. Neighbouring walls and posts
 ## swap to a different shared mesh when a slab beside them appears or goes
 ## away (bottom mask); their transforms and collision are never touched.
 ## Transforms come from GridSystem and are never edited after spawn.
@@ -17,14 +17,21 @@ var geometry: BuildingGeometry
 var collision_enabled := true
 ## Last level shown when cutting away upper floors, or -1 for everything.
 var cut_level := -1
+## When this is not empty, only these pieces hide above cut_level. Empty
+## means every piece above the cut, which is what the Build Tool wants.
+var cut_ids: Dictionary = {}
 
 var _nodes: Dictionary = {}
 var _masks: Dictionary = {}
 var spawned_total := 0
 var freed_total := 0
+var reused_total := 0
 var mask_updates := 0
 ## Meshes already removed from the building, still falling as rubble.
 var _falls: Array[Dictionary] = []
+var _pool: Array[Node3D] = []
+var _dust_material: StandardMaterial3D
+const POOL_CAP := 1024
 
 
 func bind(building_state: BuildingState, grid_system: GridSystem, building_geometry: BuildingGeometry) -> void:
@@ -45,6 +52,10 @@ func node_count() -> int:
 	return _nodes.size()
 
 
+func pool_count() -> int:
+	return _pool.size()
+
+
 func mask_of(component_id: int) -> int:
 	return int(_masks.get(component_id, -1))
 
@@ -53,18 +64,34 @@ func mask_of(component_id: int) -> int:
 func collider_is_hidden(collider: Object) -> bool:
 	if cut_level < 0 or collider == null or not collider.has_meta(&"component_id"):
 		return false
-	var component := state.get_component(int(collider.get_meta(&"component_id")))
-	return component != null and component.level > cut_level
+	var component_id := int(collider.get_meta(&"component_id"))
+	var component := state.get_component(component_id)
+	return component != null and component.level > cut_level and _cut_allows(component_id)
 
 
 ## Hides pieces above `level` without touching collision. -1 shows all.
 ## Aim rays skip those pieces; walking into them still collides.
-func set_cut_level(level: int) -> void:
-	if level == cut_level:
+## `restrict` limits the cut to one building. Leave it empty to cut every roof.
+func set_cut_level(level: int, restrict: Dictionary = {}) -> void:
+	if level == cut_level and _same_ids(restrict, cut_ids):
 		return
 	cut_level = level
+	cut_ids = restrict.duplicate()
 	for component_id in _nodes.keys():
 		_apply_cut(state.get_component(int(component_id)), _nodes[component_id])
+
+
+func _cut_allows(component_id: int) -> bool:
+	return cut_ids.is_empty() or cut_ids.has(component_id)
+
+
+func _same_ids(left: Dictionary, right: Dictionary) -> bool:
+	if left.size() != right.size():
+		return false
+	for key in left.keys():
+		if not right.has(key):
+			return false
+	return true
 
 
 func _on_changed(change: Dictionary) -> void:
@@ -94,31 +121,11 @@ func _spawn(component_id: int) -> void:
 	var component := state.get_component(component_id)
 	if component == null or _nodes.has(component_id):
 		return
-	var root := Node3D.new()
-	root.name = "%s_%d" % [BuildTypes.kind_name(component.kind), component_id]
-	root.transform = grid.component_transform(component)
-	root.set_meta(&"component_id", component_id)
-	root.add_to_group(&"building_component")
-	var mesh := MeshInstance3D.new()
-	mesh.name = "Mesh"
-	var mask := bottom_mask(component)
-	mesh.mesh = geometry.mesh_for(component.kind, mask)
-	root.add_child(mesh)
-	var body := BuildingPieceBody.new()
-	body.name = "Body"
-	body.display_name = BuildTypes.kind_name(component.kind)
-	body.collision_layer = PhysicsLayers.BUILDING if collision_enabled else 0
-	body.collision_mask = 0
-	body.set_meta(&"component_id", component_id)
-	for pair in geometry.collision_shapes(component.kind):
-		var shape := CollisionShape3D.new()
-		shape.shape = pair[0]
-		shape.transform = pair[1]
-		body.add_child(shape)
-	root.add_child(body)
+	var root := _acquire()
+	_configure(root, component)
 	add_child(root)
 	_nodes[component_id] = root
-	_masks[component_id] = mask
+	_masks[component_id] = bottom_mask(component)
 	spawned_total += 1
 	_apply_cut(component, root)
 
@@ -136,10 +143,11 @@ func _release_falling(component_id: int, step_sec: float) -> void:
 		body.collision_layer = 0
 	var mesh := node.get_node_or_null("Mesh") as MeshInstance3D
 	if mesh != null:
-		var dust := StandardMaterial3D.new()
-		dust.albedo_color = Color(0.62, 0.58, 0.52)
-		dust.roughness = 1.0
-		mesh.set_surface_override_material(0, dust)
+		if _dust_material == null:
+			_dust_material = StandardMaterial3D.new()
+			_dust_material.albedo_color = Color(0.62, 0.58, 0.52)
+			_dust_material.roughness = 1.0
+		mesh.set_surface_override_material(0, _dust_material)
 		mesh.visible = true
 	var host := get_parent().get_node_or_null("Debris") as Node3D
 	if host == null:
@@ -181,10 +189,7 @@ func _process(delta: float) -> void:
 		var flat := lerpf(1.0, 0.06, crush * crush)
 		node.scale = Vector3(1.0 + crush * 0.55, flat, 1.0 + crush * 0.55)
 		if age >= life or node.global_position.y < -1.5:
-			var mesh := node.get_node_or_null("Mesh") as MeshInstance3D
-			if mesh != null:
-				mesh.set_surface_override_material(0, null)
-			node.free()
+			_recycle(node)
 			_falls.remove_at(index)
 			continue
 		index += 1
@@ -196,12 +201,76 @@ func _free(component_id: int) -> void:
 	_masks.erase(component_id)
 	if node == null:
 		return
+	_recycle(node)
+	freed_total += 1
+
+
+func _acquire() -> Node3D:
+	while not _pool.is_empty():
+		var node := _pool.pop_back() as Node3D
+		if node != null and is_instance_valid(node):
+			reused_total += 1
+			return node
+	var root := Node3D.new()
+	var mesh := MeshInstance3D.new()
+	mesh.name = "Mesh"
+	root.add_child(mesh)
+	var body := BuildingPieceBody.new()
+	body.name = "Body"
+	body.collision_mask = 0
+	root.add_child(body)
+	return root
+
+
+func _exit_tree() -> void:
+	for node in _pool:
+		if node != null and is_instance_valid(node):
+			node.free()
+	_pool.clear()
+	_falls.clear()
+
+
+func _configure(root: Node3D, component: BuildComponent) -> void:
+	root.name = "%s_%d" % [BuildTypes.kind_name(component.kind), component.id]
+	root.scale = Vector3.ONE
+	root.transform = grid.component_transform(component)
+	root.set_meta(&"component_id", component.id)
+	root.add_to_group(&"building_component")
+	var mesh := root.get_node("Mesh") as MeshInstance3D
+	mesh.mesh = geometry.mesh_for(component.kind, bottom_mask(component))
+	mesh.visible = true
+	mesh.set_surface_override_material(0, null)
+	var body := root.get_node("Body") as BuildingPieceBody
+	body.display_name = BuildTypes.kind_name(component.kind)
+	body.collision_layer = PhysicsLayers.BUILDING if collision_enabled else 0
+	body.set_meta(&"component_id", component.id)
+	for child in body.get_children():
+		body.remove_child(child)
+		child.free()
+	for pair in geometry.collision_shapes(component.kind):
+		var shape := CollisionShape3D.new()
+		shape.shape = pair[0]
+		shape.transform = pair[1]
+		body.add_child(shape)
+
+
+func _recycle(node: Node3D) -> void:
+	if node == null or not is_instance_valid(node):
+		return
 	var mesh := node.get_node_or_null("Mesh") as MeshInstance3D
 	if mesh != null:
 		mesh.set_surface_override_material(0, null)
-	remove_child(node)
-	node.free()
-	freed_total += 1
+		mesh.visible = false
+	var body := node.get_node_or_null("Body") as StaticBody3D
+	if body != null:
+		body.collision_layer = 0
+	node.scale = Vector3.ONE
+	if node.get_parent() != null:
+		node.get_parent().remove_child(node)
+	if _pool.size() >= POOL_CAP:
+		node.free()
+		return
+	_pool.append(node)
 
 
 func _refresh_mask(component_id: int) -> void:
@@ -244,6 +313,7 @@ func _on_integrity(component_id: int) -> void:
 	if component == null or node == null:
 		return
 	_apply_appearance(component, node)
+	_refresh_joint_posts(component)
 
 
 func _apply_cut(component: BuildComponent, node: Node3D) -> void:
@@ -257,7 +327,7 @@ func _apply_appearance(component: BuildComponent, node: Node3D) -> void:
 		return
 	var mesh := node.get_node_or_null("Mesh") as MeshInstance3D
 	if mesh != null:
-		var cut_hides := cut_level >= 0 and component.level > cut_level
+		var cut_hides := cut_level >= 0 and component.level > cut_level and _cut_allows(component.id)
 		mesh.visible = not cut_hides and not component.destroyed
 		_apply_tint(mesh, component)
 	var body := node.get_node_or_null("Body") as StaticBody3D
@@ -268,15 +338,29 @@ func _apply_appearance(component: BuildComponent, node: Node3D) -> void:
 			body.collision_layer = PhysicsLayers.BUILDING
 
 
+func _refresh_joint_posts(component: BuildComponent) -> void:
+	if component == null or not BuildTypes.is_edge_kind(component.kind):
+		return
+	var key: Vector4i = component.key
+	for vertex in GridSystem.edge_vertices(key):
+		var post := state.get_component(state.post_at(GridSystem.post_key(vertex, key.z)))
+		if post == null:
+			continue
+		var node := node_for(post.id)
+		if node != null:
+			_apply_appearance(post, node)
+
+
 func _apply_tint(mesh: MeshInstance3D, component: BuildComponent) -> void:
-	if component.destroyed or component.max_health <= 0 or component.health >= component.max_health:
+	if component.destroyed:
 		mesh.set_surface_override_material(0, null)
 		return
+	var tier := state.display_tier(component)
 	var material := mesh.get_surface_override_material(0) as StandardMaterial3D
 	if material == null:
-		material = StandardMaterial3D.new()
-		material.roughness = 0.9
+		material = BuildingTier.make_material(tier, component.kind)
 		mesh.set_surface_override_material(0, material)
-	var ratio := float(component.health) / float(component.max_health)
-	var base := geometry.material_for(component.kind).albedo_color
-	material.albedo_color = base.lerp(Color(0.22, 0.1, 0.07), 1.0 - ratio)
+	var ratio := 1.0
+	if component.max_health > 0 and not state.is_joint_post(component):
+		ratio = float(component.health) / float(component.max_health)
+	BuildingTier.style_material(material, tier, ratio, component.kind)

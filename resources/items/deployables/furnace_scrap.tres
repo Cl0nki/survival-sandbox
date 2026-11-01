@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "furnace_scrap"
+display_name = "Scrap Furnace"
+description = "1x1 furnace. Smelts one iron or copper ore with 2 coal. 200 HP."
+max_stack = 1
+weight = 14.0
+category = "deployable"
+can_pickup = true
+can_store = true
+swatch = Color(0.55, 0.32, 0.22, 1)

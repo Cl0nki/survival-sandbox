@@ -57,6 +57,80 @@ func room_at(key: Vector3i) -> int:
 	return int(room_claims.get(key, 0))
 
 
+## Pieces of the structure that contains this cell. Shared walls join rooms.
+## A post is included but does not pull in a building that only touches a corner.
+func column_has_room(cell: Vector2i) -> bool:
+	for key in room_claims.keys():
+		var claim: Vector3i = key
+		if claim.x == cell.x and claim.z == cell.y:
+			return true
+	return false
+
+
+func building_ids_at(cell: Vector2i, level: int) -> Dictionary:
+	var room_ids := _connected_rooms(cell, level)
+	var seen := {}
+	if room_ids.is_empty():
+		_add_seed(seen, slab_at(GridSystem.slab_key(cell, level)))
+		_add_seed(seen, slab_at(GridSystem.slab_key(cell, level + 1)))
+		_add_seed(seen, stairs_at(GridSystem.slab_key(cell, level)))
+		return seen
+	for component: BuildComponent in components.values():
+		for room_id in component.rooms:
+			if room_ids.has(int(room_id)):
+				seen[component.id] = true
+				break
+	for room_id in room_ids.keys():
+		var room: Dictionary = rooms.get(int(room_id), {})
+		for raw in room.get("cells", []):
+			var key := raw as Vector3i
+			_add_seed(seen, slab_at(key))
+			_add_seed(seen, slab_at(Vector3i(key.x, key.y + 1, key.z)))
+			_add_seed(seen, stairs_at(key))
+	return seen
+
+
+func _connected_rooms(cell: Vector2i, level: int) -> Dictionary:
+	var start := room_at(GridSystem.slab_key(cell, level))
+	if start == 0:
+		start = room_at(GridSystem.slab_key(cell, level + 1))
+	if start == 0:
+		for key in room_claims.keys():
+			var claim: Vector3i = key
+			if claim.x == cell.x and claim.z == cell.y:
+				start = int(room_claims[key])
+				break
+	var seen := {}
+	if start == 0:
+		return seen
+	var queue: Array[int] = [start]
+	while not queue.is_empty():
+		var room_id: int = queue.pop_back()
+		if seen.has(room_id):
+			continue
+		seen[room_id] = true
+		for component: BuildComponent in components.values():
+			if not component.rooms.has(room_id):
+				continue
+			for other in component.rooms:
+				var other_id := int(other)
+				if not seen.has(other_id):
+					queue.append(other_id)
+		var room: Dictionary = rooms.get(room_id, {})
+		for raw in room.get("cells", []):
+			var key := raw as Vector3i
+			for offset in [-1, 1]:
+				var stacked := room_at(Vector3i(key.x, key.y + offset, key.z))
+				if stacked != 0 and not seen.has(stacked):
+					queue.append(stacked)
+	return seen
+
+
+func _add_seed(seeds: Dictionary, component_id: int) -> void:
+	if component_id > 0:
+		seeds[component_id] = true
+
+
 func component_count() -> int:
 	return components.size()
 
@@ -64,11 +138,22 @@ func component_count() -> int:
 ## Independent copy for a placement probe or a collapse forecast.
 ## Committing the copy does not touch this state.
 func fork() -> BuildingState:
+	return fork_region(components.keys())
+
+
+## Copy of the pieces in `ids` plus the slots they sit in. A collapse forecast
+## only needs the connected building, not the rest of the yard.
+func fork_region(ids: Array) -> BuildingState:
+	var keep := {}
+	for raw in ids:
+		var id := int(raw)
+		if id > 0 and components.has(id):
+			keep[id] = true
 	var copy := BuildingState.new()
 	copy.revision = revision
 	copy._next_component = _next_component
 	copy._next_room = _next_room
-	for id in components.keys():
+	for id in keep.keys():
 		copy.components[id] = _copy_component(components[id])
 	copy.slabs = slabs.duplicate()
 	copy.posts = posts.duplicate()
@@ -76,7 +161,13 @@ func fork() -> BuildingState:
 	copy.stairwells = stairwells.duplicate()
 	copy.stair_exits = stair_exits.duplicate()
 	copy.room_claims = room_claims.duplicate()
-	for room_id in rooms.keys():
+	var room_keep := {}
+	for component: BuildComponent in copy.components.values():
+		for room_id in component.rooms:
+			room_keep[int(room_id)] = true
+	for room_id in room_keep.keys():
+		if not rooms.has(room_id):
+			continue
 		var src: Dictionary = rooms[room_id]
 		copy.rooms[room_id] = {
 			"id": src["id"],
@@ -85,8 +176,7 @@ func fork() -> BuildingState:
 			"cells": (src["cells"] as Array).duplicate(),
 		}
 	copy.edges = edges.fork()
-	for id in copy.components.keys():
-		copy.graph.add_component(copy, copy.components[id])
+	copy.graph = graph.subgraph(keep)
 	return copy
 
 
@@ -101,6 +191,7 @@ func _copy_component(src: BuildComponent) -> BuildComponent:
 	dst.rooms = src.rooms.duplicate()
 	dst.pinned = src.pinned
 	dst.material = src.material
+	dst.tier = src.tier
 	dst.max_health = src.max_health
 	dst.health = src.health
 	dst.destroyed = src.destroyed
@@ -120,6 +211,45 @@ func vertex_has_edges(vertex: Vector2i, level: int) -> bool:
 		if edges.has_piece(edge):
 			return true
 	return false
+
+
+## Posts are only the corners of walls. They cannot be placed alone, so they
+## have no tier of their own.
+func is_joint_post(component: BuildComponent) -> bool:
+	return component != null and component.kind == BuildTypes.Kind.POST
+
+
+func edges_at_post(post: BuildComponent) -> Array[BuildComponent]:
+	var found: Array[BuildComponent] = []
+	if post == null or post.kind != BuildTypes.Kind.POST:
+		return found
+	var key: Vector3i = post.key
+	for edge_key in GridSystem.vertex_edges(Vector2i(key.x, key.z), key.y):
+		var piece := get_component(edges.component_at(edge_key))
+		if piece != null:
+			found.append(piece)
+	return found
+
+
+## Visual tier for a joint post is the strongest wall that still ends on it.
+func display_tier(component: BuildComponent) -> int:
+	if component == null:
+		return BuildingTier.MIN
+	if not is_joint_post(component):
+		return component.tier
+	var best := 0
+	for edge in edges_at_post(component):
+		if edge.tier > best:
+			best = edge.tier
+	return best if best > 0 else component.tier
+
+
+func weakest_edge_at_post(post: BuildComponent) -> BuildComponent:
+	var best: BuildComponent = null
+	for edge in edges_at_post(post):
+		if best == null or edge.health < best.health:
+			best = edge
+	return best
 
 
 ## Applies a validated plan. The caller (BuildingAuthority) re-plans against
@@ -144,16 +274,18 @@ func commit(plan: ConstructionPlan) -> Dictionary:
 			room_claims[cell] = room_id
 		(change["rooms_added"] as Array).append(room_id)
 	var inherited: Dictionary = {}
+	var quiet_removes := plan.blueprint != null and plan.blueprint.kind == BuildTypes.BlueprintKind.STAIRS
 	for entry in plan.entries:
 		var action := int(entry["action"])
 		if action == BuildTypes.Action.REMOVE or action == BuildTypes.Action.REPLACE:
 			var old := get_component(int(entry["existing"]))
 			if old != null:
 				inherited[str(entry["key"])] = old.rooms.duplicate()
-			_remove_internal(int(entry["existing"]), change)
+			_remove_internal(int(entry["existing"]), change, quiet_removes)
 	for entry in plan.entries:
 		var action := int(entry["action"])
 		if action == BuildTypes.Action.CREATE or action == BuildTypes.Action.REPLACE:
+			entry["tier"] = plan.tier
 			var created := _create(entry, change)
 			for kept in inherited.get(str(entry["key"]), PackedInt32Array()):
 				created.add_room(int(kept))
@@ -241,6 +373,10 @@ func removal_block_reason(component: BuildComponent) -> String:
 ## stairs left. `removed` lists the pieces that left, for debris.
 func apply_damage(component_id: int, amount: int) -> Dictionary:
 	var component := get_component(component_id)
+	if component != null and is_joint_post(component):
+		var wall := weakest_edge_at_post(component)
+		if wall != null:
+			return apply_damage(wall.id, amount)
 	if component == null:
 		return {"ok": false, "changed": false, "destroyed": false, "health": 0, "reason": "Missing piece", "removed": []}
 	if amount <= 0 or component.destroyed:
@@ -264,6 +400,8 @@ func apply_damage(component_id: int, amount: int) -> Dictionary:
 ## Restores a damaged piece that is still standing. Destroyed pieces must be rebuilt.
 func repair_component(component_id: int) -> Dictionary:
 	var component := get_component(component_id)
+	if component != null and is_joint_post(component):
+		return {"ok": false, "changed": false, "reason": "Pillars follow the walls around them"}
 	if component == null:
 		return {"ok": false, "changed": false, "reason": "Nothing to repair"}
 	if component.destroyed:
@@ -273,6 +411,25 @@ func repair_component(component_id: int) -> Dictionary:
 	component.health = component.max_health
 	integrity_changed.emit(component_id)
 	return {"ok": true, "changed": true, "reason": ""}
+
+
+## Raises one standing piece to the next tier and fills its health. Cost is
+## ignored. A piece already at Composite is left alone.
+func upgrade_component(component_id: int) -> Dictionary:
+	var component := get_component(component_id)
+	if component == null:
+		return {"ok": false, "changed": false, "reason": "Nothing to upgrade", "tier": 0}
+	if component.destroyed:
+		return {"ok": false, "changed": false, "reason": "Destroyed; rebuild it", "tier": component.tier}
+	if is_joint_post(component):
+		return {"ok": false, "changed": false, "reason": "Pillars follow the walls around them", "tier": component.tier}
+	if component.tier >= BuildingTier.MAX:
+		return {"ok": false, "changed": false, "reason": "Already %s" % BuildingTier.display_name(component.tier), "tier": component.tier}
+	component.tier = BuildingTier.next_of(component.tier)
+	component.max_health = BuildingTier.health_of(component.tier)
+	component.health = component.max_health
+	integrity_changed.emit(component_id)
+	return {"ok": true, "changed": true, "reason": "", "tier": component.tier}
 
 
 ## Deletes the piece that just reached zero health, unused posts at its ends,
@@ -430,7 +587,7 @@ func _slot_owner(component: BuildComponent) -> int:
 func checksum() -> int:
 	var lines := PackedStringArray()
 	for component: BuildComponent in components.values():
-		lines.append("c%d|%d|%s|%s|%s|%s|%d|%s" % [component.id, component.kind, str(component.key), component.pinned, str(component.rooms), str(component.cells), component.health, component.destroyed])
+		lines.append("c%d|%d|%s|%s|%s|%s|%d|%d|%d|%s" % [component.id, component.kind, str(component.key), component.pinned, str(component.rooms), str(component.cells), component.health, component.max_health, component.tier, component.destroyed])
 	for cell in room_claims.keys():
 		lines.append("r%s=%d" % [str(cell), int(room_claims[cell])])
 	for cell in stairwells.keys():
@@ -438,6 +595,35 @@ func checksum() -> int:
 	lines.append("e%d" % edges.size())
 	lines.sort()
 	return "\n".join(lines).hash()
+
+
+## One packet that apply_remote can replay. Used to save the world and to
+## give a late joiner the current pieces.
+func export_packet() -> Dictionary:
+	var upserts: Array = []
+	var ids: Array = components.keys()
+	ids.sort()
+	for id in ids:
+		var component := get_component(int(id))
+		if component != null:
+			upserts.append(BuildingCodec.piece(self, component))
+	var room_rows: Array = []
+	var room_ids: Array = rooms.keys()
+	room_ids.sort()
+	for room_id in room_ids:
+		room_rows.append(BuildingCodec.room(self, int(room_id)))
+	return {
+		"upserts": upserts,
+		"rooms": room_rows,
+		"removed": [],
+		"quiet_removed": [],
+		"falling": [],
+		"rooms_removed": [],
+		"health": [],
+		"revision": revision,
+		"next_component": _next_component,
+		"next_room": _next_room,
+	}
 
 
 func _create(entry: Dictionary, change: Dictionary) -> BuildComponent:
@@ -449,8 +635,9 @@ func _create(entry: Dictionary, change: Dictionary) -> BuildComponent:
 	component.pinned = bool(entry.get("pinned", false))
 	var profile := DamageCatalog.for_kind(component.kind)
 	component.material = profile.id
-	component.max_health = profile.max_health
-	component.health = profile.max_health
+	component.tier = BuildingTier.clamp_tier(int(entry.get("tier", BuildingTier.MIN)))
+	component.max_health = BuildingTier.health_of(component.tier)
+	component.health = component.max_health
 	component.destroyed = false
 	match component.kind:
 		BuildTypes.Kind.SLAB:
@@ -485,15 +672,16 @@ func _create(entry: Dictionary, change: Dictionary) -> BuildComponent:
 	return component
 
 
-func _remove_internal(component_id: int, change: Dictionary) -> void:
+func _remove_internal(component_id: int, change: Dictionary, quiet: bool = false) -> void:
 	var component := get_component(component_id)
 	if component == null:
 		return
-	(change["gone"] as Array).append({
-		"id": component.id,
-		"kind": component.kind,
-		"key": component.key,
-	})
+	if not quiet:
+		(change["gone"] as Array).append({
+			"id": component.id,
+			"kind": component.kind,
+			"key": component.key,
+		})
 	graph.remove_component(component_id)
 	match component.kind:
 		BuildTypes.Kind.SLAB:
@@ -627,9 +815,16 @@ func apply_remote(packet: Dictionary) -> void:
 		if pair is not Array or (pair as Array).size() < 2:
 			continue
 		var component := get_component(int(pair[0]))
-		if component == null or component.health == int(pair[1]):
+		if component == null:
 			continue
-		component.health = int(pair[1])
+		var health := int(pair[1])
+		var max_health := int(pair[2]) if (pair as Array).size() > 2 else component.max_health
+		var tier := int(pair[3]) if (pair as Array).size() > 3 else component.tier
+		if component.health == health and component.max_health == max_health and component.tier == tier:
+			continue
+		component.health = health
+		component.max_health = max_health
+		component.tier = BuildingTier.clamp_tier(tier)
 		integrity_changed.emit(component.id)
 
 
@@ -649,6 +844,7 @@ func _insert_remote(record: Dictionary) -> void:
 	component.kind = int(record["kind"])
 	component.health = int(record.get("health", 1))
 	component.max_health = int(record.get("max_health", component.health))
+	component.tier = BuildingTier.clamp_tier(int(record.get("tier", BuildingTier.MIN)))
 	component.material = str(record.get("material", ""))
 	component.pinned = bool(record.get("pinned", false))
 	component.destroyed = false
@@ -681,8 +877,8 @@ func _insert_remote(record: Dictionary) -> void:
 			if exit != Vector3i(1 << 30, 0, 0):
 				stair_exits[exit] = component.id
 			for rule in record.get("rules", []):
-				if rule is PackedInt32Array and (rule as PackedInt32Array).size() >= 5:
-					var packed: PackedInt32Array = rule
+				var packed := _packed_ints(rule)
+				if packed.size() >= 5:
 					edges.set_rule(Vector4i(packed[0], packed[1], packed[2], packed[3]), component.id, packed[4])
 		_:
 			var key: Vector4i = component.key
@@ -697,9 +893,12 @@ func _insert_remote(record: Dictionary) -> void:
 
 func _update_remote(component: BuildComponent, record: Dictionary) -> void:
 	var health := int(record.get("health", component.health))
-	var changed_health := health != component.health
+	var max_health := int(record.get("max_health", component.max_health))
+	var tier := BuildingTier.clamp_tier(int(record.get("tier", component.tier)))
+	var changed_look := health != component.health or max_health != component.max_health or tier != component.tier
 	component.health = health
-	component.max_health = int(record.get("max_health", component.max_health))
+	component.max_health = max_health
+	component.tier = tier
 	component.material = str(record.get("material", component.material))
 	component.pinned = bool(record.get("pinned", component.pinned))
 	var rooms := PackedInt32Array()
@@ -708,7 +907,7 @@ func _update_remote(component: BuildComponent, record: Dictionary) -> void:
 	component.rooms = rooms
 	if BuildTypes.is_edge_kind(component.kind):
 		edges.set_room_refs(component.key, rooms)
-	if changed_health:
+	if changed_look:
 		integrity_changed.emit(component.id)
 
 
@@ -718,7 +917,7 @@ func _install_room(record: Dictionary) -> void:
 		return
 	_drop_room(room_id)
 	var cells: Array = []
-	var packed: PackedInt32Array = record.get("cells", PackedInt32Array())
+	var packed := _packed_ints(record.get("cells", []))
 	var index := 0
 	while index + 2 < packed.size():
 		var cell := Vector3i(int(packed[index]), int(packed[index + 1]), int(packed[index + 2]))
@@ -755,14 +954,26 @@ func _drop_room(room_id: int) -> void:
 	rooms.erase(room_id)
 
 
-func _read_cells(packed: PackedInt32Array, component: BuildComponent) -> void:
+func _read_cells(value: Variant, component: BuildComponent) -> void:
+	var packed := _packed_ints(value)
 	var index := 0
 	while index + 2 < packed.size():
 		component.cells.append(Vector3i(int(packed[index]), int(packed[index + 1]), int(packed[index + 2])))
 		index += 3
 
 
-func _read_vec3(packed: PackedInt32Array) -> Vector3i:
+func _read_vec3(value: Variant) -> Vector3i:
+	var packed := _packed_ints(value)
 	if packed.size() < 3:
 		return Vector3i(1 << 30, 0, 0)
 	return Vector3i(int(packed[0]), int(packed[1]), int(packed[2]))
+
+
+static func _packed_ints(value: Variant) -> PackedInt32Array:
+	var packed := PackedInt32Array()
+	if value is PackedInt32Array:
+		return value
+	if value is Array:
+		for item in value:
+			packed.append(int(item))
+	return packed

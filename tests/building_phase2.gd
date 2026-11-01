@@ -37,6 +37,8 @@ func _body() -> void:
 	await _test_blast_reaches_neighbours()
 	await _test_debris_and_impacts()
 	await _test_aim_skips_hidden_ceiling()
+	_test_cutaway_stays_in_one_building()
+	_test_upgrade_tiers()
 	if _stage != null:
 		_stage.free()
 		_stage = null
@@ -119,6 +121,17 @@ func _test_profiles_and_falloff() -> void:
 	var window := DamageCatalog.for_kind(BuildTypes.Kind.WINDOW)
 	_check(wall.bullet_factor < window.bullet_factor, "window bullet resistance is not lower than a wall")
 	_check(wall.obstructs_blast and not window.obstructs_blast, "window should let a blast through")
+	_check(BuildingTier.health_of(1) == 200 and BuildingTier.display_name(1) == "Scrap", "scrap hp")
+	_check(BuildingTier.health_of(2) == 400, "wood hp")
+	_check(BuildingTier.health_of(3) == 800 and BuildingTier.health_of(4) == 1600, "brick and stone hp")
+	_check(BuildingTier.health_of(5) == 3600 and BuildingTier.health_of(6) == 8000, "concrete and composite hp")
+	_check(BuildingTier.next_of(6) == 6, "composite still had a next tier")
+	for tier in range(BuildingTier.MIN, BuildingTier.MAX + 1):
+		var face := BuildingTier.color_for(tier, BuildTypes.Kind.WALL)
+		var post_colour := BuildingTier.color_for(tier, BuildTypes.Kind.POST)
+		var slab_colour := BuildingTier.color_for(tier, BuildTypes.Kind.SLAB)
+		_check(post_colour.get_luminance() < face.get_luminance(), "tier %d post was not darker than the wall" % tier)
+		_check(slab_colour.get_luminance() < face.get_luminance(), "tier %d floor was not darker than the wall" % tier)
 
 
 func _test_spawn_health() -> void:
@@ -138,7 +151,9 @@ func _test_spawn_health() -> void:
 	for component: BuildComponent in system.state.components.values():
 		var profile := DamageCatalog.for_kind(component.kind)
 		seen[component.kind] = true
-		_check(component.health == profile.max_health and component.max_health == profile.max_health and not component.destroyed, "%s did not start at %d hp" % [component.describe(), profile.max_health])
+		var hp := BuildingTier.health_of(BuildingTier.MIN)
+		_check(component.tier == BuildingTier.MIN, "%s started at tier %d" % [component.describe(), component.tier])
+		_check(component.health == hp and component.max_health == hp and not component.destroyed, "%s did not start at %d hp" % [component.describe(), hp])
 		_check(component.material == profile.id, "%s material %s" % [component.describe(), component.material])
 	for kind in [BuildTypes.Kind.SLAB, BuildTypes.Kind.WALL, BuildTypes.Kind.DOORWAY, BuildTypes.Kind.WINDOW, BuildTypes.Kind.POST, BuildTypes.Kind.STAIRS]:
 		_check(seen.has(kind), "no %s was built to check its profile" % BuildTypes.kind_name(kind))
@@ -171,9 +186,9 @@ func _test_bullets_repair_rebuild() -> void:
 	var shared_before := system.geometry.material_for(BuildTypes.Kind.WALL).albedo_color
 	var first := system.authority.apply_bullet(wall.id, 20, wall_xform.origin + Vector3(0, 1.0, -1.0), "shot-1")
 	_check(int(first["taken"]) == DamageSystem.scale(20, wall_profile.bullet_factor), "bullet taken %s" % str(first))
-	_check(wall.health == wall_profile.max_health - int(first["taken"]) and not wall.destroyed, "wall health %d" % wall.health)
+	_check(wall.health == wall.max_health - int(first["taken"]) and not wall.destroyed, "wall health %d" % wall.health)
 	var again := system.authority.apply_bullet(wall.id, 20, Vector3.ZERO, "shot-1")
-	_check(not bool(again["changed"]) and wall.health == wall_profile.max_health - int(first["taken"]), "duplicate shot changed health")
+	_check(not bool(again["changed"]) and wall.health == wall.max_health - int(first["taken"]), "duplicate shot changed health")
 	var direct := system.authority.apply_direct(neighbour.id, 20, Vector3.ZERO, "hit-1")
 	var neighbour_profile := DamageCatalog.for_kind(BuildTypes.Kind.POST if neighbour.kind != BuildTypes.Kind.WALL else BuildTypes.Kind.WALL)
 	_check(int(direct["taken"]) == DamageSystem.scale(20, neighbour_profile.direct_factor), "direct taken %s" % str(direct))
@@ -275,7 +290,7 @@ func _test_explosions() -> void:
 		_check(int(near_hit["taken"]) > int(far_hit["taken"]), "near wall took %s, far took %s" % [str(near_hit), str(far_hit)])
 		var profile := DamageCatalog.for_kind(BuildTypes.Kind.WALL)
 		var expected := DamageSystem.scale(roundi(40.0 * ExplosionSystem.falloff(float(near_hit["distance"]), 8.0)), profile.blast_factor)
-		_check(int(near_hit["taken"]) == expected and near.health == profile.max_health - expected, "near falloff taken %s expected %d" % [str(near_hit), expected])
+		_check(int(near_hit["taken"]) == expected and near.health == near.max_health - expected, "near falloff taken %s expected %d" % [str(near_hit), expected])
 	var blocked := system.authority.apply_explosion(Vector3(0.5, 1.5, 0.5), 8.0, 80, "blast-block")
 	_check(_hit(blocked, front.id).is_empty() == false and front.health < front.max_health, "front wall was not hit")
 	_check(_hit(blocked, back.id).is_empty() and back.health == back.max_health, "blast passed through a solid wall: %s" % str(blocked["hits"]))
@@ -393,6 +408,119 @@ func _test_aim_skips_hidden_ceiling() -> void:
 	var still_solid := _ray(above, below)
 	var solid := system.state.get_component(_component_id(still_solid.get("collider")))
 	_check(solid != null and solid.level == 1, "hiding the ceiling removed its collision")
+
+
+func _test_cutaway_stays_in_one_building() -> void:
+	var system := _begin("cutaway stays in one building")
+	_built(system, "room", Vector2i(0, 0), 0, 0, 0, Vector2i(4, 4))
+	_built(system, "room", Vector2i(6, 0), 0, 0, 0, Vector2i(2, 2))
+	_built(system, "room", Vector2i(4, 0), 0, 0, 0, Vector2i(1, 2))
+	var home := system.state.building_ids_at(Vector2i(1, 1), 0)
+	var neighbour := system.state.building_ids_at(Vector2i(6, 0), 0)
+	var joined := system.state.building_ids_at(Vector2i(4, 0), 0)
+	var home_roof := system.state.slab_at(GridSystem.slab_key(Vector2i(0, 0), 1))
+	var far_roof := system.state.slab_at(GridSystem.slab_key(Vector2i(3, 3), 1))
+	var join_roof := system.state.slab_at(GridSystem.slab_key(Vector2i(4, 0), 1))
+	var other_roof := system.state.slab_at(GridSystem.slab_key(Vector2i(6, 0), 1))
+	_check(home.has(home_roof) and home.has(far_roof) and home.has(join_roof), "the whole roof of this building was not included")
+	_check(not home.has(other_roof) and neighbour.has(other_roof), "a gap still merged two buildings")
+	_check(joined.has(home_roof) and joined.has(far_roof), "standing in the attached room left the first room")
+	system.world.set_cut_level(0, home)
+	var home_mesh := system.world.node_for(home_roof).get_node("Mesh") as MeshInstance3D
+	var far_mesh := system.world.node_for(far_roof).get_node("Mesh") as MeshInstance3D
+	var other_mesh := system.world.node_for(other_roof).get_node("Mesh") as MeshInstance3D
+	_check(home_mesh != null and not home_mesh.visible, "the building you are in kept its roof")
+	_check(far_mesh != null and not far_mesh.visible, "only the tile above you opened")
+	_check(other_mesh != null and other_mesh.visible, "the neighbour roof was cut away")
+	_check(system.world.collider_is_hidden(system.world.node_for(home_roof).get_node("Body")), "aim still hits your hidden roof")
+	_check(not system.world.collider_is_hidden(system.world.node_for(other_roof).get_node("Body")), "aim skipped the neighbour roof")
+	_check(system.state.building_ids_at(Vector2i(1, 1), 1).has(far_roof), "page-up left the building")
+	system.cut_override = 0
+	system.cut_aim_cell = Vector2i(1, 1)
+	var at_floor: Array = system.active_cut()
+	_check(int(at_floor[0]) == 0 and at_floor[1].has(far_roof), "build level 0 did not open this building")
+	system.world.set_cut_level(int(at_floor[0]), at_floor[1])
+	_check(not far_mesh.visible, "build mode still hid only one tile")
+	_check(other_mesh.visible, "build mode opened the neighbour")
+	system.cut_override = 1
+	var at_roof: Array = system.active_cut()
+	_check(int(at_roof[0]) == 1 and at_roof[1].has(far_roof), "build level 1 lost the building")
+	system.world.set_cut_level(int(at_roof[0]), at_roof[1])
+	_check(far_mesh.visible, "page-up did not show this building's floor")
+	_check(other_mesh.visible, "page-up opened the neighbour")
+	var tool := BuildTool.new()
+	_stage.add_child(tool)
+	tool.setup(system)
+	tool.set_equipped(true)
+	tool.follow_stand_from_height(0.2)
+	tool.update_aim(Vector3(1.5, 0.2, 1.5))
+	_check(tool.level == 0 and system.cut_override == 0, "the tool did not start on the floor you stood on")
+	tool.follow_stand_from_height(3.2)
+	tool.update_aim(Vector3(1.5, 3.2, 1.5))
+	_check(tool.level == 1 and system.cut_override == 1, "walking a ramp with the tool open kept the starting floor")
+	var after_ramp: Array = system.active_cut()
+	_check(int(after_ramp[0]) == 1 and after_ramp[1].has(far_roof), "the cut stayed on the starting floor after the ramp")
+	system.world.set_cut_level(int(after_ramp[0]), after_ramp[1])
+	_check(far_mesh.visible, "the upper floor stayed hidden after the ramp")
+	_check(other_mesh.visible, "the neighbour opened after the ramp")
+	tool.change_level(1)
+	tool.follow_stand_from_height(3.2)
+	_check(tool.level == 2, "page-up was reset without leaving the floor")
+
+
+func _test_upgrade_tiers() -> void:
+	var system := _begin("upgrade tiers")
+	_built(system, "floor_1x1", Vector2i(0, 0))
+	_built(system, "floor_1x1", Vector2i(0, -1))
+	_built(system, "wall", Vector2i(0, 0), 0, 0, BuildTypes.AXIS_X)
+	var wall := _edge(system, Vector4i(0, 0, 0, BuildTypes.AXIS_X))
+	_check(wall != null, "no wall to upgrade")
+	if wall == null:
+		return
+	_check(wall.tier == 1 and wall.max_health == 200, "new wall was not Scrap")
+	var post := system.state.get_component(system.state.post_at(GridSystem.post_key(Vector2i(0, 0), 0)))
+	_check(post != null and system.state.is_joint_post(post), "wall had no corner post")
+	if post != null:
+		var refused := system.authority.upgrade(post.id)
+		_check(not bool(refused.get("ok", false)), "a corner post accepted its own upgrade")
+	var mesh := system.world.node_for(wall.id).get_node("Mesh") as MeshInstance3D
+	_check(mesh != null, "wall had no mesh")
+	var first := system.authority.upgrade(wall.id)
+	_check(bool(first.get("ok", false)) and wall.tier == 2 and wall.max_health == 400 and wall.health == 400, "upgrade to wood failed: %s" % first.get("reason", ""))
+	var wood := mesh.get_surface_override_material(0) as StandardMaterial3D
+	_check(wood != null and wood.albedo_color.is_equal_approx(BuildingTier.color_for(2, BuildTypes.Kind.WALL)), "wood wall kept the scrap colour")
+	if post != null:
+		var post_mesh := system.world.node_for(post.id).get_node("Mesh") as MeshInstance3D
+		var post_mat := post_mesh.get_surface_override_material(0) as StandardMaterial3D if post_mesh != null else null
+		_check(post_mat != null and post_mat.albedo_color.is_equal_approx(BuildingTier.color_for(2, BuildTypes.Kind.POST)), "corner post did not follow the wall colour")
+		_check(post_mat.albedo_color.get_luminance() < wood.albedo_color.get_luminance(), "corner post was not darker than the wall")
+		_check(system.state.display_tier(post) == 2 and post.tier == 1, "corner post stored its own wood tier")
+		var before := wall.health
+		system.authority.apply_bullet(post.id, 20, Vector3.ZERO, "post-chip")
+		_check(wall.health == before - DamageSystem.scale(20, DamageCatalog.for_kind(BuildTypes.Kind.WALL).bullet_factor), "a shot on the post did not hurt the wall")
+		_check(post.health == post.max_health, "the post kept its own damage")
+	system.authority.apply_bullet(wall.id, 40, Vector3.ZERO, "tier-chip")
+	_check(wall.health < wall.max_health, "chip did not land")
+	var stone := system.authority.upgrade(wall.id)
+	_check(bool(stone.get("ok", false)) and wall.tier == 3 and wall.health == 800, "upgrade did not heal to the next tier")
+	for _step in 3:
+		system.authority.upgrade(wall.id)
+	_check(wall.tier == 6 and wall.max_health == 8000 and wall.health == 8000, "did not reach composite")
+	var composite := mesh.get_surface_override_material(0) as StandardMaterial3D
+	_check(composite != null and composite.albedo_color.is_equal_approx(BuildingTier.color_for(6, BuildTypes.Kind.WALL)), "composite wall was not distinct")
+	var capped := system.authority.upgrade(wall.id)
+	_check(not bool(capped.get("ok", false)) and wall.tier == 6, "composite accepted another upgrade")
+	_built(system, "floor_1x1", Vector2i(4, 0))
+	_built(system, "floor_1x1", Vector2i(4, -1))
+	var brick := system.authority.request_place(RoomPlacer.make_request("wall", Vector2i(4, 0), 0, 0, BuildTypes.AXIS_X, 0, Vector2i.ZERO, 3))
+	_check(bool(brick.get("ok", false)), "brick wall was not built: %s" % brick.get("reason", ""))
+	var brick_wall := _edge(system, Vector4i(4, 0, 0, BuildTypes.AXIS_X))
+	_check(brick_wall != null and brick_wall.tier == 3 and brick_wall.max_health == 800, "the selected build tier was ignored")
+	var floor_id := system.state.slab_at(GridSystem.slab_key(Vector2i(4, 0), 0))
+	var floor_mesh := system.world.node_for(floor_id).get_node("Mesh") as MeshInstance3D if floor_id != 0 else null
+	var floor_mat := floor_mesh.get_surface_override_material(0) as StandardMaterial3D if floor_mesh != null else null
+	_check(floor_mat != null and floor_mat.albedo_color.is_equal_approx(BuildingTier.color_for(1, BuildTypes.Kind.SLAB)), "floor lost its darker tint")
+	_audit(system, "after upgrades")
 
 
 func _component_id(collider: Object) -> int:

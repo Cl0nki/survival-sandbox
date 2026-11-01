@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "shovel_scrap"
+display_name = "Scrap Shovel"
+description = "Tier I. Digs sand and clay slowly."
+max_stack = 1
+weight = 1.5
+category = "tool"
+can_pickup = true
+can_store = true
+swatch = Color(0.62, 0.64, 0.68, 1)
+harvest_kind = "shovel"
+harvest_tier = 1
+harvest_power = 8

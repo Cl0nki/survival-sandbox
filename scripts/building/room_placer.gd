@@ -40,8 +40,8 @@ func _init(grid_system: GridSystem, building_geometry: BuildingGeometry) -> void
 
 
 ## size matters for resizable rooms and floors; zero means the default footprint.
-static func make_request(blueprint_id: String, anchor: Vector2i, rotation: int = 0, level: int = 0, axis: int = 0, target: int = 0, size := Vector2i.ZERO) -> Dictionary:
-	return {"blueprint": blueprint_id, "anchor": anchor, "rotation": rotation, "level": level, "axis": axis, "target": target, "size": size}
+static func make_request(blueprint_id: String, anchor: Vector2i, rotation: int = 0, level: int = 0, axis: int = 0, target: int = 0, size := Vector2i.ZERO, tier: int = BuildingTier.MIN) -> Dictionary:
+	return {"blueprint": blueprint_id, "anchor": anchor, "rotation": rotation, "level": level, "axis": axis, "target": target, "size": size, "tier": BuildingTier.clamp_tier(tier)}
 
 
 func plan(state: BuildingState, blueprint: BlueprintDefinition, request: Dictionary) -> ConstructionPlan:
@@ -56,7 +56,8 @@ func plan(state: BuildingState, blueprint: BlueprintDefinition, request: Diction
 	var size := blueprint.size_for(requested if requested is Vector2i else Vector2i.ZERO)
 	result.level = level
 	result.rotation = rotation
-	result.request = make_request(blueprint.id, anchor, rotation, level, axis, int(request.get("target", 0)), size)
+	result.tier = BuildingTier.clamp_tier(int(request.get("tier", BuildingTier.MIN)))
+	result.request = make_request(blueprint.id, anchor, rotation, level, axis, int(request.get("target", 0)), size, result.tier)
 	if level < 0 or level >= grid.config.max_levels:
 		result.errors.append("Level %d is outside 0-%d" % [level, grid.config.max_levels - 1])
 		return result

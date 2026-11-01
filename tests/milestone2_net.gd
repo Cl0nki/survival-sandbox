@@ -201,7 +201,7 @@ func _body() -> int:
 		return _fail("shot origin was not taken from the player %s" % shot_origin)
 
 	net.debug_reset_cooldown(2)
-	net.debug_place(2, Vector3(-12.0, 0.15, 0.0))
+	net.debug_place(2, Vector3(15.0, 0.15, -4.8))
 	for _step in 5:
 		await physics_frame
 	var side_aim := _aim_from_server(net.debug_player(2), covered_server.global_position)
@@ -210,7 +210,7 @@ func _body() -> int:
 		return covered_server.health == covered_before - 34
 	)
 	if not side_hit:
-		return _fail("covered dummy was not hit in the open yard, health=%s" % covered_server.health)
+		return _fail("covered dummy was not hit from beside the lane, health=%s" % covered_server.health)
 	covered_mirror.apply_authoritative_health(covered_server.health)
 	if covered_mirror.health != covered_server.health:
 		return _fail("covered health mirror diverged")

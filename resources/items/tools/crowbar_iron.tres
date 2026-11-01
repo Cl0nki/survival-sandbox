@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "crowbar_iron"
+display_name = "Iron Crowbar"
+description = "Tier II. Strips wrecks faster than scrap."
+max_stack = 1
+weight = 1.8
+category = "tool"
+can_pickup = true
+can_store = true
+swatch = Color(0.58, 0.58, 0.62, 1)
+harvest_kind = "crowbar"
+harvest_tier = 2
+harvest_power = 14

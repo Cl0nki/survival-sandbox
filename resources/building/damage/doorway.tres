@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_prof")
 id = "wood_doorway"
-max_health = 70
+max_health = 100
 bullet_factor = 0.5
 direct_factor = 1.0
 blast_factor = 1.0

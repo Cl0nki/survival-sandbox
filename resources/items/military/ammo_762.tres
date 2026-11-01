@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "ammo_762"
+display_name = "7.62mm Ammunition"
+description = "Full-power rifle cartridges."
+max_stack = 60
+weight = 0.03
+category = "ammo"
+can_pickup = true
+can_store = true
+swatch = Color(0.48, 0.58, 0.3, 1)

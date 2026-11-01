@@ -11,6 +11,7 @@ const PANEL_WIDTH := 330
 var tool: BuildTool
 var _root: PanelContainer
 var _buttons: Array[Button] = []
+var _tier_buttons: Array[Button] = []
 var _details: Label
 var _status: Label
 var _reasons: Label
@@ -34,6 +35,22 @@ func setup(build_tool: BuildTool) -> void:
 	title.text = "BUILD TOOL  -  blueprints"
 	title.add_theme_font_size_override("font_size", 16)
 	column.add_child(title)
+	var tier_header := Label.new()
+	tier_header.text = "TIER"
+	tier_header.add_theme_font_size_override("font_size", 11)
+	tier_header.modulate = Color(0.6, 0.85, 1.0)
+	column.add_child(tier_header)
+	for tier in range(BuildingTier.MIN, BuildingTier.MAX + 1):
+		var tier_button := Button.new()
+		tier_button.toggle_mode = true
+		tier_button.focus_mode = Control.FOCUS_NONE
+		tier_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		tier_button.custom_minimum_size = Vector2(0, 26)
+		tier_button.text = "  %s   %d HP" % [BuildingTier.label(tier), BuildingTier.health_of(tier)]
+		tier_button.modulate = BuildingTier.color_of(tier).lerp(Color.WHITE, 0.35)
+		tier_button.pressed.connect(tool.select_build_tier.bind(tier))
+		column.add_child(tier_button)
+		_tier_buttons.append(tier_button)
 	var current_category := ""
 	for i in tool.blueprints.size():
 		var blueprint := tool.blueprints[i]
@@ -82,6 +99,8 @@ func refresh() -> void:
 	if _root == null:
 		return
 	visible = tool.equipped
+	for i in _tier_buttons.size():
+		_tier_buttons[i].set_pressed_no_signal(i + BuildingTier.MIN == tool.build_tier)
 	for i in _buttons.size():
 		_buttons[i].set_pressed_no_signal(i == tool.selected)
 	var blueprint := tool.selected_blueprint()
@@ -106,7 +125,7 @@ func refresh() -> void:
 		elif blueprint.resizable:
 			cost_label = "for 1x1:"
 		lines.append("Cost %s %d %s%s" % [cost_label, full, tool.system.config.cost_item_id, "" if tool.system.config.require_resources else " (not charged)"])
-	lines.append("Level %d   Rotation %d deg" % [tool.level, tool.rotation_steps * 90])
+	lines.append("%s   Level %d   Rotation %d deg" % [BuildingTier.label(tool.build_tier), tool.level, tool.rotation_steps * 90])
 	_details.text = "\n".join(lines)
 
 

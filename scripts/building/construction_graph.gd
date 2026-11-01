@@ -44,6 +44,22 @@ func neighbours(component_id: int) -> Dictionary:
 	return _links.get(component_id, {})
 
 
+## Links among `keep` only. Collapse forecasts use this instead of rebuilding
+## the yard from slots.
+func subgraph(keep: Dictionary) -> ConstructionGraph:
+	var copy := ConstructionGraph.new()
+	for raw in keep.keys():
+		var id := int(raw)
+		var mine := {}
+		var links: Dictionary = _links.get(id, {})
+		for other in links.keys():
+			var next := int(other)
+			if keep.has(next):
+				mine[next] = int(links[other])
+		copy._links[id] = mine
+	return copy
+
+
 func link_count() -> int:
 	var total := 0
 	for value in _links.values():

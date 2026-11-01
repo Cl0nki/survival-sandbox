@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="GroundDepositDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/ground_deposit_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "natural_gas"
+display_name = "Natural Gas"
+item_id = "natural_gas"
+resistance = 350
+yield_amount = 600
+color = Color(0.64705884, 0.6509804, 0.29019608, 1)
+harvest_kind = ""
+extractor_kinds = PackedStringArray("well")

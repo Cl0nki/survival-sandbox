@@ -110,7 +110,7 @@ function Wait-ServerReady {
 }
 
 function Start-SandboxServer {
-    param([int]$Port, [switch]$AllowExisting)
+    param([int]$Port, [switch]$AllowExisting, [string]$WorldFile = "")
     if (-not (Test-Path $script:Console)) {
         Write-Log "Godot console build was not found."
         return $false
@@ -118,16 +118,18 @@ function Start-SandboxServer {
     if (-not $AllowExisting) {
         $existing = Get-ServerState
         if ($existing.Running) {
-            Write-Log "A server is already running on port $($existing.Port). Use Restart to replace it."
+            Write-Log "A server is already running on port $($existing.Port). Use Reset server for a new empty world."
             return $false
         }
     }
     $script:StatusPath = Join-Path $env:TEMP ("survival-sandbox-launcher-{0}-server.txt" -f $Port)
     if (Test-Path $script:StatusPath) { Remove-Item $script:StatusPath -Force -ErrorAction SilentlyContinue }
     Write-Log "Starting server on port $Port."
+    $world = if ($WorldFile) { $WorldFile } else { "user://world.json" }
     $args = @(
         "--headless", "--path", $script:Project, "--",
-        "--server", "--port", "$Port", "--status-file", $script:StatusPath
+        "--server", "--port", "$Port", "--status-file", $script:StatusPath,
+        "--world-file", $world
     )
     Start-Process -FilePath $script:Console -ArgumentList $args -WorkingDirectory $script:Project -WindowStyle Hidden | Out-Null
     $result = Wait-ServerReady -Path $script:StatusPath
@@ -144,11 +146,22 @@ function Start-SandboxServer {
     return $false
 }
 
-function Restart-SandboxServer {
+function Get-UserWorldPath {
+    return Join-Path $env:APPDATA "Godot\app_userdata\Survival Sandbox\world.json"
+}
+
+function Reset-SandboxServer {
     param([int]$Port)
-    Write-Log "Restarting server."
+    Write-Log "Resetting the server to an empty world."
     $removed = Stop-ProjectProcesses -Role "server"
     if ($removed -gt 0) { Write-Log "Stopped $removed server process(es)." }
+    $world = Get-UserWorldPath
+    foreach ($path in @($world, "$world.tmp")) {
+        if (Test-Path $path) {
+            Remove-Item $path -Force
+            Write-Log "Deleted $path"
+        }
+    }
     return Start-SandboxServer -Port $Port
 }
 
@@ -169,17 +182,6 @@ function Start-SandboxClient {
     )
     Start-Process -FilePath $script:Gui -ArgumentList $args -WorkingDirectory $script:Project | Out-Null
     Write-Log "Opened a client for ${Address}:${Port}."
-    return $true
-}
-
-## No network flags: the arena runs in local mode, the only mode with building.
-function Start-SandboxLocal {
-    if (-not (Test-Path $script:Gui)) {
-        Write-Log "Godot player build was not found."
-        return $false
-    }
-    Start-Process -FilePath $script:Gui -ArgumentList @("--path", $script:Project) -WorkingDirectory $script:Project | Out-Null
-    Write-Log "Opened a local game. Building works here."
     return $true
 }
 
@@ -235,7 +237,8 @@ if ($Smoke) {
         return $selected
     }
     $port = Get-FreeUdpPort
-    if (-not (Start-SandboxServer -Port $port -AllowExisting)) { exit 1 }
+    $smokeWorld = Join-Path $env:TEMP "survival-sandbox-smoke-world.json"
+    if (-not (Start-SandboxServer -Port $port -AllowExisting -WorldFile $smokeWorld)) { exit 1 }
     $owned = $script:StatusPath
     $match = @(Get-ProjectProcesses -Role "server" -StatusFile $owned)
     if ($match.Count -lt 1) {
@@ -243,13 +246,14 @@ if ($Smoke) {
         exit 1
     }
     Stop-ProjectProcesses -Role "server" -StatusFile $owned | Out-Null
-    if (-not (Start-SandboxServer -Port $port -AllowExisting)) { exit 1 }
+    if (-not (Start-SandboxServer -Port $port -AllowExisting -WorldFile $smokeWorld)) { exit 1 }
     $owned = $script:StatusPath
     $stopped = Stop-ProjectProcesses -Role "server" -StatusFile $owned
     if ($stopped -lt 1) {
         Write-Log "Smoke stop did not find the server."
         exit 1
     }
+    Remove-Item $smokeWorld, "$smokeWorld.tmp" -Force -ErrorAction SilentlyContinue
     Write-Log "LAUNCHER_SMOKE_OK"
     exit 0
 }
@@ -259,7 +263,7 @@ $form.Text = "Survival Sandbox"
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
-$form.ClientSize = New-Object System.Drawing.Size(520, 510)
+$form.ClientSize = New-Object System.Drawing.Size(520, 464)
 $form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $form.BackColor = [System.Drawing.Color]::FromArgb(244, 242, 236)
 
@@ -271,7 +275,7 @@ $title.Location = New-Object System.Drawing.Point(20, 16)
 $form.Controls.Add($title)
 
 $hint = New-Object System.Windows.Forms.Label
-$hint.Text = "Multiplayer: start the server, then open a client. Building is local-only for now: use Play local.`r`nBuild Tool (hotbar 2): LMB place  RMB cancel  R rotate  PgUp/PgDn level  [ ] (Ue +) blueprint  F3 debug"
+$hint.Text = "Start the server, then open a client. Reset server wipes the saved world.`r`nBuild Tool (hotbar 2): LMB place  RMB cancel  R rotate  PgUp/PgDn level  [ ] (Ue +) blueprint  F3 debug"
 $hint.AutoSize = $false
 $hint.Size = New-Object System.Drawing.Size(476, 60)
 $hint.ForeColor = [System.Drawing.Color]::FromArgb(70, 70, 70)
@@ -326,10 +330,10 @@ $form.Controls.Add((New-ActionButton "Start server" 22 188 150 {
         Start-SandboxServer -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Restart server" 182 188 156 {
+$form.Controls.Add((New-ActionButton "Reset server" 182 188 156 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
-        Restart-SandboxServer -Port $fields.Port | Out-Null
+        Reset-SandboxServer -Port $fields.Port | Out-Null
     }
 }))
 $form.Controls.Add((New-ActionButton "Stop server" 348 188 150 {
@@ -360,16 +364,12 @@ $form.Controls.Add((New-ActionButton "Close clients" 348 234 150 {
         else { Write-Log "Closed $removed client process(es)." }
     }
 }))
-$form.Controls.Add((New-ActionButton "Play local (building)" 22 280 476 {
-    Invoke-LauncherAction { Start-SandboxLocal | Out-Null }
-}))
-
 $script:LogBox = New-Object System.Windows.Forms.TextBox
 $script:LogBox.Multiline = $true
 $script:LogBox.ReadOnly = $true
 $script:LogBox.ScrollBars = "Vertical"
 $script:LogBox.Font = New-Object System.Drawing.Font("Consolas", 9)
-$script:LogBox.Location = New-Object System.Drawing.Point(22, 328)
+$script:LogBox.Location = New-Object System.Drawing.Point(22, 282)
 $script:LogBox.Size = New-Object System.Drawing.Size(476, 156)
 $script:LogBox.BackColor = [System.Drawing.Color]::White
 $form.Controls.Add($script:LogBox)

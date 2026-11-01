@@ -57,6 +57,14 @@ var _drop_seq := 1
 var _item_lock := false
 var last_item_notice := {}
 var last_container_recipients: Array[int] = []
+## Empty means this process does not load or write a world file.
+var world_path := ""
+var last_world_error := ""
+var _profiles: Dictionary = {}
+var _peer_token: Dictionary = {}
+var _token_peer: Dictionary = {}
+var _local_token := ""
+var _autosave: Timer
 
 
 func _ready() -> void:
@@ -73,6 +81,8 @@ func _ready() -> void:
 	else:
 		_boot_client()
 	_index_loot()
+	if multiplayer.is_server():
+		_boot_world()
 
 
 func _physics_process(delta: float) -> void:
@@ -132,6 +142,12 @@ func send_open_container(container_id: String) -> void:
 	request_open_container.rpc_id(1, container_id)
 
 
+func send_toggle_door(piece_id: int) -> void:
+	if not _client_connected():
+		return
+	request_toggle_door.rpc_id(1, piece_id)
+
+
 func send_close_container() -> void:
 	if not _client_connected():
 		return
@@ -187,7 +203,7 @@ func send_hotbar_swap(area: int, index: int, hotbar_index: int) -> void:
 
 
 @rpc("any_peer", "reliable")
-func client_ready() -> void:
+func client_ready(token: String = "") -> void:
 	if not multiplayer.is_server():
 		return
 	var sender := multiplayer.get_remote_sender_id()
@@ -196,11 +212,11 @@ func client_ready() -> void:
 		return
 	if not _connected_peers.has(sender):
 		_note_peer(sender)
-	if _players.has(sender):
-		_sync_world_to(sender)
+	var reason := _admit(sender, token)
+	if reason != "":
+		_server_log("client ready rejected sender=%d reason=%s" % [sender, reason])
 		return
 	_server_log("client ready id=%d" % sender)
-	_spawn_authority(sender)
 
 
 @rpc("any_peer", "unreliable_ordered")
@@ -248,6 +264,13 @@ func request_open_container(container_id: String) -> void:
 	if not multiplayer.is_server():
 		return
 	_handle_open_container(multiplayer.get_remote_sender_id(), container_id)
+
+
+@rpc("any_peer", "reliable")
+func request_toggle_door(piece_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	_handle_toggle_door(multiplayer.get_remote_sender_id(), piece_id)
 
 
 @rpc("any_peer", "reliable")
@@ -398,6 +421,30 @@ func loot_spawn(pickup_id: String, item_id: String, quantity: int, pos: Vector3)
 	if pickup_id.is_empty() or quantity <= 0 or not NetConfig.finite_vector(pos):
 		return
 	_ensure_pickup(pickup_id, item_id, quantity, pos)
+
+
+@rpc("authority", "reliable")
+func harvest_state(node_id: String, health: int, depleted: bool) -> void:
+	if multiplayer.is_server():
+		return
+	if multiplayer.get_remote_sender_id() != 1:
+		return
+	var node := _find_resource_node(node_id)
+	if node == null:
+		return
+	node.apply_network_health(health, depleted)
+
+
+@rpc("authority", "reliable")
+func ground_deposit_state(node_id: String, remaining: int) -> void:
+	if multiplayer.is_server():
+		return
+	if multiplayer.get_remote_sender_id() != 1:
+		return
+	var deposit := _find_ground_deposit(node_id)
+	if deposit == null:
+		return
+	deposit.apply_network_remaining(remaining)
 
 
 @rpc("authority", "reliable")
@@ -622,7 +669,7 @@ func _try_client_ready() -> void:
 		return
 	if not _client_connected():
 		return
-	client_ready.rpc_id(1)
+	client_ready.rpc_id(1, _client_token())
 
 
 func _server_physics(delta: float) -> void:
@@ -697,15 +744,26 @@ func _handle_input(
 
 
 func _weapon_drawn(peer_id: int) -> bool:
+	return _held_item_id(peer_id) == "debugweapon"
+
+
+func _held_item_id(peer_id: int) -> String:
 	var bag := _inventories.get(peer_id) as Inventory
 	var player := _players.get(peer_id) as PlayerController
 	if bag == null or player == null:
-		return false
+		return ""
 	var index := player.hotbar_index
 	if index < 0 or index >= bag.capacity:
-		return false
+		return ""
 	var slot: Dictionary = bag.slots[index]
-	return str(slot["id"]) == "debugweapon" and int(slot["qty"]) > 0
+	if int(slot.get("qty", 0)) <= 0:
+		return ""
+	return str(slot.get("id", ""))
+
+
+func _is_harvest_tool(item_id: String) -> bool:
+	var definition := ItemCatalog.get_item(item_id)
+	return definition != null and definition.harvest_kind != ""
 
 
 func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: float, crouch: float = 0.0) -> void:
@@ -719,7 +777,9 @@ func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: flo
 	if player.health <= 0:
 		_reject_shot(sender, "down")
 		return
-	if not _weapon_drawn(sender):
+	var tool_id := _held_item_id(sender)
+	var harvest_tool := _is_harvest_tool(tool_id)
+	if not _weapon_drawn(sender) and not harvest_tool:
 		_reject_shot(sender, "unarmed")
 		return
 	if not _rate_ok(sender, "fire", NetConfig.FIRE_RATE_PER_SEC):
@@ -753,6 +813,9 @@ func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: flo
 	player.set_aim_pitch(asin(clampf(direction.y, -1.0, 1.0)))
 	_refresh_visibility()
 	var origin := player.shot_origin()
+	if harvest_tool:
+		_handle_harvest(sender, player, origin, direction, tool_id)
+		return
 	var result := HitscanWeapon.resolve_shot(
 		world.direct_space_state,
 		origin,
@@ -778,6 +841,75 @@ func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: flo
 		% [sender, origin, direction, target, damaged, health_left]
 	)
 	_send_shot_event(sender, origin, end_point, damaged, collider)
+
+
+func _handle_harvest(
+	sender: int,
+	player: PlayerController,
+	origin: Vector3,
+	direction: Vector3,
+	tool_id: String
+) -> void:
+	var bag := _inventories.get(sender) as Inventory
+	var result := HarvestSwing.try_strike(player, origin, direction, tool_id, bag)
+	_next_fire_msec[sender] = Time.get_ticks_msec() + 400
+	accepted_shots += 1
+	if bool(result.get("changed", false)):
+		_broadcast_harvest_state(result)
+		_push_inventory(sender)
+		var leftovers: Array = result.get("leftovers", [])
+		if leftovers.is_empty() and int(result.get("leftover", 0)) > 0:
+			leftovers = [[str(result.get("item_id", "")), int(result.get("leftover", 0))]]
+		for drop in leftovers:
+			_spawn_drop(str(drop[0]), int(drop[1]), _drop_position(player))
+	var notice := str(result.get("notice", ""))
+	if notice != "":
+		_notice(sender, notice)
+	var collider: Object = result.get("collider")
+	var end_point: Vector3 = result.get("point", origin)
+	_server_log(
+		"harvest peer=%d tool=%s node=%s dmg=%s hp=%s yielded=%s leftover=%s"
+		% [
+			sender,
+			tool_id,
+			str(result.get("node_id", "")),
+			str(result.get("damage", 0)),
+			str(result.get("health", 0)),
+			str(result.get("yielded", 0)),
+			str(result.get("leftover", 0)),
+		]
+	)
+	_send_shot_event(sender, origin, end_point, bool(result.get("changed", false)), collider)
+
+
+func _broadcast_harvest_state(result: Dictionary) -> void:
+	var node_id := str(result.get("node_id", ""))
+	if node_id.is_empty() or multiplayer.get_peers().is_empty():
+		return
+	if str(result.get("kind", "")) == "ground":
+		ground_deposit_state.rpc(node_id, int(result.get("health", 0)))
+		return
+	harvest_state.rpc(node_id, int(result.get("health", 0)), bool(result.get("depleted", false)))
+
+
+func _find_ground_deposit(node_id: String) -> GroundDeposit:
+	if node_id.is_empty():
+		return null
+	for node in get_tree().get_nodes_in_group(&"ground_deposit"):
+		var deposit := node as GroundDeposit
+		if deposit != null and deposit.node_id == node_id:
+			return deposit
+	return null
+
+
+func _find_resource_node(node_id: String) -> ResourceNode:
+	if node_id.is_empty():
+		return null
+	for node in get_tree().get_nodes_in_group(&"resource_node"):
+		var deposit := node as ResourceNode
+		if deposit != null and deposit.node_id == node_id:
+			return deposit
+	return null
 
 
 func _snapshot_for(observer: int) -> Dictionary:
@@ -915,11 +1047,25 @@ func _send_shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged
 
 
 func _spawn_authority(peer_id: int) -> void:
-	var pos := _allocate_spawn(peer_id)
-	var player := _make_player(peer_id, pos, 0.0, PlayerController.NetRole.SERVER)
+	var token := str(_peer_token.get(peer_id, ""))
+	var profile: Dictionary = {}
+	if WorldStore.valid_token(token):
+		profile = _profiles.get(token, {})
+	var yaw := float(profile.get("yaw", 0.0)) if not profile.is_empty() else 0.0
+	var pos := WorldStore.restore_pose(profile)
+	if not NetConfig.finite_vector(pos):
+		pos = _allocate_spawn(peer_id)
+	else:
+		_spawn_by_peer[peer_id] = pos
+	var player := _make_player(peer_id, pos, yaw, PlayerController.NetRole.SERVER)
 	_players[peer_id] = player
+	if profile.has("health"):
+		player.apply_authoritative_health(int(profile["health"]))
 	var bag := Inventory.new(NetConfig.INVENTORY_SLOTS)
-	bag.grant_loadout()
+	if profile.is_empty() or not WorldStore.apply_inventory(bag, profile):
+		bag.grant_loadout()
+	else:
+		bag.ensure_item("upgrade_tool")
 	_inventories[peer_id] = bag
 	_server_log("spawned player id=%d at=%s" % [peer_id, pos])
 	_refresh_visibility()
@@ -950,11 +1096,24 @@ func _sync_world_to(peer_id: int) -> void:
 		if dummy == null:
 			continue
 		health_update.rpc_id(peer_id, 0, index, dummy.health)
+	for node in get_tree().get_nodes_in_group(&"resource_node"):
+		var deposit := node as ResourceNode
+		if deposit == null:
+			continue
+		harvest_state.rpc_id(peer_id, deposit.node_id, deposit.health, deposit.depleted)
+	for ground_node in get_tree().get_nodes_in_group(&"ground_deposit"):
+		var ground := ground_node as GroundDeposit
+		if ground == null:
+			continue
+		ground_deposit_state.rpc_id(peer_id, ground.node_id, ground.remaining)
 	for pickup_key in _pickups.keys():
 		var pickup := _pickups[pickup_key] as WorldPickup
 		if pickup == null:
 			continue
-		loot_state.rpc_id(peer_id, pickup.pickup_id, pickup.quantity)
+		if str(pickup.pickup_id).begins_with("drop_"):
+			loot_spawn.rpc_id(peer_id, pickup.pickup_id, pickup.item_id, pickup.quantity, pickup.global_position)
+		else:
+			loot_state.rpc_id(peer_id, pickup.pickup_id, pickup.quantity)
 
 
 func _spawn_visual(peer_id: int, pos: Vector3, yaw: float) -> void:
@@ -1001,6 +1160,7 @@ func _make_player(peer_id: int, pos: Vector3, yaw: float, role: PlayerController
 
 func _release_player(peer_id: int) -> void:
 	var player: PlayerController = _players.get(peer_id) as PlayerController
+	_stash_profile(peer_id)
 	_players.erase(peer_id)
 	_inventories.erase(peer_id)
 	var leftover: Dictionary = _cursors.get(peer_id, {"id": "", "qty": 0})
@@ -1020,6 +1180,7 @@ func _release_player(peer_id: int) -> void:
 		building.relay.forget_peer(peer_id)
 	if player != null and is_instance_valid(player):
 		player.queue_free()
+	save_world()
 	if multiplayer.get_peers().is_empty():
 		return
 	despawn_player.rpc(peer_id)
@@ -1255,7 +1416,7 @@ func _handle_open_container(sender: int, container_id: String) -> String:
 		return _fail_item(sender, "too_far")
 	_open_container[sender] = container_id
 	_push_container(crate)
-	_notice(sender, "Opened crate.")
+	_notice(sender, "Opened %s." % crate.prompt)
 	return ""
 
 
@@ -1608,6 +1769,48 @@ func authority_players() -> Dictionary:
 	return _players
 
 
+func hotbar_item(peer_id: int) -> String:
+	var bag := _inventories.get(peer_id) as Inventory
+	var player := _players.get(peer_id) as PlayerController
+	if bag == null or player == null:
+		return ""
+	var index := player.hotbar_index
+	if index < 0 or index >= bag.capacity:
+		return ""
+	var slot: Dictionary = bag.slots[index]
+	if int(slot.get("qty", 0)) <= 0:
+		return ""
+	return str(slot.get("id", ""))
+
+
+func take_hotbar_item(peer_id: int, item_id: String) -> bool:
+	if hotbar_item(peer_id) != item_id:
+		return false
+	var bag := _inventories.get(peer_id) as Inventory
+	var player := _players.get(peer_id) as PlayerController
+	if not bag.remove_from_slot(player.hotbar_index, 1):
+		return false
+	_push_inventory(peer_id)
+	return true
+
+
+func notify_container(crate: LootContainer) -> void:
+	if crate == null:
+		return
+	watch_container(crate)
+	_push_container(crate)
+
+
+func watch_container(crate: LootContainer) -> void:
+	if crate == null or crate.container_id.is_empty():
+		return
+	_containers[crate.container_id] = crate
+
+
+func deploy_notice(peer_id: int, text: String) -> void:
+	_notice(peer_id, text)
+
+
 func _building() -> BuildingSystem:
 	var arena := get_parent()
 	if arena == null:
@@ -1615,8 +1818,237 @@ func _building() -> BuildingSystem:
 	return arena.get_node_or_null("BuildingSystem") as BuildingSystem
 
 
+func _deployables() -> DeployableSystem:
+	var arena := get_parent()
+	if arena == null:
+		return null
+	return arena.get_node_or_null("DeployableSystem") as DeployableSystem
+
+
+func _handle_toggle_door(sender: int, piece_id: int) -> void:
+	if sender <= 1 or not _players.has(sender):
+		return
+	var player := _players.get(sender) as Node3D
+	var system := _deployables()
+	if player == null or system == null:
+		return
+	var door := system.piece_node(piece_id) as Node3D
+	if door == null or not door.is_in_group(&"deployable_door"):
+		return
+	if _flat_distance(player.global_position, door.global_position) > NetConfig.INTERACT_RANGE:
+		deploy_notice(sender, "Nothing in reach.")
+		return
+	if not system.toggle_door(piece_id, player.global_position):
+		return
+	deploy_notice(sender, "Opened the door." if bool(door.get(&"open")) else "Closed the door.")
+
+
 func debug_inventory(peer_id: int) -> Inventory:
 	return _inventories.get(peer_id) as Inventory
+
+
+func debug_spawn(peer_id: int, token: String = "") -> String:
+	return _admit(peer_id, token)
+
+
+func debug_disconnect(peer_id: int) -> void:
+	if _players.has(peer_id):
+		_release_player(peer_id)
+	else:
+		_clear_peer_limits(peer_id)
+
+
+func debug_save() -> bool:
+	return save_world()
+
+
+func debug_load() -> bool:
+	return load_world()
+
+
+func debug_profile(token: String) -> Dictionary:
+	return _profiles.get(token, {})
+
+
+func _admit(peer_id: int, token: String) -> String:
+	if peer_id <= 1:
+		return "sender"
+	token = token.strip_edges()
+	if token != "" and not WorldStore.valid_token(token):
+		return "token"
+	if token != "" and _token_peer.has(token) and int(_token_peer[token]) != peer_id:
+		return "online"
+	if token != "":
+		_peer_token[peer_id] = token
+		_token_peer[token] = peer_id
+	if _players.has(peer_id):
+		_sync_world_to(peer_id)
+		_push_inventory(peer_id)
+		return ""
+	_spawn_authority(peer_id)
+	return ""
+
+
+func _stash_profile(peer_id: int) -> void:
+	var token := str(_peer_token.get(peer_id, ""))
+	if WorldStore.valid_token(token):
+		_profiles[token] = WorldStore.profile_from(
+			_inventories.get(peer_id) as Inventory,
+			_players.get(peer_id) as PlayerController
+		)
+	_token_peer.erase(token)
+	_peer_token.erase(peer_id)
+
+
+func _boot_world() -> void:
+	var session := _session()
+	if session != null:
+		var configured := str(session.get("world_file"))
+		if not configured.is_empty():
+			world_path = configured
+	if world_path.is_empty():
+		return
+	load_world()
+	_autosave = Timer.new()
+	_autosave.wait_time = 30.0
+	_autosave.timeout.connect(save_world)
+	add_child(_autosave)
+	_autosave.start()
+
+
+func _exit_tree() -> void:
+	if multiplayer.multiplayer_peer != null and multiplayer.is_server():
+		save_world()
+
+
+func save_world() -> bool:
+	if world_path.is_empty():
+		return false
+	for peer_id in _players.keys():
+		var token := str(_peer_token.get(int(peer_id), ""))
+		if not WorldStore.valid_token(token):
+			continue
+		var player := _players.get(int(peer_id)) as PlayerController
+		if player != null and is_instance_valid(player) and player.is_inside_tree():
+			_profiles[token] = WorldStore.profile_from(
+				_inventories.get(int(peer_id)) as Inventory,
+				player
+			)
+		elif not _profiles.has(token):
+			_profiles[token] = WorldStore.profile_from(
+				_inventories.get(int(peer_id)) as Inventory,
+				null
+			)
+	var snapshot := WorldStore.capture(
+		_building(),
+		_pickups,
+		_containers,
+		_dummy_healths(),
+		_profiles,
+		_drop_seq
+	)
+	if not WorldStore.write(world_path, snapshot):
+		last_world_error = "write failed"
+		_server_log("world save failed path=%s" % world_path)
+		return false
+	last_world_error = ""
+	return true
+
+
+func load_world() -> bool:
+	if world_path.is_empty():
+		return false
+	var snapshot := WorldStore.read(world_path)
+	if snapshot.is_empty():
+		last_world_error = "missing or invalid"
+		return false
+	var building := _building()
+	if building != null and building.state != null:
+		WorldStore.apply_buildings(building.state, snapshot)
+	_apply_saved_loot(snapshot)
+	_apply_saved_dummies(snapshot)
+	_profiles = snapshot.get("players", {})
+	_drop_seq = maxi(_drop_seq, int(snapshot.get("drop_seq", _drop_seq)))
+	last_world_error = ""
+	_server_log("world loaded path=%s" % world_path)
+	return true
+
+
+func _apply_saved_loot(snapshot: Dictionary) -> void:
+	if _pickups.is_empty() and _containers.is_empty():
+		_index_loot()
+	var seen := {}
+	for row in snapshot.get("loot", []):
+		if row is not Dictionary:
+			continue
+		var pickup_id := str(row.get("id", ""))
+		if pickup_id.is_empty():
+			continue
+		seen[pickup_id] = true
+		var pos := Vector3(float(row.get("x", 0.0)), float(row.get("y", 0.15)), float(row.get("z", 0.0)))
+		_ensure_pickup(pickup_id, str(row.get("item", "")), int(row.get("qty", 0)), pos)
+	for pickup_id in _pickups.keys():
+		if seen.has(pickup_id):
+			continue
+		var leftover := _pickups[pickup_id] as WorldPickup
+		if leftover != null:
+			leftover.apply_network_quantity(0)
+	for crate_id in snapshot.get("containers", {}).keys():
+		var crate := _containers.get(str(crate_id)) as LootContainer
+		if crate == null or crate.inventory == null:
+			continue
+		var slots: Array = snapshot["containers"][crate_id]
+		WorldStore.apply_inventory(crate.inventory, {"slots": slots})
+
+
+func _apply_saved_dummies(snapshot: Dictionary) -> void:
+	var healths: Dictionary = snapshot.get("dummies", {})
+	for index in DUMMY_NAMES.size():
+		var dummy := _dummy_node(index)
+		if dummy == null or not healths.has(DUMMY_NAMES[index]):
+			continue
+		dummy.apply_authoritative_health(int(healths[DUMMY_NAMES[index]]))
+
+
+func _dummy_healths() -> Dictionary:
+	var healths := {}
+	for index in DUMMY_NAMES.size():
+		var dummy := _dummy_node(index)
+		if dummy != null:
+			healths[DUMMY_NAMES[index]] = dummy.health
+	return healths
+
+
+func _client_token() -> String:
+	if not _local_token.is_empty():
+		return _local_token
+	var session := _session()
+	var forced := str(session.get("player_token")) if session != null else ""
+	if WorldStore.valid_token(forced):
+		_local_token = forced
+		return _local_token
+	if _is_bot():
+		_local_token = WorldStore.new_token()
+		return _local_token
+	_local_token = _load_player_token()
+	return _local_token
+
+
+func _load_player_token() -> String:
+	const TOKEN_PATH := "user://player.id"
+	if FileAccess.file_exists(TOKEN_PATH):
+		var file := FileAccess.open(TOKEN_PATH, FileAccess.READ)
+		if file != null:
+			var stored := file.get_as_text().strip_edges()
+			file.close()
+			if WorldStore.valid_token(stored):
+				return stored
+	var token := WorldStore.new_token()
+	var out := FileAccess.open(TOKEN_PATH, FileAccess.WRITE)
+	if out != null:
+		out.store_string(token)
+		out.close()
+	return token
 
 
 func debug_pickup(pickup_id: String) -> WorldPickup:

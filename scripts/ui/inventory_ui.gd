@@ -12,6 +12,8 @@ var _player: PlayerController
 var _screen: Control
 var _hud: Control
 var _box_panel: PanelContainer
+var _box_title: Label
+var _box_hint: Label
 var _box_grid: GridContainer
 var _storage_grid: GridContainer
 var _hotbar_grid: GridContainer
@@ -62,9 +64,12 @@ func _ready() -> void:
 	_screen.add_child(_box_panel)
 	var box_column := VBoxContainer.new()
 	_box_panel.add_child(box_column)
-	var box_title := Label.new()
-	box_title.text = "Crate"
-	box_column.add_child(box_title)
+	_box_title = Label.new()
+	_box_title.text = "Crate"
+	box_column.add_child(_box_title)
+	_box_hint = Label.new()
+	_box_hint.visible = false
+	box_column.add_child(_box_hint)
 	_box_grid = GridContainer.new()
 	_box_grid.columns = 9
 	box_column.add_child(_box_grid)
@@ -225,9 +230,46 @@ func _refresh() -> void:
 		_add_slot(_storage_grid, SlotOps.AREA_PLAYER, index, false, true)
 	var crate: Inventory = _player.container_view
 	_box_panel.visible = crate != null
+	_paint_box_header()
 	if crate != null:
 		for index in crate.capacity:
 			_add_slot(_box_grid, SlotOps.AREA_CONTAINER, index, false, true)
+
+
+func _paint_box_header() -> void:
+	if _box_title == null:
+		return
+	var station := _open_loot()
+	if station == null:
+		_box_title.text = "Crate"
+		_box_hint.text = ""
+		_box_hint.visible = false
+		return
+	_box_title.text = station.prompt if station.prompt != "" else "Crate"
+	var hint := ""
+	if station.has_method(&"slot_hint"):
+		hint = str(station.call(&"slot_hint"))
+	_box_hint.text = hint
+	_box_hint.visible = hint != ""
+
+
+func _slot_caption(area: int, index: int) -> String:
+	if area != SlotOps.AREA_CONTAINER:
+		return ""
+	var station := _open_loot()
+	if station == null or index < 0 or index >= station.slot_labels.size():
+		return ""
+	return station.slot_labels[index]
+
+
+func _open_loot() -> LootContainer:
+	if _player == null or _player.container_view_id.is_empty():
+		return null
+	for node in get_tree().get_nodes_in_group(&"loot_container"):
+		var crate := node as LootContainer
+		if crate != null and crate.container_id == _player.container_view_id:
+			return crate
+	return null
 
 
 func _add_slot(grid: GridContainer, area: int, index: int, hotbar: bool, interactive: bool) -> void:
@@ -240,7 +282,7 @@ func _add_slot(grid: GridContainer, area: int, index: int, hotbar: bool, interac
 	var item_id := str(slot["id"])
 	var qty := int(slot["qty"])
 	if item_id.is_empty() or qty <= 0:
-		button.text = ""
+		button.text = _slot_caption(area, index)
 		button.icon = null
 	else:
 		button.text = str(qty)

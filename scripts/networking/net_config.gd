@@ -38,9 +38,9 @@ const MODE_CLIENT := 2
 static func usage() -> String:
 	return "\n".join([
 		"Survival Sandbox multiplayer",
-		"  --server [--port N] [--status-file PATH]",
+		"  --server [--port N] [--status-file PATH] [--world-file PATH]",
 		"  --client [--address HOST] [--port N] [--window-x N] [--window-y N]",
-		"           [--bot] [--expect-peers N] [--status-file PATH]",
+		"           [--bot] [--expect-peers N] [--status-file PATH] [--player-token TOKEN]",
 		"Local play (no flags) keeps the Milestone 1 prototype.",
 	])
 
@@ -55,6 +55,8 @@ static func parse(args: PackedStringArray) -> Dictionary:
 		"bot": false,
 		"expect_peers": 2,
 		"status_file": "",
+		"world_file": "",
+		"player_token": "",
 		"help": false,
 		"error": "",
 	}
@@ -74,7 +76,7 @@ static func parse(args: PackedStringArray) -> Dictionary:
 				result.mode = MODE_CLIENT
 			"--bot":
 				result.bot = true
-			"--address", "--port", "--window-x", "--window-y", "--expect-peers", "--status-file":
+			"--address", "--port", "--window-x", "--window-y", "--expect-peers", "--status-file", "--world-file", "--player-token":
 				if index + 1 >= args.size():
 					result.error = "%s needs a value" % arg
 					return result
@@ -131,6 +133,16 @@ static func _apply_option(result: Dictionary, option: String, value: String) -> 
 				result.error = "--status-file is empty"
 				return false
 			result.status_file = value
+		"--world-file":
+			if value.is_empty():
+				result.error = "--world-file is empty"
+				return false
+			result.world_file = value
+		"--player-token":
+			if value.length() < 8 or value.length() > 64:
+				result.error = "--player-token must be 8-64 letters, digits, - or _"
+				return false
+			result.player_token = value
 	return true
 
 

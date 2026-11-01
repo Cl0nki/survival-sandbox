@@ -136,6 +136,8 @@ func _ready() -> void:
 		if net_role == NetRole.OWNER:
 			_attach_build_tool.call_deferred()
 			_attach_repair_tool.call_deferred()
+			_attach_upgrade_tool.call_deferred()
+			_attach_deploy_tool.call_deferred()
 
 
 func _physics_process(delta: float) -> void:
@@ -173,10 +175,12 @@ func _run_local_frame(delta: float) -> void:
 	_show_aim_marker(aim, aim_info["normal"])
 	_try_interact()
 	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
-		if holds_build_tool() or holds_repair_tool():
+		if holds_build_tool() or holds_repair_tool() or holds_upgrade_tool() or holds_deployable():
 			pass
 		elif holds_blast_gun():
 			_try_local_blast()
+		elif holds_harvest_tool():
+			_try_local_harvest()
 		elif not holds_debug_weapon():
 			show_item_notice("No weapon in hand.")
 		else:
@@ -205,15 +209,15 @@ func _run_owner_frame(_delta: float) -> void:
 	_session.call("send_owner_input", input_2d, _camera.get_yaw(), aim_yaw, lean, _owner_crouch, _owner_pitch)
 	_try_interact()
 	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
-		if holds_build_tool() or holds_repair_tool():
+		if holds_build_tool() or holds_repair_tool() or holds_upgrade_tool() or holds_deployable():
 			pass
 		elif holds_blast_gun():
 			_try_network_blast()
-		elif not holds_debug_weapon():
-			show_item_notice("No weapon in hand.")
-		else:
+		elif holds_harvest_tool() or holds_debug_weapon():
 			_session.call("send_owner_fire", direction, aim_yaw, lean, _owner_crouch)
 			_weapon.note_local_request()
+		else:
+			show_item_notice("No weapon in hand.")
 
 
 func get_aim_point() -> Vector3:
@@ -401,6 +405,8 @@ func _setup_inventory_ui() -> void:
 	if net_role == NetRole.LOCAL:
 		_attach_build_tool.call_deferred()
 		_attach_repair_tool.call_deferred()
+		_attach_upgrade_tool.call_deferred()
+		_attach_deploy_tool.call_deferred()
 
 
 ## The tool finds the arena's BuildingSystem by group. Local play commits
@@ -414,11 +420,30 @@ func _attach_build_tool() -> void:
 	tool.setup(system, self)
 
 
+func _attach_deploy_tool() -> void:
+	var system := get_tree().get_first_node_in_group(&"deployable_system") as DeployableSystem
+	var building := get_tree().get_first_node_in_group(&"building_system") as BuildingSystem
+	if system == null or building == null or get_node_or_null("DeployTool") != null:
+		return
+	var tool := DeployTool.new()
+	add_child(tool)
+	tool.setup(system, building, self)
+
+
 func _attach_repair_tool() -> void:
 	var system := get_tree().get_first_node_in_group(&"building_system") as BuildingSystem
 	if system == null or get_node_or_null("RepairTool") != null:
 		return
 	var tool := RepairTool.new()
+	add_child(tool)
+	tool.setup(system, self)
+
+
+func _attach_upgrade_tool() -> void:
+	var system := get_tree().get_first_node_in_group(&"building_system") as BuildingSystem
+	if system == null or get_node_or_null("UpgradeTool") != null:
+		return
+	var tool := UpgradeTool.new()
 	add_child(tool)
 	tool.setup(system, self)
 
@@ -435,6 +460,9 @@ func _try_interact() -> void:
 	var target := _nearest_loot()
 	if target == null:
 		show_item_notice("Nothing in reach.")
+		return
+	if target.is_in_group(&"deployable_door"):
+		_use_door(target)
 		return
 	if net_role == NetRole.OWNER:
 		if target is WorldPickup:
@@ -470,7 +498,7 @@ func _local_open(crate: LootContainer) -> void:
 	container_view = crate.inventory
 	container_view_id = crate.container_id
 	container_changed.emit()
-	show_item_notice("Opened crate.")
+	show_item_notice("Opened %s." % crate.prompt)
 
 
 func _local_transfer(to_container: bool, source_slot: int, dest_slot: int, quantity: int) -> void:
@@ -533,7 +561,31 @@ func _nearest_loot() -> Node3D:
 		if distance <= best_distance:
 			best = crate
 			best_distance = distance
+	for node in get_tree().get_nodes_in_group(&"deployable_door"):
+		var door := node as Node3D
+		if door == null:
+			continue
+		var door_distance := _flat_distance(door.global_position)
+		if door_distance <= best_distance:
+			best = door
+			best_distance = door_distance
 	return best
+
+
+func _use_door(door: Node3D) -> void:
+	if not door.has_meta(&"deployable_id"):
+		return
+	var piece_id := int(door.get_meta(&"deployable_id"))
+	if net_role == NetRole.OWNER:
+		if _session != null:
+			_session.call(&"send_toggle_door", piece_id)
+		return
+	var host := door.get_parent()
+	if host == null or not host.has_method(&"toggle_door"):
+		return
+	if not bool(host.call(&"toggle_door", piece_id, global_position)):
+		return
+	show_item_notice("Opened the door." if bool(door.get(&"open")) else "Closed the door.")
 
 
 func _flat_distance(point: Vector3) -> float:
@@ -545,6 +597,10 @@ func _pointer_over_ui() -> bool:
 	if viewport == null:
 		return false
 	return viewport.gui_get_hovered_control() != null
+
+
+func cursor_aim() -> Dictionary:
+	return _cursor_aim()
 
 
 func _cursor_aim() -> Dictionary:
@@ -603,8 +659,70 @@ func holds_repair_tool() -> bool:
 	return _hotbar_is("repair_tool")
 
 
+func holds_upgrade_tool() -> bool:
+	return _hotbar_is("upgrade_tool")
+
+
 func holds_debug_weapon() -> bool:
 	return _hotbar_is("debugweapon")
+
+
+func held_item_id() -> String:
+	if inventory == null or hotbar_index < 0 or hotbar_index >= inventory.capacity:
+		return ""
+	var slot: Dictionary = inventory.slots[hotbar_index]
+	if int(slot.get("qty", 0)) <= 0:
+		return ""
+	return str(slot.get("id", ""))
+
+
+func holds_harvest_tool() -> bool:
+	var definition := ItemCatalog.get_item(held_item_id())
+	return definition != null and definition.harvest_kind != ""
+
+
+func _try_local_harvest() -> void:
+	if _weapon == null or not _weapon.is_ready():
+		return
+	var origin := shot_origin()
+	var direction := direction_toward_aim(get_aim_point())
+	var result := HarvestSwing.try_strike(self, origin, direction, held_item_id(), inventory)
+	_weapon.note_local_request()
+	_weapon.last_feedback = str(result.get("notice", "harvest"))
+	var end_point: Vector3 = result.get("point", origin)
+	ShotVisual.spawn(_visual_parent(), origin, end_point, bool(result.get("changed", false)))
+	var leftovers: Array = result.get("leftovers", [])
+	if leftovers.is_empty() and int(result.get("leftover", 0)) > 0:
+		leftovers = [[str(result.get("item_id", "")), int(result.get("leftover", 0))]]
+	for drop in leftovers:
+		_spawn_local_pickup(str(drop[0]), int(drop[1]))
+	var notice := str(result.get("notice", ""))
+	if notice != "":
+		show_item_notice(notice)
+	inventory_changed.emit()
+
+
+func _spawn_local_pickup(item_id: String, quantity: int) -> void:
+	if item_id.is_empty() or quantity <= 0:
+		return
+	var pickup := WorldPickup.new()
+	pickup.pickup_id = "local_drop_%d" % Time.get_ticks_msec()
+	pickup.item_id = item_id
+	pickup.quantity = quantity
+	var folder := get_tree().root.find_child("Loot", true, false)
+	if folder == null:
+		folder = get_parent()
+	folder.add_child(pickup)
+	var forward := -Basis(Vector3.UP, get_facing_yaw()).z
+	pickup.global_position = global_position + forward * 0.9
+	pickup.global_position.y = 0.15
+
+
+func _visual_parent() -> Node:
+	var tree := get_tree()
+	if tree.current_scene != null:
+		return tree.current_scene
+	return tree.root
 
 
 func _hotbar_is(item_id: String) -> bool:
@@ -616,6 +734,10 @@ func _hotbar_is(item_id: String) -> bool:
 
 func holds_build_tool() -> bool:
 	return _hotbar_is("build_tool")
+
+
+func holds_deployable() -> bool:
+	return DeployableCatalog.known(held_item_id())
 
 
 func select_hotbar(index: int) -> void:

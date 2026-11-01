@@ -49,6 +49,9 @@ $ServerArgs = @(
     "--headless", "--path", $Project, "--",
     "--server", "--port", "$Port", "--status-file", $ServerStatus
 )
+if (-not $Automated) {
+    $ServerArgs += @("--world-file", "user://world.json")
+}
 $ClientExecutable = if ($Automated) { $Console } else { $Gui }
 $ClientPrefix = @("--path", $Project, "--")
 if ($Automated) {

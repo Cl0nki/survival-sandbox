@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="GroundDepositDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/ground_deposit_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "gravel"
+display_name = "Gravel"
+item_id = "gravel"
+resistance = 180
+yield_amount = 400
+color = Color(0.52156866, 0.52156866, 0.52156866, 1)
+harvest_kind = "shovel"
+extractor_kinds = PackedStringArray("shovel")

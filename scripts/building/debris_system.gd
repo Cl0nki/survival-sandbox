@@ -20,6 +20,9 @@ var _ash_vel: Array[Vector3] = []
 var _ash_age: Array[float] = []
 var spawned_total := 0
 const ASH_CAP := 72
+## A storey drop this large skips per-piece ash. The falling meshes already
+## read as rubble; walking every id just to hit the cap is wasted work.
+const MASS_WAVE := 12
 
 
 func setup(config: BuildingConfig) -> void:

@@ -11,6 +11,7 @@ static func piece(state: BuildingState, component: BuildComponent) -> Dictionary
 		"kind": component.kind,
 		"health": component.health,
 		"max_health": component.max_health,
+		"tier": component.tier,
 		"material": component.material,
 		"pinned": component.pinned,
 		"rooms": component.rooms.duplicate(),

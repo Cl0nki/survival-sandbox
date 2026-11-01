@@ -51,6 +51,8 @@ static func click(
 		return _place(bag, index, cursor, 1 if right else int(cursor["qty"]))
 	if ItemCatalog.get_item(str(slot["id"])) == null:
 		return "unknown_item"
+	if not bag.accepts_insert(index, str(cursor["id"])):
+		return "wrong_slot"
 	var held_id := str(cursor["id"])
 	var held_qty := int(cursor["qty"])
 	cursor["id"] = str(slot["id"])
@@ -127,6 +129,8 @@ static func spread(
 			continue
 		if not _empty(slot) and int(slot["qty"]) >= definition.max_stack:
 			continue
+		if not bag.accepts_insert(index, str(cursor["id"])):
+			continue
 		var key := Vector2i(area, index)
 		if chosen.has(key):
 			continue
@@ -169,6 +173,8 @@ static func swap_hotbar(player_bag: Inventory, crate_bag: Inventory, area: int, 
 		return "unknown_item"
 	if not _empty(hot) and ItemCatalog.get_item(str(hot["id"])) == null:
 		return "unknown_item"
+	if not _empty(hot) and not bag.accepts_insert(index, str(hot["id"])):
+		return "wrong_slot"
 	bag.slots[index] = hot.duplicate()
 	player_bag.slots[hotbar_index] = from.duplicate()
 	return ""
@@ -232,6 +238,8 @@ static func _pour(from: Inventory, index: int, into: Inventory, order: Array, re
 
 
 static func _place(bag: Inventory, index: int, cursor: Dictionary, amount: int) -> String:
+	if not bag.accepts_insert(index, str(cursor["id"])):
+		return "wrong_slot"
 	var placed := _push_into(bag, index, str(cursor["id"]), mini(amount, int(cursor["qty"])))
 	if placed <= 0:
 		return "stack_limit"
@@ -247,6 +255,8 @@ static func _push_into(bag: Inventory, index: int, item_id: String, amount: int)
 		return 0
 	var definition := ItemCatalog.get_item(item_id)
 	if definition == null:
+		return 0
+	if not bag.accepts_insert(index, item_id):
 		return 0
 	var slot: Dictionary = bag.slots[index]
 	if _empty(slot):

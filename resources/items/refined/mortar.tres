@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "mortar"
+display_name = "Mortar"
+description = "Lime mix for binding bricks and stone."
+max_stack = 50
+weight = 0.35
+category = "refined"
+can_pickup = true
+can_store = true
+swatch = Color(0.72, 0.7, 0.64, 1)

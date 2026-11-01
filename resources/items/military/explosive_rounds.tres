@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "explosive_rounds"
+display_name = "Explosive Rounds"
+description = "Tipped cartridges that burst on impact."
+max_stack = 20
+weight = 0.06
+category = "explosive"
+can_pickup = true
+can_store = true
+swatch = Color(0.8, 0.42, 0.16, 1)

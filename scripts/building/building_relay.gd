@@ -88,7 +88,8 @@ func request_place(request: Dictionary) -> void:
 		int(request.get("axis", 0)),
 		int(request.get("target", 0)),
 		size.x,
-		size.y
+		size.y,
+		int(request.get("tier", BuildingTier.MIN))
 	)
 
 
@@ -97,6 +98,13 @@ func request_repair(component_id: int) -> void:
 		return
 	_out_seq += 1
 	submit_repair.rpc_id(1, _out_seq, component_id)
+
+
+func request_upgrade(component_id: int) -> void:
+	if authoritative:
+		return
+	_out_seq += 1
+	submit_upgrade.rpc_id(1, _out_seq, component_id)
 
 
 func request_blast(origin: Vector3) -> void:
@@ -117,7 +125,8 @@ func submit_place(
 	axis: int,
 	target: int,
 	size_x: int,
-	size_y: int
+	size_y: int,
+	tier: int = BuildingTier.MIN
 ) -> void:
 	if multiplayer.multiplayer_peer == null or not multiplayer.is_server():
 		return
@@ -129,6 +138,7 @@ func submit_place(
 		"axis": axis,
 		"target": target,
 		"size": Vector2i(size_x, size_y),
+		"tier": tier,
 	})
 
 
@@ -137,6 +147,13 @@ func submit_repair(seq: int, component_id: int) -> void:
 	if multiplayer.multiplayer_peer == null or not multiplayer.is_server():
 		return
 	handle_repair(multiplayer.get_remote_sender_id(), seq, component_id)
+
+
+@rpc("any_peer", "reliable")
+func submit_upgrade(seq: int, component_id: int) -> void:
+	if multiplayer.multiplayer_peer == null or not multiplayer.is_server():
+		return
+	handle_upgrade(multiplayer.get_remote_sender_id(), seq, component_id)
 
 
 @rpc("any_peer", "reliable")
@@ -208,6 +225,30 @@ func handle_repair(sender: int, seq: int, component_id: int) -> Dictionary:
 	else:
 		rejected += 1
 		_notify(sender, seq, false, str(result.get("reason", "Cannot repair.")))
+	flush()
+	return result
+
+
+func handle_upgrade(sender: int, seq: int, component_id: int) -> Dictionary:
+	var component: BuildComponent = system.state.get_component(component_id)
+	var player := _players().get(sender) as Node3D
+	var point := player.global_position if component == null and player != null else Vector3.ZERO
+	if component != null:
+		point = system.grid.component_transform(component).origin
+	var denied := _gate(sender, seq, "upgrade_tool", point)
+	if not denied.is_empty():
+		return denied
+	if component == null:
+		rejected += 1
+		_notify(sender, seq, false, "Nothing to upgrade")
+		return {"ok": false, "reason": "Nothing to upgrade"}
+	var result: Dictionary = system.authority.upgrade(component_id)
+	if bool(result.get("ok", false)):
+		accepted += 1
+		_notify(sender, seq, true, "Upgraded to %s." % BuildingTier.label(int(result.get("tier", component.tier))))
+	else:
+		rejected += 1
+		_notify(sender, seq, false, str(result.get("reason", "Cannot upgrade.")))
 	flush()
 	return result
 
@@ -344,7 +385,7 @@ func _on_integrity(component_id: int) -> void:
 	var component: BuildComponent = system.state.get_component(component_id)
 	if component == null:
 		return
-	_health.append([component_id, component.health])
+	_health.append([component_id, component.health, component.max_health, component.tier])
 
 
 func _on_presentation(event_name: String, data: Dictionary) -> void:
@@ -453,7 +494,11 @@ func _packet_for(peer_id: int, merged: Dictionary, health: Array, impacts: Array
 	var health_rows: Array = []
 	for pair in health:
 		var id := int(pair[0])
-		if known.has(id) or included.has(id):
+		if not (known.has(id) or included.has(id)):
+			continue
+		if pair is Array and (pair as Array).size() >= 4:
+			health_rows.append([id, int(pair[1]), int(pair[2]), int(pair[3])])
+		else:
 			health_rows.append([id, int(pair[1])])
 	var impact_rows: Array = []
 	for mark in impacts:

@@ -19,6 +19,7 @@ var blueprint: BlueprintDefinition
 var request: Dictionary = {}
 var level := 0
 var rotation := 0
+var tier := 1
 var state_revision := -1
 var entries: Array[Dictionary] = []
 ## Plan-level problems that are not tied to a single slot.

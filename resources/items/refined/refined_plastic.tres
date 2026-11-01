@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "refined_plastic"
+display_name = "Refined Plastic"
+description = "Clean polymer stock."
+max_stack = 50
+weight = 0.18
+category = "refined"
+can_pickup = true
+can_store = true
+swatch = Color(0.55, 0.78, 0.88, 1)

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "sulfur"
+display_name = "Sulfur"
+description = "Yellow mineral. Feedstock for gunpowder and chemicals."
+max_stack = 50
+weight = 0.3
+category = "harvest"
+can_pickup = true
+can_store = true
+swatch = Color(0.86, 0.78, 0.22, 1)

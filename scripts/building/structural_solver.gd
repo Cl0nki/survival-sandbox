@@ -165,9 +165,9 @@ static func _unsupported(state: BuildingState, component: BuildComponent) -> boo
 
 
 ## Every piece a collapse starting at `seeds` would remove, in wave order.
-## The state passed in is not changed.
+## The state passed in is not changed. Only the connected region is copied.
 static func cascade(state: BuildingState, seeds: Array, config: BuildingConfig) -> Array[int]:
-	var copy := state.fork()
+	var copy := state.fork_region(region(state, seeds))
 	var pending: Array = []
 	for id in seeds:
 		var start := int(id)

@@ -13,3 +13,7 @@ class_name ItemDefinition
 @export var can_pickup := true
 @export var can_store := true
 @export var swatch := Color(0.7, 0.7, 0.7, 1)
+## Empty means this item is not a harvest tool.
+@export var harvest_kind := ""
+@export var harvest_tier := 0
+@export var harvest_power := 0

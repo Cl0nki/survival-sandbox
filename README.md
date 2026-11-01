@@ -1,6 +1,6 @@
 # Survival Sandbox
 
-Local playable prototype of a 3D top-down survival sandbox, plus a dedicated authoritative server. Milestone 1 is one player in one arena. Milestone 2 adds a headless server, two clients, server-side movement, and server-side hitscan. There is still no persistence.
+Local playable prototype of a 3D top-down survival sandbox, plus a dedicated authoritative server. Milestone 1 is one player in one arena. Milestone 2 adds a headless server, two clients, server-side movement, and server-side hitscan. Milestone 7 saves the dedicated-server world and restores a player who reconnects with the same token.
 
 Built for Godot **4.7.2 stable**.
 
@@ -26,7 +26,7 @@ Controls, the manual checklist, and the decisions for the local prototype are in
 
 ## Multiplayer
 
-Double-click `tools\launcher.vbs`. The window can start, restart, and stop the server, and it can open client windows.
+Double-click `tools\launcher.vbs`. The window can start, reset, and stop the server, and it can open client windows.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "C:\Users\Admin\Documents\VSC\survival-sandbox\tools\start_multiplayer.ps1"
@@ -46,11 +46,11 @@ Authoritative simulation check:
 
 A passing run prints `MILESTONE2_NET_OK`. The launch flags, manual checklist, and limitations are in [docs/milestone-2.md](docs/milestone-2.md).
 
-Line-of-sight filtering is [docs/milestone-3.md](docs/milestone-3.md). Inventories, pickups, and crates are [docs/milestone-4.md](docs/milestone-4.md).
+Line-of-sight filtering is [docs/milestone-3.md](docs/milestone-3.md). Inventories, pickups, and crates are [docs/milestone-4.md](docs/milestone-4.md). World save and reconnect are [docs/milestone-7.md](docs/milestone-7.md).
 
 ## Building
 
-Press F5, or use **Play local (building)** in `tools\launcher.vbs`. Select hotbar slot 2 (Build Tool), pick a blueprint from the right-hand menu, left-click to place. In a server game the same tool sends a request; the server places, damages, and collapses, and clients receive the result. `scenes/world/building_test.tscn` is the arena with every Phase 1 scenario prebuilt. Building regression suite:
+Press F5, or start a server and a client from `tools\launcher.vbs`. Select hotbar slot 2 (Build Tool), pick a blueprint from the right-hand menu, left-click to place. In a server game the same tool sends a request; the server places, damages, and collapses, and clients receive the result. **Reset server** wipes `user://world.json` and starts an empty yard. `scenes/world/building_test.tscn` is the arena with every Phase 1 scenario prebuilt. Building regression suite:
 
 ```powershell
 & "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe" --headless --path "C:\Users\Admin\Documents\VSC\survival-sandbox" --script res://tests/building_phase1.gd

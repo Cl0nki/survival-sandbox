@@ -42,15 +42,13 @@ func _body() -> int:
 
 	var scrap := net.debug_pickup("scrap_pile")
 	var cloth := net.debug_pickup("cloth_pile")
-	var crate := net.debug_container("supply_crate")
+	var crate := net.debug_container("woods_crate")
 	if scrap == null or scrap.quantity != 8:
 		return _fail("scrap pile missing")
 	if cloth == null or cloth.quantity != 6:
 		return _fail("cloth pile missing")
-	if crate == null or crate.inventory.count_item("medical_supplies") != 2:
+	if crate == null or crate.inventory.count_item("logs") != 20:
 		return _fail("crate contents missing")
-	if crate.inventory.count_item("ammunition") != 20:
-		return _fail("crate ammo missing")
 
 	net.debug_place(2, Vector3(0.0, 0.15, 0.0))
 	net.debug_reset_item_rate(2)
@@ -114,39 +112,40 @@ func _body() -> int:
 		return _fail("failed pickup destroyed cloth")
 
 	bag.resize(NetConfig.INVENTORY_SLOTS)
-	net.debug_place(2, Vector3(-12.0, 0.15, 12.0))
-	net.debug_place(3, Vector3(-12.2, 0.15, 12.0))
+	var at_woods := ShowcasePad.WOODS_CRATE + Vector3(0.0, 0.0, -1.05)
+	net.debug_place(2, at_woods)
+	net.debug_place(3, at_woods + Vector3(0.2, 0.0, 0.0))
 	net.debug_reset_item_rate(2)
 	net.debug_reset_item_rate(3)
-	if net.debug_open(2, "supply_crate") != "":
+	if net.debug_open(2, "woods_crate") != "":
 		return _fail("could not open the crate")
-	if net.debug_transfer(2, "supply_crate", false, 0, 0, 1) != "":
-		return _fail("could not take one medical supply")
-	if bag.count_item("medical_supplies") != 1 or crate.inventory.count_item("medical_supplies") != 1:
-		return _fail("partial take split medical wrong")
-	if net.debug_transfer(2, "supply_crate", true, 0, 0, 1) != "":
-		return _fail("could not store the medical supply back")
-	if bag.count_item("medical_supplies") != 0 or crate.inventory.count_item("medical_supplies") != 2:
+	if net.debug_transfer(2, "woods_crate", false, 0, 0, 1) != "":
+		return _fail("could not take one log")
+	if bag.count_item("logs") != 1 or crate.inventory.count_item("logs") != 19:
+		return _fail("partial take split logs wrong")
+	if net.debug_transfer(2, "woods_crate", true, 0, 0, 1) != "":
+		return _fail("could not store the log back")
+	if bag.count_item("logs") != 0 or crate.inventory.count_item("logs") != 20:
 		return _fail("store did not restore the crate")
 	if not bag.add_exact("scrap_metal", 4):
 		return _fail("could not keep a private scrap stack")
-	if not bag.add_exact("ammunition", 50):
+	if not bag.add_exact("ammo_9mm", 50):
 		return _fail("could not add an ammo stack")
-	var ammo_before := bag.count_item("ammunition")
-	var crate_ammo := crate.inventory.count_item("ammunition")
+	var ammo_before := bag.count_item("ammo_9mm")
+	var crate_logs := crate.inventory.count_item("logs")
 	net.debug_reset_item_rate(2)
-	if net.debug_transfer(2, "supply_crate", true, 1, 1, 50) == "":
+	if net.debug_transfer(2, "woods_crate", true, 1, 1, 50) == "":
 		return _fail("transfer exceeded the ammo stack limit")
-	if bag.count_item("ammunition") != ammo_before or crate.inventory.count_item("ammunition") != crate_ammo:
+	if bag.count_item("ammo_9mm") != ammo_before or crate.inventory.count_item("logs") != crate_logs:
 		return _fail("rejected stack-limit transfer changed items")
 	net.debug_reset_item_rate(2)
-	if net.debug_transfer(2, "supply_crate", false, 9, 0, 1) == "":
+	if net.debug_transfer(2, "woods_crate", false, 27, 0, 1) == "":
 		return _fail("bad slot was accepted")
-	if net.debug_transfer(2, "supply_crate", false, 0, 0, 0) == "":
+	if net.debug_transfer(2, "woods_crate", false, 0, 0, 0) == "":
 		return _fail("zero quantity was accepted")
 	bag.slots[2] = {"id": "ghost", "qty": 1}
 	var ghost_qty := 1
-	if net.debug_transfer(2, "supply_crate", true, 2, 3, 1) == "":
+	if net.debug_transfer(2, "woods_crate", true, 2, 3, 1) == "":
 		return _fail("unknown item id was stored")
 	if int(bag.slots[2]["qty"]) != ghost_qty:
 		return _fail("rejected unknown item changed the slot")
@@ -170,38 +169,38 @@ func _body() -> int:
 		return _fail("rejected pickup changed the world item")
 	food.item_id = saved_food
 	bag.slots[3] = {"id": "bolted_plate", "qty": 2}
-	net.debug_place(2, Vector3(-12.0, 0.15, 12.0))
+	net.debug_place(2, at_woods)
 	net.debug_reset_item_rate(2)
-	if net.debug_open(2, "supply_crate") != "":
+	if net.debug_open(2, "woods_crate") != "":
 		return _fail("could not reopen the crate")
-	if net.debug_transfer(2, "supply_crate", true, 3, 4, 2) == "":
+	if net.debug_transfer(2, "woods_crate", true, 3, 4, 2) == "":
 		return _fail("unstorable item entered the crate")
 	if int(bag.slots[3]["qty"]) != 2:
 		return _fail("rejected store changed the player stack")
 
-	var ammo_slot := -1
+	var logs_slot := -1
 	for index in crate.inventory.capacity:
-		if str(crate.inventory.slots[index]["id"]) == "ammunition" and int(crate.inventory.slots[index]["qty"]) >= 20:
-			ammo_slot = index
-	if ammo_slot < 0:
-		return _fail("crate lost its ammo before the concurrent transfer")
-	crate.inventory.slots[ammo_slot] = {"id": "ammunition", "qty": 20}
+		if str(crate.inventory.slots[index]["id"]) == "logs" and int(crate.inventory.slots[index]["qty"]) >= 20:
+			logs_slot = index
+	if logs_slot < 0:
+		return _fail("crate lost its logs before the concurrent transfer")
+	crate.inventory.slots[logs_slot] = {"id": "logs", "qty": 20}
 	for index in bag.capacity:
-		if str(bag.slots[index]["id"]) == "ammunition":
+		if str(bag.slots[index]["id"]) == "logs":
 			bag.slots[index] = {"id": "", "qty": 0}
 	net.debug_inventory(3).slots[0] = {"id": "", "qty": 0}
-	if net.debug_open(3, "supply_crate") != "":
+	if net.debug_open(3, "woods_crate") != "":
 		return _fail("second player could not open the crate")
 	net.debug_reset_item_rate(2)
 	net.debug_reset_item_rate(3)
-	var first := net.debug_transfer(2, "supply_crate", false, ammo_slot, 5, 20)
-	var second := net.debug_transfer(3, "supply_crate", false, ammo_slot, 0, 20)
-	var held := bag.count_item("ammunition") + net.debug_inventory(3).count_item("ammunition")
-	var left := crate.inventory.count_item("ammunition")
+	var first := net.debug_transfer(2, "woods_crate", false, logs_slot, 5, 20)
+	var second := net.debug_transfer(3, "woods_crate", false, logs_slot, 0, 20)
+	var held := bag.count_item("logs") + net.debug_inventory(3).count_item("logs")
+	var left := crate.inventory.count_item("logs")
 	if first != "" or second == "":
-		return _fail("concurrent ammo transfer result first=%s second=%s" % [first, second])
+		return _fail("concurrent logs transfer result first=%s second=%s" % [first, second])
 	if held + left != 20:
-		return _fail("concurrent transfer duplicated or lost ammo held=%s left=%s" % [held, left])
+		return _fail("concurrent transfer duplicated or lost logs held=%s left=%s" % [held, left])
 
 	if net.debug_inventory(3).count_item("scrap_metal") != Inventory.STARTING_SCRAP:
 		return _fail("peer 3 payload included peer 2 scrap")

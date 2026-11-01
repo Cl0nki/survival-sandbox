@@ -142,6 +142,15 @@ func _body() -> void:
 	_check(mirror_a.state.get_component(wall.id).health == wall.max_health, "repair did not replicate")
 	_audit(system, "after repair")
 
+	_section = "upgrade tiers"
+	_tool(net, 2, 4)
+	var upgraded := system.relay.handle_upgrade(2, _next_seq(), wall.id)
+	_check(bool(upgraded.get("ok", false)) and wall.tier == 2 and wall.max_health == 400 and wall.health == 400, "upgrade failed: %s" % upgraded.get("reason", ""))
+	_deliver(system, 2, mirror_a)
+	_deliver(system, 3, mirror_b)
+	_check(mirror_a.state.get_component(wall.id).tier == 2 and mirror_a.state.get_component(wall.id).max_health == 400, "upgrade did not replicate")
+	_check(_same(system, mirror_a) and _same(system, mirror_b), "upgrade did not match on both clients")
+
 	_section = "unchanged state is not resent"
 	var quiet := system.state.checksum()
 	system.relay.flush()

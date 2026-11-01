@@ -159,6 +159,7 @@ func _test_catalog_and_config() -> void:
 	_check(problems.is_empty(), "catalog problems: %s" % ", ".join(problems))
 	_check(BlueprintCatalog.all().size() == BlueprintCatalog.FILES.size(), "catalog loaded %d of %d" % [BlueprintCatalog.all().size(), BlueprintCatalog.FILES.size()])
 	_check(ItemCatalog.get_item("build_tool") != null, "build_tool item missing")
+	_check(ItemCatalog.get_item("upgrade_tool") != null, "upgrade_tool item missing")
 
 
 func _test_grid_math() -> void:
@@ -584,7 +585,10 @@ func _test_stairs() -> void:
 	_check(bool(partition["ok"]), "could not open the partition: %s" % partition["reason"])
 	var plan := _plan(system, "stairs_straight", Vector2i(1, 1), 1)
 	_check(plan.count(BuildTypes.Action.REMOVE, BuildTypes.Kind.SLAB) == 3, "stairs open %d ceiling slabs" % plan.count(BuildTypes.Action.REMOVE, BuildTypes.Kind.SLAB))
-	_built(system, "stairs_straight", Vector2i(1, 1), 1)
+	var opened := _place(system, "stairs_straight", Vector2i(1, 1), 1)
+	_check(bool(opened["ok"]) and bool(opened["changed"]), "stairs were not built: %s" % opened.get("reason", ""))
+	_check((opened.get("change", {}).get("gone", []) as Array).is_empty(), "opening a stairwell spawned debris")
+	_check(system.debris.alive() == 0, "stairwell left %d chips" % system.debris.alive())
 	for x in range(1, 4):
 		_check(system.state.stairwell_at(GridSystem.slab_key(Vector2i(x, 1), 1)) != 0, "cell %d,1 is not a stairwell" % x)
 	var upper := _plan(system, "room", Vector2i(0, 0), 0, 1, 0, Vector2i(3, 3))

@@ -4,8 +4,12 @@ class_name Inventory
 ## Server-side slot list. Empty slots are id "" and quantity 0.
 ## Callers validate a whole move before anything is written.
 
+const STARTING_SCRAP := 0
+
 var capacity := 0
 var slots: Array[Dictionary] = []
+## Station that owns these slots. Null accepts every item.
+var host: Object = null
 
 
 func _init(slot_count: int = 0) -> void:
@@ -13,11 +17,16 @@ func _init(slot_count: int = 0) -> void:
 
 
 func grant_loadout() -> void:
-	## Pistol, Build Tool, Blast Gun, then Repair Tool, in the first empty hotbar slots.
+	## Pistol, Build Tool, Blast Gun, Repair Tool, then Upgrade Tool.
 	_grant_hotbar_item("debugweapon")
 	_grant_hotbar_item("build_tool")
 	_grant_hotbar_item("blast_gun")
 	_grant_hotbar_item("repair_tool")
+	_grant_hotbar_item("upgrade_tool")
+
+
+func ensure_item(item_id: String) -> void:
+	_grant_hotbar_item(item_id)
 
 
 func _grant_hotbar_item(item_id: String) -> void:
@@ -28,6 +37,14 @@ func _grant_hotbar_item(item_id: String) -> void:
 		if _is_empty(slots[index]):
 			slots[index] = {"id": item_id, "qty": 1}
 			return
+
+
+func accepts_insert(index: int, item_id: String) -> bool:
+	if host == null or not is_instance_valid(host):
+		return true
+	if not host.has_method(&"accepts_insert"):
+		return true
+	return bool(host.call(&"accepts_insert", index, item_id))
 
 
 func resize(slot_count: int) -> void:
@@ -150,6 +167,8 @@ static func move(
 		return "unknown_item"
 	if into_container and not definition.can_store:
 		return "not_storable"
+	if not dest.accepts_insert(dest_index, item_id):
+		return "wrong_slot"
 	if quantity > definition.max_stack:
 		return "stack_limit"
 	var dst := dest.slots[dest_index]
@@ -214,6 +233,10 @@ static func drop(
 		return "occupied"
 	if ItemCatalog.get_item(str(dst["id"])) == null:
 		return "unknown_item"
+	if not dest.accepts_insert(dest_index, item_id):
+		return "wrong_slot"
+	if not source.accepts_insert(source_index, str(dst["id"])):
+		return "wrong_slot"
 	var incoming := src.duplicate()
 	var outgoing := dst.duplicate()
 	source.slots[source_index] = outgoing

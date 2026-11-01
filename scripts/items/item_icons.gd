@@ -39,6 +39,20 @@ static func texture_for(definition: ItemDefinition) -> Texture2D:
 		"tool":
 			_rect(image, 10, 10, 28, 8, ink)
 			_rect(image, 21, 18, 6, 22, ink)
+		"harvest":
+			_rect(image, 16, 22, 16, 16, ink)
+			_rect(image, 20, 14, 8, 10, ink)
+		"refined":
+			_rect(image, 12, 12, 24, 24, ink)
+			_rect(image, 18, 18, 12, 12, edge)
+		"component":
+			_rect(image, 8, 8, 12, 12, ink)
+			_rect(image, 28, 8, 12, 12, ink)
+			_rect(image, 8, 28, 12, 12, ink)
+			_rect(image, 28, 28, 12, 12, ink)
+		"explosive":
+			_disc(image, 24, 26, 10, ink)
+			_rect(image, 21, 8, 6, 12, ink)
 		_:
 			_rect(image, 14, 14, 20, 20, ink)
 	var texture := ImageTexture.create_from_image(image)

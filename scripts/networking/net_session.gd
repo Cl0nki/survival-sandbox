@@ -15,6 +15,8 @@ var window_y := -1
 var bot := false
 var expect_peers := 2
 var status_file := ""
+var world_file := ""
+var player_token := ""
 var status_text := "local"
 var last_error := ""
 
@@ -46,6 +48,8 @@ func _ready() -> void:
 	bot = bool(parsed.bot)
 	expect_peers = int(parsed.expect_peers)
 	status_file = str(parsed.status_file)
+	world_file = str(parsed.world_file)
+	player_token = str(parsed.player_token)
 	if mode == MODE_LOCAL:
 		status_text = "local"
 		return

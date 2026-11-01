@@ -144,7 +144,7 @@ func apply_explosion(origin: Vector3, radius: float, base_damage: int, event_id:
 	var structural_seeds: Array[int] = []
 	for hit in seen:
 		var component := state.get_component(int(hit["id"]))
-		if component == null or component.destroyed:
+		if component == null or component.destroyed or state.is_joint_post(component):
 			continue
 		var point: Vector3 = hit["point"]
 		if float(hit["distance"]) > 0.001 and ExplosionSystem.obstructed(state, space, ray_origin, point, component.id):
@@ -179,6 +179,13 @@ func repair(component_id: int) -> Dictionary:
 	return _finish_integrity(result)
 
 
+func upgrade(component_id: int) -> Dictionary:
+	if not writes_enabled:
+		return {"ok": false, "changed": false, "reason": "Not the authority", "tier": 0}
+	var result := state.upgrade_component(component_id)
+	return _finish_integrity(result)
+
+
 func rebuild(component_id: int) -> Dictionary:
 	if not writes_enabled:
 		return {"ok": false, "changed": false, "reason": "Not the authority"}
@@ -188,6 +195,9 @@ func rebuild(component_id: int) -> Dictionary:
 
 ## Name of a non-building body inside the box, or "".
 func obstruction_at(box: AABB) -> String:
+	var blocked := _deployable_obstruction(box)
+	if blocked != "":
+		return blocked
 	if _space_source == null or not _space_source.is_inside_tree():
 		return ""
 	var world := _space_source.get_world_3d()
@@ -209,6 +219,18 @@ func obstruction_at(box: AABB) -> String:
 	if collider is Node:
 		return str((collider as Node).name)
 	return "something"
+
+
+func _deployable_obstruction(box: AABB) -> String:
+	if not is_inside_tree():
+		return ""
+	var nodes := get_tree().get_nodes_in_group(&"deployable_system")
+	if nodes.is_empty():
+		return ""
+	var deployables := nodes[0] as DeployableSystem
+	if deployables == null:
+		return ""
+	return deployables.obstruction_name(box)
 
 
 func _dismantle(plan: ConstructionPlan, result: Dictionary) -> Dictionary:
@@ -243,7 +265,8 @@ func _sanitize(request: Dictionary) -> Dictionary:
 		int(request.get("level", 0)),
 		int(request.get("axis", 0)),
 		int(request.get("target", 0)),
-		size if size is Vector2i else Vector2i.ZERO
+		size if size is Vector2i else Vector2i.ZERO,
+		int(request.get("tier", BuildingTier.MIN))
 	)
 
 
@@ -258,6 +281,11 @@ func _apply_scaled(component_id: int, raw: int, point: Vector3, event_id: String
 			result["destroyed"] = existing.destroyed
 		return result
 	var component := state.get_component(component_id)
+	if component != null and state.is_joint_post(component):
+		var wall := state.weakest_edge_at_post(component)
+		if wall != null:
+			component_id = wall.id
+			component = wall
 	if component == null:
 		result["ok"] = false
 		result["reason"] = "Missing piece"
@@ -392,7 +420,10 @@ func _collect_seeds(into: Array[int], applied: Dictionary) -> void:
 func _spawn_debris(applied: Dictionary, collapse := false) -> void:
 	if debris == null:
 		return
-	for snap in applied.get("removed", []):
+	var removed: Array = applied.get("removed", [])
+	if collapse and removed.size() >= DebrisSystem.MASS_WAVE:
+		return
+	for snap in removed:
 		var kind := int(snap["kind"])
 		var origin := geometry.world_aabb(kind, grid.transform_for(kind, snap["key"])).get_center()
 		if collapse:
@@ -409,11 +440,8 @@ func _arm_pancake(seeds: Array) -> void:
 	var combined: Array[int] = []
 	_collect_seeds(combined, {"seeds": seeds})
 	_collect_seeds(combined, {"seeds": _pending_collapse})
+	_pending_collapse = combined
 	last_region_count = StructuralSolver.region(state, combined).size()
-	_pending_collapse.clear()
-	for id in StructuralSolver.cascade(state, combined, grid.config):
-		if state.get_component(int(id)) != null:
-			_pending_collapse.append(int(id))
 	if _pending_collapse.is_empty():
 		_collapse_waves = 0
 		return
@@ -425,17 +453,22 @@ func _arm_pancake(seeds: Array) -> void:
 
 
 func _recheck_pancake() -> void:
-	var doomed := StructuralSolver.cascade(state, _pending_collapse, grid.config)
-	_pending_collapse.clear()
-	for id in doomed:
-		if state.get_component(int(id)) != null:
-			_pending_collapse.append(int(id))
+	_forecast_pancake()
 	if _pending_collapse.is_empty():
 		_stop_collapse_timer()
 		_collapse_waves = 0
 
 
+func _forecast_pancake() -> void:
+	var doomed := StructuralSolver.cascade(state, _pending_collapse, grid.config)
+	_pending_collapse.clear()
+	for id in doomed:
+		if state.get_component(int(id)) != null:
+			_pending_collapse.append(int(id))
+
+
 func _begin_pancake() -> void:
+	_forecast_pancake()
 	_pancake_groups = _storey_groups(_pending_collapse)
 	_pancake_step = 0
 	_in_pancake = true
@@ -483,9 +516,6 @@ func _on_collapse_timer() -> void:
 		_run_collapse_wave()
 		return
 	if not _in_pancake:
-		_recheck_pancake()
-		if _pending_collapse.is_empty():
-			return
 		_begin_pancake()
 		return
 	_drop_pancake_step()

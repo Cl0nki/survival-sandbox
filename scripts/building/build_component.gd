@@ -21,6 +21,8 @@ var pinned := false
 ## Damage profile id copied at creation. Health stays on this record so a hit
 ## never needs a second object, and a destroyed piece keeps its id and slot.
 var material := ""
+## Construction tier. 1 is Scrap. Health comes from BuildingTier.
+var tier := 1
 var max_health := 1
 var health := 1
 var destroyed := false

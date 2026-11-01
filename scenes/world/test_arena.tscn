@@ -1,9 +1,8 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scenes/world/test_arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/world/target_dummy.tscn" id="3_dummy"]
-[ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="4_debug"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -47,16 +46,6 @@ environment = SubResource("Environment_main")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 shadow_enabled = true
-
-[node name="NorthLabel" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, -15)
-billboard = 1
-pixel_size = 0.02
-font_size = 80
-outline_size = 12
-text = "NORTH"
-modulate = Color(0.92, 0.93, 0.88, 1)
-outline_modulate = Color(0, 0, 0, 1)
 
 [node name="Geometry" type="Node3D" parent="."]
 
@@ -123,13 +112,11 @@ shape = SubResource("BoxShape3D_wall_ew")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 8)
 
 [node name="OpenDummy" parent="." instance=ExtResource("3_dummy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.75, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.75, 2)
 display_name = "Open Dummy"
 tint = Color(0.82, 0.18, 0.16, 1)
 
 [node name="CoveredDummy" parent="." instance=ExtResource("3_dummy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.75, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.75, -2)
 display_name = "Covered Dummy"
 tint = Color(0.9, 0.48, 0.12, 1)
-
-[node name="DebugOverlay" parent="." instance=ExtResource("4_debug")]

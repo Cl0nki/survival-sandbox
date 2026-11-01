@@ -1,20 +1,20 @@
 extends RefCounted
 class_name SpawnPoints
 
-## Fixed south-yard pads. They sit clear of the divider, both crates, and both dummies.
+## South deployables tile. Clear of the deployables chest and the other showcase chests.
 ## Separation is above two capsule diameters so spawned bodies do not overlap.
 
 const POINTS: Array[Vector3] = [
-	Vector3(-6, 0.15, 10),
-	Vector3(6, 0.15, 10),
-	Vector3(-10, 0.15, 8),
-	Vector3(10, 0.15, 8),
-	Vector3(-6, 0.15, 13),
-	Vector3(6, 0.15, 13),
-	Vector3(0, 0.15, 12),
-	Vector3(-12, 0.15, 12),
-	Vector3(12, 0.15, 12),
-	Vector3(0, 0.15, 8),
+	Vector3(-3.0, 0.15, 8.0),
+	Vector3(0.0, 0.15, 8.0),
+	Vector3(3.0, 0.15, 8.0),
+	Vector3(-3.0, 0.15, 11.0),
+	Vector3(0.0, 0.15, 11.0),
+	Vector3(3.0, 0.15, 11.0),
+	Vector3(-3.0, 0.15, 14.0),
+	Vector3(0.0, 0.15, 14.0),
+	Vector3(3.0, 0.15, 14.0),
+	Vector3(0.0, 0.15, 5.0),
 ]
 
 const MIN_SEPARATION := 2.0
