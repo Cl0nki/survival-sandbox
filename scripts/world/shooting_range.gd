@@ -38,30 +38,21 @@ static func _place_dummy(arena: Node3D, node_name: String, at: Vector3) -> void:
 
 
 static func _mat(root: Node3D) -> void:
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(10.0, 0.02, 10.0)
-	mesh.mesh = box
-	mesh.position = Vector3(15.0, 0.012, -5.0)
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.40, 0.26, 0.16)
-	material.roughness = 1.0
-	mesh.set_surface_override_material(0, material)
-	root.add_child(mesh)
+	ShowcasePad.add(root, ShowcasePad.RANGE, Color(0.42, 0.36, 0.24), "ground_dirt")
 	var open_lane := MeshInstance3D.new()
 	var strip := BoxMesh.new()
 	strip.size = Vector3(6.4, 0.02, 1.7)
 	open_lane.mesh = strip
 	open_lane.position = Vector3(16.2, 0.04, OPEN.z)
 	var open_mat := StandardMaterial3D.new()
-	open_mat.albedo_color = Color(0.48, 0.22, 0.18)
+	ShowcasePad.paint(open_mat, "ground_rock", Vector2(6.4, 1.7), Color(0.48, 0.46, 0.44))
 	open_lane.set_surface_override_material(0, open_mat)
 	root.add_child(open_lane)
 	var covered_lane := MeshInstance3D.new()
 	covered_lane.mesh = strip
 	covered_lane.position = Vector3(16.2, 0.04, COVERED.z)
 	var covered_mat := StandardMaterial3D.new()
-	covered_mat.albedo_color = Color(0.50, 0.34, 0.16)
+	ShowcasePad.paint(covered_mat, "ground_dirt", Vector2(6.4, 1.7), Color(0.42, 0.36, 0.24))
 	covered_lane.set_surface_override_material(0, covered_mat)
 	root.add_child(covered_lane)
 

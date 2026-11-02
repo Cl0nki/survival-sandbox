@@ -84,7 +84,7 @@ static func _ensure() -> void:
 		1.2,
 		Color(0.42, 0.28, 0.16),
 		Color(0.22, 0.42, 0.18),
-		[["logs", 6], ["sticks", 4], ["plant_resin", 1]]
+		[["log", 6], ["stick", 4], ["plant_resin", 1]]
 	)
 	_add_tree(
 		"birch",
@@ -93,7 +93,7 @@ static func _ensure() -> void:
 		0.8,
 		Color(0.82, 0.80, 0.74),
 		Color(0.48, 0.62, 0.28),
-		[["logs", 3], ["sticks", 8], ["plant_resin", 2]]
+		[["log", 3], ["stick", 8], ["plant_resin", 2]]
 	)
 	_add_tree(
 		"spruce",
@@ -102,7 +102,7 @@ static func _ensure() -> void:
 		1.0,
 		Color(0.32, 0.24, 0.18),
 		Color(0.16, 0.36, 0.24),
-		[["logs", 5], ["sticks", 6], ["plant_resin", 3]]
+		[["log", 5], ["stick", 6], ["plant_resin", 3]]
 	)
 	_add_scavenge(
 		"broken_car",
@@ -110,7 +110,7 @@ static func _ensure() -> void:
 		56,
 		1.4,
 		Color(0.45, 0.22, 0.16),
-		[["scrap_metal", 6], ["steel_scrap", 3], ["rubber", 2], ["mechanical_parts", 1], ["glass", 2], ["plastic", 2]]
+		[["scrap_metal", 6], ["steel_scrap", 3], ["rubber", 2], ["mechanical_part", 1], ["glass", 2], ["plastic", 2]]
 	)
 	_add_scavenge(
 		"scrap_pile",
@@ -175,7 +175,7 @@ static func _add_tree(
 	var deposit := ResourceDeposit.new()
 	deposit.id = deposit_id
 	deposit.display_name = display_name
-	deposit.item_id = "logs"
+	deposit.item_id = "log"
 	deposit.health = health
 	deposit.yield_amount = 0
 	deposit.tool_kind = "hatchet"
@@ -186,7 +186,7 @@ static func _add_tree(
 	deposit.visual = "tree"
 	deposit.yields = yields
 	for entry in yields:
-		if str(entry[0]) == "logs":
+		if str(entry[0]) == "log":
 			deposit.yield_amount = int(entry[1])
 			break
 	_by_id[deposit_id] = deposit

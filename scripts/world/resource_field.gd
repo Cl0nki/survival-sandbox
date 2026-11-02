@@ -14,7 +14,7 @@ static func build(arena: Node3D) -> void:
 	var root := Node3D.new()
 	root.name = "Mine"
 	arena.add_child(root)
-	ShowcasePad.add(root, ShowcasePad.MINE, Color(0.36, 0.30, 0.24))
+	ShowcasePad.add(root, ShowcasePad.MINE, Color(0.48, 0.46, 0.44), "ground_rock")
 	ShowcasePad.label(root, "MINE", ShowcasePad.MINE + Vector3(0.0, 2.6, -4.2), 52, Color(0.82, 0.74, 0.58))
 	ShowcasePad.label(root, "PICKAXES", ShowcasePad.MINE + Vector3(0.0, 1.15, 3.7), 22, Color(0.84, 0.76, 0.62))
 	var ids := ResourceCatalog.mineral_ids()

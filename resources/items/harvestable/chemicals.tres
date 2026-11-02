@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "chemicals"
 display_name = "Chemicals"
-description = "Unlabeled drums and lab leftovers."
+description = "Unlabeled flasks and lab leftovers."
 max_stack = 20
 weight = 0.5
 category = "harvest"

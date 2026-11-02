@@ -47,7 +47,7 @@ func _body() -> int:
 		return _fail("scrap pile missing")
 	if cloth == null or cloth.quantity != 6:
 		return _fail("cloth pile missing")
-	if crate == null or crate.inventory.count_item("logs") != 20:
+	if crate == null or crate.inventory.count_item("log") != 20:
 		return _fail("crate contents missing")
 
 	net.debug_place(2, Vector3(0.0, 0.15, 0.0))
@@ -121,22 +121,22 @@ func _body() -> int:
 		return _fail("could not open the crate")
 	if net.debug_transfer(2, "woods_crate", false, 0, 0, 1) != "":
 		return _fail("could not take one log")
-	if bag.count_item("logs") != 1 or crate.inventory.count_item("logs") != 19:
-		return _fail("partial take split logs wrong")
+	if bag.count_item("log") != 1 or crate.inventory.count_item("log") != 19:
+		return _fail("partial take split log wrong")
 	if net.debug_transfer(2, "woods_crate", true, 0, 0, 1) != "":
 		return _fail("could not store the log back")
-	if bag.count_item("logs") != 0 or crate.inventory.count_item("logs") != 20:
+	if bag.count_item("log") != 0 or crate.inventory.count_item("log") != 20:
 		return _fail("store did not restore the crate")
 	if not bag.add_exact("scrap_metal", 4):
 		return _fail("could not keep a private scrap stack")
 	if not bag.add_exact("ammo_9mm", 50):
 		return _fail("could not add an ammo stack")
 	var ammo_before := bag.count_item("ammo_9mm")
-	var crate_logs := crate.inventory.count_item("logs")
+	var crate_logs := crate.inventory.count_item("log")
 	net.debug_reset_item_rate(2)
 	if net.debug_transfer(2, "woods_crate", true, 1, 1, 50) == "":
 		return _fail("transfer exceeded the ammo stack limit")
-	if bag.count_item("ammo_9mm") != ammo_before or crate.inventory.count_item("logs") != crate_logs:
+	if bag.count_item("ammo_9mm") != ammo_before or crate.inventory.count_item("log") != crate_logs:
 		return _fail("rejected stack-limit transfer changed items")
 	net.debug_reset_item_rate(2)
 	if net.debug_transfer(2, "woods_crate", false, 27, 0, 1) == "":
@@ -180,13 +180,13 @@ func _body() -> int:
 
 	var logs_slot := -1
 	for index in crate.inventory.capacity:
-		if str(crate.inventory.slots[index]["id"]) == "logs" and int(crate.inventory.slots[index]["qty"]) >= 20:
+		if str(crate.inventory.slots[index]["id"]) == "log" and int(crate.inventory.slots[index]["qty"]) >= 20:
 			logs_slot = index
 	if logs_slot < 0:
-		return _fail("crate lost its logs before the concurrent transfer")
-	crate.inventory.slots[logs_slot] = {"id": "logs", "qty": 20}
+		return _fail("crate lost its log before the concurrent transfer")
+	crate.inventory.slots[logs_slot] = {"id": "log", "qty": 20}
 	for index in bag.capacity:
-		if str(bag.slots[index]["id"]) == "logs":
+		if str(bag.slots[index]["id"]) == "log":
 			bag.slots[index] = {"id": "", "qty": 0}
 	net.debug_inventory(3).slots[0] = {"id": "", "qty": 0}
 	if net.debug_open(3, "woods_crate") != "":
@@ -195,12 +195,12 @@ func _body() -> int:
 	net.debug_reset_item_rate(3)
 	var first := net.debug_transfer(2, "woods_crate", false, logs_slot, 5, 20)
 	var second := net.debug_transfer(3, "woods_crate", false, logs_slot, 0, 20)
-	var held := bag.count_item("logs") + net.debug_inventory(3).count_item("logs")
-	var left := crate.inventory.count_item("logs")
+	var held := bag.count_item("log") + net.debug_inventory(3).count_item("log")
+	var left := crate.inventory.count_item("log")
 	if first != "" or second == "":
-		return _fail("concurrent logs transfer result first=%s second=%s" % [first, second])
+		return _fail("concurrent log transfer result first=%s second=%s" % [first, second])
 	if held + left != 20:
-		return _fail("concurrent transfer duplicated or lost logs held=%s left=%s" % [held, left])
+		return _fail("concurrent transfer duplicated or lost log held=%s left=%s" % [held, left])
 
 	if net.debug_inventory(3).count_item("scrap_metal") != Inventory.STARTING_SCRAP:
 		return _fail("peer 3 payload included peer 2 scrap")

@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "foundry"
 display_name = "Foundry"
-description = "3x3 foundry. Every melt, plus aluminum and composite stock, twenty at a time. Burns coal or fuel. 1600 HP."
+description = "3x3 foundry. Every melt, plus aluminum, twenty at a time. Burns coal or fuel. 1600 HP."
 max_stack = 1
 weight = 60.0
 category = "deployable"

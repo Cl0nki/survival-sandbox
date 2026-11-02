@@ -5,8 +5,8 @@ class_name LootLayout
 ## every peer. Container contents are authoritative only on the server.
 
 const WOODS := [
-	["logs", 20],
-	["sticks", 20],
+	["log", 20],
+	["stick", 20],
 	["plant_resin", 12],
 ]
 
@@ -36,7 +36,7 @@ const SCAVENGE := [
 	["scrap_metal", 20],
 	["steel_scrap", 20],
 	["rubber", 20],
-	["mechanical_parts", 10],
+	["mechanical_part", 10],
 	["glass", 20],
 	["plastic", 20],
 	["stone", 20],
@@ -49,11 +49,11 @@ const TIER_SCRAP := [
 	["steel_scrap", 20],
 ]
 const TIER_WOOD := [
-	["planks", 40],
-	["nails", 40],
+	["plank", 40],
+	["nail", 40],
 ]
 const TIER_BRICK := [
-	["bricks", 40],
+	["brick", 40],
 	["mortar", 20],
 ]
 const TIER_STONE := [
@@ -65,11 +65,11 @@ const TIER_CONCRETE := [
 	["reinforcement_mesh", 10],
 ]
 const TIER_COMPOSITE := [
-	["composite_panels", 20],
+	["composite_panel", 20],
 ]
 
 const MILL_STOCK := [
-	["logs", 20],
+	["log", 20],
 	["clay", 20],
 	["stone", 20],
 	["limestone", 20],
@@ -81,14 +81,13 @@ const MILL_STOCK := [
 const BENCH_STOCK := [
 	["scrap_metal", 20],
 	["steel_scrap", 20],
-	["sticks", 20],
-	["iron_ingots", 20],
-	["copper_ingots", 20],
-	["steel_ingots", 20],
+	["stick", 20],
+	["iron_ingot", 20],
+	["copper_ingot", 20],
+	["steel_ingot", 20],
 	["coal", 20],
 	["electronics", 10],
-	["mechanical_parts", 10],
-	["composite_stock", 20],
+	["mechanical_part", 10],
 	["refined_plastic", 20],
 ]
 
@@ -99,14 +98,14 @@ const CHEM_STOCK := [
 	["sulfur", 20],
 	["oil_drum_full", 1],
 	["gunpowder", 20],
-	["lead_ingots", 20],
-	["aluminum_ingots", 20],
+	["lead_ingot", 20],
+	["aluminum_ingot", 20],
 	["explosive_compound", 8],
-	["steel_plates", 10],
+	["steel_plate", 10],
 	["coal", 20],
-	["iron_ingots", 20],
-	["copper_ingots", 20],
-	["steel_ingots", 20],
+	["iron_ingot", 20],
+	["copper_ingot", 20],
+	["steel_ingot", 20],
 	["steel_scrap", 20],
 ]
 
@@ -119,7 +118,7 @@ const SMELT_STOCK := [
 	["sand", 20],
 	["coal", 20],
 	["fuel", 10],
-	["iron_ingots", 20],
+	["iron_ingot", 20],
 ]
 
 const COOK_STOCK := [
@@ -129,8 +128,8 @@ const COOK_STOCK := [
 	["mushroom", 20],
 	["egg", 20],
 	["corn", 20],
-	["sticks", 20],
-	["logs", 20],
+	["stick", 20],
+	["log", 20],
 	["coal", 20],
 ]
 
@@ -138,7 +137,7 @@ const COLLECTABLES := [
 	["electronics", 10],
 	["chemicals", 10],
 	["fuel", 10],
-	["batteries", 8],
+	["battery", 8],
 	["raw_meat", 8],
 	["raw_fish", 8],
 	["potato", 8],
@@ -148,34 +147,34 @@ const COLLECTABLES := [
 ]
 
 const REFINED := [
-	["planks", 20],
-	["bricks", 20],
+	["plank", 20],
+	["brick", 20],
 	["mortar", 20],
 	["cut_stone", 20],
 	["cement", 20],
 	["concrete_mix", 20],
 	["glass", 20],
-	["iron_ingots", 20],
-	["steel_ingots", 20],
-	["copper_ingots", 20],
+	["iron_ingot", 20],
+	["steel_ingot", 20],
+	["copper_ingot", 20],
 	["refined_plastic", 20],
 	["synthetic_rubber", 20],
 	["gunpowder", 20],
 ]
 
 const COMPONENTS := [
-	["metal_parts", 15],
-	["steel_plates", 15],
-	["metal_beams", 8],
-	["nails", 50],
-	["screws_bolts", 50],
-	["pipes", 15],
+	["metal_part", 15],
+	["steel_plate", 15],
+	["metal_beam", 8],
+	["nail", 50],
+	["screw_bolt", 50],
+	["pipe", 15],
 	["wiring", 20],
-	["circuit_boards", 8],
-	["mechanical_components", 8],
-	["industrial_motors", 4],
-	["batteries", 8],
-	["composite_panels", 10],
+	["circuit_board", 8],
+	["mechanical_component", 8],
+	["industrial_motor", 4],
+	["battery", 8],
+	["composite_panel", 10],
 	["reinforcement_mesh", 10],
 	["explosive_compound", 8],
 ]
@@ -187,11 +186,12 @@ const MILITARY := [
 	["ammo_762", 30],
 	["ammo_12gauge", 20],
 	["ammo_50bmg", 10],
-	["explosive_rounds", 10],
-	["grenades", 4],
-	["demolition_charges", 4],
-	["mines", 4],
-	["rocket_warheads", 2],
+	["grenade", 4],
+	["smoke_grenade", 4],
+	["flash_grenade", 4],
+	["demolition_charge", 4],
+	["mine", 4],
+	["rocket_warhead", 2],
 ]
 
 static func build(arena: Node3D) -> void:
@@ -200,7 +200,7 @@ static func build(arena: Node3D) -> void:
 	var folder := Node3D.new()
 	folder.name = "Loot"
 	arena.add_child(folder)
-	ShowcasePad.add(folder, ShowcasePad.SUPPLIES, Color(0.34, 0.32, 0.28))
+	ShowcasePad.add(folder, ShowcasePad.SUPPLIES, Color(0.42, 0.36, 0.24), "ground_dirt")
 	ShowcasePad.label(folder, "SUPPLIES", ShowcasePad.SUPPLIES + Vector3(0.0, 2.6, -3.6), 52, Color(0.88, 0.82, 0.55))
 	_pickup(folder, "scrap_pile", "scrap_metal", 8, Vector3(-6.0, 0.15, 16.0))
 	_pickup(folder, "cloth_pile", "cloth", 6, Vector3(-7.2, 0.15, 16.0))

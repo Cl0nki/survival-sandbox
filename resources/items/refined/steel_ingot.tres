@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "steel_ingot"
+display_name = "Steel Ingot"
+description = "Hardened iron with carbon."
+max_stack = 50
+weight = 0.85
+category = "refined"
+can_pickup = true
+can_store = true
+swatch = Color(0.4, 0.44, 0.5, 1)

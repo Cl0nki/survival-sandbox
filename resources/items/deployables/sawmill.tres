@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "sawmill"
 display_name = "Sawmill"
-description = "2x2 mill. Eight logs at a time, on half the coal. 400 HP."
+description = "2x2 mill. Eight log at a time, on half the coal. 400 HP."
 max_stack = 1
 weight = 28.0
 category = "deployable"

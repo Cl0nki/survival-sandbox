@@ -14,6 +14,13 @@ const PATCHES := [
 	["crude_oil", Vector2i(16, -17), Vector2i(2, 2)],
 ]
 
+## Base ground options shown side by side on the south edge of the dirt pad.
+## Grass/dirt samples omitted — they sat coplanar on the dirt pad and z-fought.
+const TERRAIN := [
+	["ground_rock", "Rock", Color(0.48, 0.46, 0.44)],
+	["ground_meadow", "Meadow", Color(0.30, 0.42, 0.22)],
+]
+
 
 static func build(arena: Node3D) -> void:
 	if arena.get_node_or_null("GroundDeposits") != null:
@@ -21,9 +28,11 @@ static func build(arena: Node3D) -> void:
 	var root := Node3D.new()
 	root.name = "GroundDeposits"
 	arena.add_child(root)
-	ShowcasePad.add(root, ShowcasePad.GROUND, Color(0.42, 0.36, 0.24), "ground_dirt")
+	## No scatter under deposit patches — MultiMeshes z-fought the overlays.
+	ShowcasePad.add(root, ShowcasePad.GROUND, Color(0.42, 0.36, 0.24), "ground_dirt", false)
 	ShowcasePad.label(root, "GROUND", ShowcasePad.GROUND + Vector3(0.0, 2.5, -4.2), 52, Color(0.82, 0.74, 0.48))
 	ShowcasePad.label(root, "SHOVELS", ShowcasePad.GROUND + Vector3(0.0, 1.15, 3.6), 22, Color(0.84, 0.76, 0.56))
+	_terrain_samples(root)
 	var loot := arena.get_node_or_null("Loot") as Node3D
 	if loot == null:
 		loot = root
@@ -48,6 +57,21 @@ static func build(arena: Node3D) -> void:
 	for index in tools.size():
 		var tool: Array = tools[index]
 		_pickup(loot, str(tool[0]), str(tool[1]), 1, Vector3(12.0 + float(index) * 1.3, 0.15, -10.6))
+
+
+static func _terrain_samples(root: Node3D) -> void:
+	var sample := 2.0
+	var gap := 0.3
+	var span := float(TERRAIN.size()) * sample + float(TERRAIN.size() - 1) * gap
+	var start_x := ShowcasePad.GROUND.x - span * 0.5 + sample * 0.5
+	## Between the deposit patches and the shovels on the south edge.
+	var z := ShowcasePad.GROUND.z + 2.8
+	for index in TERRAIN.size():
+		var entry: Array = TERRAIN[index]
+		var center := Vector3(start_x + float(index) * (sample + gap), 0.0, z)
+		## Lift above the dirt pad so rock/meadow samples do not z-fight.
+		ShowcasePad.add_rect(root, center, sample, entry[2], str(entry[0]), false, 0.02)
+		ShowcasePad.label(root, str(entry[1]), center + Vector3(0.0, 1.05, 0.0), 18, Color(0.88, 0.82, 0.62))
 
 
 static func _pickup(folder: Node3D, pickup_id: String, item_id: String, quantity: int, pos: Vector3) -> void:

@@ -231,77 +231,77 @@ static func _warm() -> void:
 	if not _specs.is_empty():
 		return
 	var coal := {"coal": 1}
-	var flame := {"sticks": 1, "logs": 4, "coal": 2}
-	_station("sawbench", "craft", "saw", 1, 1, 4.0, 1, 1, coal, 150, 0.84, "Sawbench", Vector2i(1, 1), Color(0.62, 0.44, 0.24), "Logs into planks. One coal.")
-	_station("sawmill", "craft", "saw", 2, 8, 1.5, 1, 2, coal, 400, 0.84, "Sawmill", Vector2i(2, 2), Color(0.50, 0.34, 0.18), "Eight logs at a time, half the coal.")
+	var flame := {"stick": 1, "log": 4, "coal": 2}
+	_station("sawbench", "craft", "saw", 1, 1, 4.0, 1, 1, coal, 150, 0.84, "Sawbench", Vector2i(1, 1), Color(0.62, 0.44, 0.24), "Log into plank. One coal.")
+	_station("sawmill", "craft", "saw", 2, 8, 1.5, 1, 2, coal, 400, 0.84, "Sawmill", Vector2i(2, 2), Color(0.50, 0.34, 0.18), "Eight log at a time, half the coal.")
 	_station("kiln", "craft", "kiln", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Kiln", Vector2i(1, 1), Color(0.64, 0.32, 0.24), "Clay, stone, or limestone. One coal.")
 	_station("kiln_shed", "craft", "kiln", 2, 8, 2.5, 1, 2, coal, 500, 0.84, "Kiln Shed", Vector2i(2, 2), Color(0.52, 0.28, 0.22), "Also cement and concrete. Eight at a time.")
-	_station("workbench", "craft", "bench", 1, 1, 5.0, 1, 1, coal, 100, 0.84, "Workbench", Vector2i(1, 1), Color(0.52, 0.36, 0.20), "Nails, scrap tools, and metal parts. One coal.")
-	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 0.84, "Iron Workbench", Vector2i(1, 1), Color(0.58, 0.58, 0.62), "Iron tools, wiring, and beams.")
-	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 0.84, "Steel Workbench", Vector2i(1, 1), Color(0.40, 0.44, 0.50), "Steel tools, plates, pipes, and screws.")
-	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 0.84, "Composite Workbench", Vector2i(1, 1), Color(0.42, 0.40, 0.48), "Composite tools, motors, and panels.")
+	_station("workbench", "craft", "bench", 1, 1, 5.0, 1, 1, coal, 100, 0.84, "Workbench", Vector2i(1, 1), Color(0.52, 0.36, 0.20), "Nail, scrap tools, and metal part. One coal.")
+	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 0.84, "Iron Workbench", Vector2i(1, 1), Color(0.58, 0.58, 0.62), "Iron tools, wiring, and metal beam.")
+	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 0.84, "Steel Workbench", Vector2i(1, 1), Color(0.40, 0.44, 0.50), "Steel tools, steel plate, pipe, and screw bolt.")
+	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 0.84, "Composite Workbench", Vector2i(1, 1), Color(0.42, 0.40, 0.48), "Composite tools, industrial motor, and composite panel.")
 	_station("machine_shop", "craft", "bench", 4, 12, 1.2, 1, 4, coal, 1200, 0.84, "Machine Shop", Vector2i(3, 3), Color(0.36, 0.38, 0.42), "The same bench jobs, twelve at a time.")
 	_station("chem_bench", "craft", "chem", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Chem Bench", Vector2i(1, 1), Color(0.42, 0.62, 0.36), "Gunpowder, plastic, rubber, and fuel.")
 	_station("refinery", "craft", "chem", 2, 8, 2.0, 1, 2, coal, 800, 0.84, "Refinery", Vector2i(3, 2), Color(0.32, 0.36, 0.34), "The chem bench, plus a drum of oil into fuel.")
 	_station("ammo_bench", "craft", "armory", 1, 2, 4.0, 1, 1, coal, 250, 0.84, "Ammo Bench", Vector2i(1, 1), Color(0.48, 0.42, 0.28), "Gunpowder and metal into rounds.")
-	_station("armory", "craft", "armory", 2, 8, 2.0, 1, 2, coal, 600, 0.84, "Armory", Vector2i(2, 2), Color(0.32, 0.36, 0.26), "Rounds, grenades, mines, and charges.")
+	_station("armory", "craft", "armory", 2, 8, 2.0, 1, 2, coal, 600, 0.84, "Armory", Vector2i(2, 2), Color(0.32, 0.36, 0.26), "Round, grenade, mine, and demolition charge.")
 	_station("campfire", "cook", "cook", 1, 1, 6.0, 1, 1, flame, 80, 0.42, "Campfire", Vector2i(1, 1), Color(0.72, 0.36, 0.16), "Cooks meat, fish, potato, mushroom, egg, or corn.")
 	_station("fire_pit", "cook", "cook", 1, 4, 4.0, 1, 1, flame, 120, 0.42, "Fire Pit", Vector2i(2, 1), Color(0.46, 0.28, 0.16), "Cooks four at a time.")
 	_station("cooking_pot", "cook", "cook", 2, 2, 4.0, 1, 1, flame, 100, 0.84, "Cooking Pot", Vector2i(1, 1), Color(0.40, 0.42, 0.44), "Also a stew: meat or fish, plus a potato.")
 	_station("stove", "cook", "cook", 3, 4, 2.5, 1, 2, flame, 250, 0.84, "Stove", Vector2i(2, 1), Color(0.55, 0.50, 0.46), "Cooks four, on half the fuel.")
 	_station("kitchen", "cook", "cook", 4, 8, 1.5, 1, 2, flame, 400, 0.84, "Kitchen", Vector2i(2, 2), Color(0.62, 0.58, 0.50), "Cooks eight at a time.")
 	_recipes = [
-		_out("saw", 1, "logs", "", "planks", 1, 0, 4),
-		_out("kiln", 1, "clay", "", "bricks", 1, 0, 1),
+		_out("saw", 1, "log", "", "plank", 1, 0, 4),
+		_out("kiln", 1, "clay", "", "brick", 1, 0, 1),
 		_out("kiln", 1, "stone", "", "cut_stone", 1, 0, 1),
 		_out("kiln", 1, "limestone", "", "mortar", 1, 0, 1),
 		_out("kiln", 2, "limestone", "clay", "cement", 1, 1, 1),
 		_out("kiln", 2, "cement", "sand", "concrete_mix", 1, 1, 1),
-		_out("bench", 1, "iron_ingots", "", "nails", 1, 0, 8),
-		_out("bench", 1, "steel_scrap", "", "metal_parts", 1, 0, 2),
-		_out("bench", 1, "scrap_metal", "sticks", "hatchet_scrap", 1, 1, 1),
+		_out("bench", 1, "iron_ingot", "", "nail", 1, 0, 8),
+		_out("bench", 1, "steel_scrap", "", "metal_part", 1, 0, 2),
+		_out("bench", 1, "scrap_metal", "stick", "hatchet_scrap", 1, 1, 1),
 		_out("bench", 1, "scrap_metal", "stone", "pickaxe_scrap", 1, 1, 1),
-		_out("bench", 1, "scrap_metal", "logs", "shovel_scrap", 1, 1, 1),
+		_out("bench", 1, "scrap_metal", "log", "shovel_scrap", 1, 1, 1),
 		_out("bench", 1, "scrap_metal", "steel_scrap", "crowbar_scrap", 1, 1, 1),
-		_out("bench", 2, "copper_ingots", "", "wiring", 1, 0, 4),
-		_out("bench", 2, "iron_ingots", "copper_ingots", "metal_beams", 1, 1, 1),
-		_out("bench", 2, "mechanical_parts", "", "mechanical_components", 1, 0, 1),
-		_out("bench", 2, "iron_ingots", "sticks", "hatchet_iron", 1, 1, 1),
-		_out("bench", 2, "iron_ingots", "stone", "pickaxe_iron", 1, 1, 1),
-		_out("bench", 2, "iron_ingots", "logs", "shovel_iron", 1, 1, 1),
-		_out("bench", 2, "iron_ingots", "steel_scrap", "crowbar_iron", 1, 1, 1),
-		_out("bench", 3, "steel_ingots", "", "steel_plates", 1, 0, 1),
-		_out("bench", 3, "steel_ingots", "iron_ingots", "screws_bolts", 1, 1, 8),
-		_out("bench", 3, "steel_ingots", "copper_ingots", "pipes", 1, 1, 2),
-		_out("bench", 3, "iron_ingots", "steel_ingots", "reinforcement_mesh", 1, 1, 1),
-		_out("bench", 3, "electronics", "", "circuit_boards", 1, 0, 1),
-		_out("bench", 3, "steel_ingots", "sticks", "hatchet_steel", 1, 1, 1),
-		_out("bench", 3, "steel_ingots", "stone", "pickaxe_steel", 1, 1, 1),
-		_out("bench", 3, "steel_ingots", "logs", "shovel_steel", 1, 1, 1),
-		_out("bench", 3, "steel_ingots", "steel_scrap", "crowbar_steel", 1, 1, 1),
-		_out("bench", 4, "steel_ingots", "electronics", "industrial_motors", 1, 1, 1),
-		_out("bench", 4, "composite_stock", "refined_plastic", "composite_panels", 1, 1, 1),
-		_out("bench", 4, "composite_stock", "sticks", "hatchet_composite", 1, 1, 1),
-		_out("bench", 4, "composite_stock", "stone", "pickaxe_composite", 1, 1, 1),
-		_out("bench", 4, "composite_stock", "logs", "shovel_composite", 1, 1, 1),
-		_out("bench", 4, "composite_stock", "steel_ingots", "crowbar_composite", 1, 1, 1),
+		_out("bench", 2, "copper_ingot", "", "wiring", 1, 0, 4),
+		_out("bench", 2, "iron_ingot", "copper_ingot", "metal_beam", 1, 1, 1),
+		_out("bench", 2, "mechanical_part", "", "mechanical_component", 1, 0, 1),
+		_out("bench", 2, "iron_ingot", "stick", "hatchet_iron", 1, 1, 1),
+		_out("bench", 2, "iron_ingot", "stone", "pickaxe_iron", 1, 1, 1),
+		_out("bench", 2, "iron_ingot", "log", "shovel_iron", 1, 1, 1),
+		_out("bench", 2, "iron_ingot", "steel_scrap", "crowbar_iron", 1, 1, 1),
+		_out("bench", 3, "steel_ingot", "", "steel_plate", 1, 0, 1),
+		_out("bench", 3, "steel_ingot", "iron_ingot", "screw_bolt", 1, 1, 8),
+		_out("bench", 3, "steel_ingot", "copper_ingot", "pipe", 1, 1, 2),
+		_out("bench", 3, "iron_ingot", "steel_ingot", "reinforcement_mesh", 1, 1, 1),
+		_out("bench", 3, "electronics", "", "circuit_board", 1, 0, 1),
+		_out("bench", 3, "steel_ingot", "stick", "hatchet_steel", 1, 1, 1),
+		_out("bench", 3, "steel_ingot", "stone", "pickaxe_steel", 1, 1, 1),
+		_out("bench", 3, "steel_ingot", "log", "shovel_steel", 1, 1, 1),
+		_out("bench", 3, "steel_ingot", "steel_scrap", "crowbar_steel", 1, 1, 1),
+		_out("bench", 4, "steel_ingot", "electronics", "industrial_motor", 1, 1, 1),
+		_out("bench", 4, "aluminum_ingot", "refined_plastic", "composite_panel", 1, 1, 1),
+		_out("bench", 4, "aluminum_ingot", "stick", "hatchet_composite", 1, 1, 1),
+		_out("bench", 4, "aluminum_ingot", "stone", "pickaxe_composite", 1, 1, 1),
+		_out("bench", 4, "aluminum_ingot", "log", "shovel_composite", 1, 1, 1),
+		_out("bench", 4, "aluminum_ingot", "steel_ingot", "crowbar_composite", 1, 1, 1),
 		_out("chem", 1, "sulfur", "", "gunpowder", 1, 0, 1),
 		_out("chem", 1, "plastic", "", "refined_plastic", 1, 0, 1),
 		_out("chem", 1, "rubber", "", "synthetic_rubber", 1, 0, 1),
 		_out("chem", 1, "chemicals", "", "fuel", 1, 0, 1),
 		_out("chem", 2, "oil_drum_full", "", "fuel", 1, 0, 4),
-		_out("armory", 1, "gunpowder", "lead_ingots", "ammo_9mm", 1, 1, 8),
-		_out("armory", 1, "gunpowder", "copper_ingots", "ammo_45acp", 1, 1, 8),
-		_out("armory", 1, "gunpowder", "iron_ingots", "ammo_556", 1, 1, 6),
+		_out("armory", 1, "gunpowder", "lead_ingot", "ammo_9mm", 1, 1, 8),
+		_out("armory", 1, "gunpowder", "copper_ingot", "ammo_45acp", 1, 1, 8),
+		_out("armory", 1, "gunpowder", "iron_ingot", "ammo_556", 1, 1, 6),
 		_out("armory", 1, "gunpowder", "steel_scrap", "ammo_12gauge", 1, 1, 4),
-		_out("armory", 2, "gunpowder", "steel_ingots", "ammo_762", 1, 1, 4),
-		_out("armory", 2, "gunpowder", "aluminum_ingots", "explosive_rounds", 1, 1, 2),
-		_out("armory", 2, "lead_ingots", "gunpowder", "ammo_50bmg", 1, 1, 2),
+		_out("armory", 2, "gunpowder", "steel_ingot", "ammo_762", 1, 1, 4),
+		_out("armory", 2, "gunpowder", "aluminum_ingot", "explosive_round", 1, 1, 2),
+		_out("armory", 2, "lead_ingot", "gunpowder", "ammo_50bmg", 1, 1, 2),
 		_out("armory", 2, "chemicals", "sulfur", "explosive_compound", 1, 1, 1),
-		_out("armory", 2, "explosive_compound", "steel_ingots", "grenades", 1, 1, 1),
-		_out("armory", 2, "explosive_compound", "iron_ingots", "demolition_charges", 1, 1, 1),
-		_out("armory", 2, "explosive_compound", "steel_scrap", "mines", 1, 1, 1),
-		_out("armory", 2, "explosive_compound", "steel_plates", "rocket_warheads", 1, 1, 1),
+		_out("armory", 2, "explosive_compound", "steel_ingot", "grenade", 1, 1, 1),
+		_out("armory", 2, "explosive_compound", "iron_ingot", "demolition_charge", 1, 1, 1),
+		_out("armory", 2, "explosive_compound", "steel_scrap", "mine", 1, 1, 1),
+		_out("armory", 2, "explosive_compound", "steel_plate", "rocket_warhead", 1, 1, 1),
 		_out("cook", 1, "raw_meat", "", "cooked_meat", 1, 0, 1),
 		_out("cook", 1, "raw_fish", "", "cooked_fish", 1, 0, 1),
 		_out("cook", 1, "potato", "", "baked_potato", 1, 0, 1),

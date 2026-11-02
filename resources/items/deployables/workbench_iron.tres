@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "workbench_iron"
 display_name = "Iron Workbench"
-description = "1x1 bench. Iron tools, wiring, and beams. 200 HP."
+description = "1x1 bench. Iron tools, wiring, and metal beam. 200 HP."
 max_stack = 1
 weight = 16.0
 category = "deployable"

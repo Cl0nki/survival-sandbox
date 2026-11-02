@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "electronics"
 display_name = "Electronics"
-description = "Pulled boards and chips from wrecks."
+description = "Pulled from wrecks."
 max_stack = 30
 weight = 0.2
 category = "harvest"

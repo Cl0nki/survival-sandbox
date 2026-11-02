@@ -1,6 +1,68 @@
 {
-  "items": {},
+  "items": {
+    "corn": {
+      "image": "A raw ear of corn."
+    },
+    "lead_ore": {
+      "image": "Heavy dull ore"
+    },
+    "iron_ore": {
+      "image": "Red-brown ore."
+    },
+    "copper_ore": {
+      "image": "Green-stained ore"
+    },
+    "egg": {
+      "image": "A raw egg."
+    },
+    "fish_stew": {
+      "image": "Fish and potato cooked in a pot."
+    },
+    "log": {
+      "image": "Rough timber"
+    },
+    "explosive_compound": {
+      "image": "Plastic package filled with colored explosiv stuff"
+    },
+    "cut_stone": {
+      "image": "Not uniformly cut stone"
+    },
+    "plastic": {
+      "image": "Plastic Scraps"
+    },
+    "mortar": {
+      "image": "."
+    }
+  },
   "surfaces": {
+    "ground_grass": {
+      "ingame": "Short grass ground.",
+      "image": "dense soft short-grass carpet, low-contrast mottled greens, tiny yellow wildflower dots only, no large isolated tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "ground_dirt": {
+      "ingame": "Packed dirt ground.",
+      "image": "packed warm dry dirt, fine sand grain and tiny pebbles only, soft low-contrast mottling, no plants, no big boulders, no large hero rocks, no path, no horizon"
+    },
+    "ground_rock": {
+      "ingame": "Rocky stone ground.",
+      "image": "muted gray cobble and broad flat stone slabs, thick readable mortar cracks, fine pebble noise between slabs, no grass, no plants, no cliffs, no oversized hero rocks, no path, no horizon"
+    },
+    "ground_meadow": {
+      "ingame": "Lush meadow ground.",
+      "image": "dense soft meadow carpet, warm mixed greens, tiny wildflower dots, low-contrast mottling, no large isolated grass tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "ground_water": {
+      "ingame": "Damp dirt with shallow water stains.",
+      "image": "same packed warm dry dirt ground as the dirt tile, but with irregular damp darker wet spots and soft teal-blue puddle stains soaked into the soil, fine pebbles still visible, no open water plane, no horizon, no object, no plants"
+    },
+    "ground_gas": {
+      "ingame": "Dirt with gas vents.",
+      "image": "same packed warm dry dirt ground as the dirt tile, but with scattered small dark vents and crater-like holes punched in the soil, faint pale yellow-green seep stains around the holes, fine pebbles still visible, no flames, no pipe, no text, no horizon, no object, no plants"
+    },
+    "ground_oil": {
+      "ingame": "Dirt with crude oil stains.",
+      "image": "same packed warm dry dirt ground as the dirt tile, but with irregular dull brown-black oil stains and sticky dark blotches soaked into the soil, fine pebbles still visible through thinner stains, no open puddle silhouette, no equipment, no horizon, no object, no plants"
+    },
     "wall_scrap": {
       "ingame": "Scrap wall surface.",
       "image": "corrugated-iron shack wall, hand-painted"
@@ -11,7 +73,7 @@
     },
     "floor_wood": {
       "ingame": "Wood floor surface.",
-      "image": "sawn timber planks, wood grain, subtle gaps between boards"
+      "image": "sawn timber plank, wood grain, subtle gaps between boards"
     },
     "wall_composite": {
       "ingame": "Composite wall surface.",

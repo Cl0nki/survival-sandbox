@@ -1,28 +1,31 @@
 {
-  "asset_id": "3401ad7bf175",
+  "asset_id": "b50096bff0ba",
   "asset_name": "ground_grass",
   "category": "grass",
   "kind": "texture",
-  "created_at": "2026-11-02T12:18:58+00:00",
+  "created_at": "2026-11-02T20:14:41+00:00",
   "provider": "openai",
   "model": "gpt-image-2.5-flare",
-  "prompt": "more small green grass inbetween",
-  "negative_prompt": "",
+  "prompt": "dense soft short-grass carpet, low-contrast mottled greens, tiny yellow wildflower dots only, no large isolated tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
   "seed": null,
   "seed_supported": false,
   "generation_parameters": {
-    "sent_prompt": "more small green grass inbetween",
+    "sent_prompt": "dense soft short-grass carpet, low-contrast mottled greens, tiny yellow wildflower dots only, no large isolated tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
     "godot_folder": "textures",
     "roughness": 0.88,
     "metallic": 0.0,
     "variation": 1,
     "quality": "medium",
     "provider_parameters": {
-      "output_format": "png",
-      "reference_images": 1
+      "model": "gpt-image-2.5-flare",
+      "size": "1024x1024",
+      "n": 1,
+      "quality": "medium",
+      "output_format": "png"
     },
     "provider_resolution": "1024x1024",
-    "seam_score": 15.942
+    "seam_score": 5.627
   },
   "original_files": [
     "original/albedo.png",
@@ -42,19 +45,19 @@
     "preview/tiled.png"
   ],
   "polygon_count": null,
-  "texture_resolution": 512,
+  "texture_resolution": 1024,
   "processing_status": "ready_for_review",
   "approval_status": "approved",
   "version": 1,
   "history": [
     {
       "event": "created",
-      "at": "2026-11-02T12:18:58+00:00",
+      "at": "2026-11-02T20:14:41+00:00",
       "version": 1,
       "provider": "openai",
       "model": "",
-      "prompt": "more small green grass inbetween",
-      "negative_prompt": "",
+      "prompt": "dense soft short-grass carpet, low-contrast mottled greens, tiny yellow wildflower dots only, no large isolated tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "generating",
       "approval_status": "pending",
@@ -63,12 +66,12 @@
     },
     {
       "event": "processed",
-      "at": "2026-11-02T12:19:14+00:00",
+      "at": "2026-11-02T20:14:58+00:00",
       "version": 1,
       "provider": "openai",
       "model": "gpt-image-2.5-flare",
-      "prompt": "more small green grass inbetween",
-      "negative_prompt": "",
+      "prompt": "dense soft short-grass carpet, low-contrast mottled greens, tiny yellow wildflower dots only, no large isolated tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "ready_for_review",
       "approval_status": "pending",
@@ -98,7 +101,7 @@
   },
   "errors": [],
   "warnings": [],
-  "job_id": "0cca64ec2f9a",
+  "job_id": "d4936068b22d",
   "production_files": [
     "assets/textures/ground_grass/albedo.png",
     "assets/textures/ground_grass/normal.png",

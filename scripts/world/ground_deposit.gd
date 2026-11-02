@@ -4,7 +4,8 @@ class_name GroundDeposit
 ## One-meter colored square on the floor. Not a terrain material.
 ## Wells and pumps later call covering() / compatible_at() / take().
 
-const PATCH_THICKNESS := 0.04
+## Thick enough to sit clear of the dirt pad and avoid z-fighting.
+const PATCH_THICKNESS := 0.06
 
 var node_id := ""
 var definition_id := ""

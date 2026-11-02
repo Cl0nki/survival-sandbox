@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "nail"
+display_name = "Nail"
+description = "Iron nail for timber work."
+max_stack = 100
+weight = 0.02
+category = "component"
+can_pickup = true
+can_store = true
+swatch = Color(0.55, 0.55, 0.52, 1)

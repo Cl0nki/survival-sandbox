@@ -156,6 +156,8 @@ def load_grounds(project_root: Path, copy: dict | None = None) -> list[dict]:
 _GROUNDS = (
     ("ground_grass", "Grass", "grass", [0.26, 0.34, 0.20, 1.0], 0.90, "Short grass on the woods pad."),
     ("ground_dirt", "Dirt", "dirt", [0.42, 0.36, 0.24, 1.0], 0.95, "Packed dirt under the ground deposits."),
+    ("ground_rock", "Rock", "rock", [0.48, 0.46, 0.44, 1.0], 0.92, "Rocky stone ground for hard terrain."),
+    ("ground_meadow", "Meadow", "meadow", [0.30, 0.42, 0.22, 1.0], 0.86, "Lush meadow ground with soft mixed grass."),
     ("ground_sand", "Sand", "sand", [0.85, 0.76, 0.54, 1.0], 0.93, "Sand patch. A shovel gathers it."),
     ("ground_clay", "Clay", "clay", [0.62, 0.36, 0.24, 1.0], 0.90, "Clay patch. A shovel gathers it."),
     ("ground_gravel", "Gravel", "gravel", [0.52, 0.52, 0.52, 1.0], 0.94, "Gravel patch. A shovel gathers it."),

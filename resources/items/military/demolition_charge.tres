@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "demolition_charge"
+display_name = "Demolition Charge"
+description = "Placed breaching charges."
+max_stack = 10
+weight = 1.2
+category = "explosive"
+can_pickup = true
+can_store = true
+swatch = Color(0.55, 0.22, 0.16, 1)

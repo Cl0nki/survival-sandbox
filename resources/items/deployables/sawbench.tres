@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "sawbench"
 display_name = "Sawbench"
-description = "1x1 saw. One log and one coal become four planks. 150 HP."
+description = "1x1 saw. One log and one coal become four plank. 150 HP."
 max_stack = 1
 weight = 10.0
 category = "deployable"

@@ -80,8 +80,8 @@ func _body() -> int:
 	var dummy_hp := dummy.health
 
 	var crate := net.debug_container("woods_crate")
-	if crate == null or not crate.inventory.take_item("logs", 1):
-		return _fail("crate logs were missing")
+	if crate == null or not crate.inventory.take_item("log", 1):
+		return _fail("crate log were missing")
 	net._spawn_drop("cloth", 3, Vector3(4.0, 0.15, 4.0))
 	if net.debug_pickup("drop_1") == null or net.debug_pickup("drop_1").quantity != 3:
 		return _fail("dropped cloth was missing")
@@ -122,7 +122,7 @@ func _body() -> int:
 	if net2.debug_pickup("drop_1") == null or net2.debug_pickup("drop_1").quantity != 3:
 		return _fail("dropped cloth did not reload")
 	var crate2 := net2.debug_container("woods_crate")
-	if crate2 == null or crate2.inventory.count_item("logs") != 19:
+	if crate2 == null or crate2.inventory.count_item("log") != 19:
 		return _fail("crate contents did not reload")
 	var dummy2 := second.get_node_or_null("OpenDummy") as Damageable
 	if dummy2 == null or dummy2.health != dummy_hp:

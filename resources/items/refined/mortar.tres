@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "mortar"
 display_name = "Mortar"
-description = "Lime mix for binding bricks and stone."
+description = ""
 max_stack = 50
 weight = 0.35
 category = "refined"

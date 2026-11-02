@@ -4,22 +4,22 @@ extends SceneTree
 ## godot --headless --path <project> --script res://tests/items_catalog.gd
 
 const REQUIRED := [
-	"logs", "sticks", "plant_resin", "stone", "limestone", "clay", "sand", "gravel", "iron_ore", "copper_ore",
+	"log", "stick", "plant_resin", "stone", "limestone", "clay", "sand", "gravel", "iron_ore", "copper_ore",
 	"coal", "sulfur", "bauxite", "lead_ore", "quartz", "scrap_metal", "steel_scrap",
 	"bucket_empty", "bucket_full", "water_bottle_empty", "water_bottle_full",
 	"gas_bottle_empty", "gas_bottle_full", "oil_drum_empty", "oil_drum_full",
-	"electronics", "plastic", "rubber", "glass", "mechanical_parts",
-	"chemicals", "fuel", "batteries",
-	"planks", "bricks", "mortar", "cut_stone", "cement", "concrete_mix",
-	"iron_ingots", "steel_ingots", "copper_ingots", "lead_ingots", "aluminum_ingots", "composite_stock", "refined_plastic",
+	"electronics", "plastic", "rubber", "glass", "mechanical_part",
+	"chemicals", "fuel", "battery",
+	"plank", "brick", "mortar", "cut_stone", "cement", "concrete_mix",
+	"iron_ingot", "steel_ingot", "copper_ingot", "lead_ingot", "aluminum_ingot", "refined_plastic",
 	"synthetic_rubber", "gunpowder",
-	"metal_parts", "steel_plates", "metal_beams", "nails", "screws_bolts",
-	"pipes", "wiring", "circuit_boards", "mechanical_components",
-	"industrial_motors", "composite_panels", "reinforcement_mesh",
+	"metal_part", "steel_plate", "metal_beam", "nail", "screw_bolt",
+	"pipe", "wiring", "circuit_board", "mechanical_component",
+	"industrial_motor", "composite_panel", "reinforcement_mesh",
 	"explosive_compound",
 	"ammo_9mm", "ammo_45acp", "ammo_556", "ammo_762", "ammo_12gauge",
-	"ammo_50bmg", "explosive_rounds", "grenades", "demolition_charges",
-	"mines", "rocket_warheads",
+	"ammo_50bmg", "explosive_round", "grenade", "smoke_grenade", "flash_grenade",
+	"demolition_charge", "mine", "rocket_warhead",
 	"chest", "workbench", "furnace_scrap", "smelter_iron", "smelter_steel", "foundry",
 	"water_well", "pump_jack_gas", "pump_jack_oil",
 	"door_scrap", "door_wood", "door_brick", "door_stone", "door_concrete", "door_composite",
@@ -59,7 +59,7 @@ func _run() -> int:
 		print("FAIL catalog missing: %s" % ", ".join(missing))
 		return 1
 	if ItemCatalog.known("wood"):
-		print("FAIL wood should be replaced by logs")
+		print("FAIL wood should be replaced by log")
 		return 1
 	if ItemCatalog.known("roubles"):
 		print("FAIL roubles should be gone")

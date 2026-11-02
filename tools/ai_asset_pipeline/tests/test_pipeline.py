@@ -453,6 +453,8 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(set(grounds), {
             "ground_grass",
             "ground_dirt",
+            "ground_rock",
+            "ground_meadow",
             "ground_sand",
             "ground_clay",
             "ground_gravel",
@@ -461,9 +463,12 @@ class PipelineTests(unittest.TestCase):
             "ground_oil",
         })
         self.assertEqual(grounds["ground_grass"]["pipeline_category"], "grass")
+        self.assertEqual(grounds["ground_rock"]["pipeline_category"], "rock")
+        self.assertEqual(grounds["ground_meadow"]["pipeline_category"], "meadow")
         self.assertEqual(grounds["ground_oil"]["pipeline_category"], "oil")
         self.assertEqual(grounds["ground_water"]["category"], "ground")
-        self.assertTrue(grounds["ground_grass"]["needs_art"])
+        self.assertTrue(grounds["ground_rock"]["needs_art"])
+        self.assertTrue(grounds["ground_meadow"]["needs_art"])
 
     def test_subject_override_replaces_the_category_words(self):
         prompts = preview_prompt(
@@ -516,11 +521,11 @@ class PipelineTests(unittest.TestCase):
         self.assertNotIn("sample", stored["items"])
 
         self.settings.project_root = PROJECT
-        surface = save_surface_copy(self.settings, "wall_wood", "Warm boards.", "wide painted planks")
+        surface = save_surface_copy(self.settings, "wall_wood", "Warm boards.", "wide painted plank")
         self.assertEqual(surface["description"], "Warm boards.")
-        self.assertEqual(surface["image_description"], "wide painted planks")
+        self.assertEqual(surface["image_description"], "wide painted plank")
         loaded = {item["id"]: item for item in load_surfaces(PROJECT, load_descriptions(self.settings))}
-        self.assertEqual(loaded["wall_wood"]["image_description"], "wide painted planks")
+        self.assertEqual(loaded["wall_wood"]["image_description"], "wide painted plank")
         self.assertEqual(loaded["floor_wood"]["description"], "Wood floor surface.")
         reset = save_surface_copy(self.settings, "wall_wood", "", "")
         self.assertEqual(reset["description"], "Wood wall surface.")

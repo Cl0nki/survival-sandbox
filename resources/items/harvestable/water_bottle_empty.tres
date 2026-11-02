@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "water_bottle_empty"
 display_name = "Empty Water Bottle"
-description = "Place in a well. Comes out full."
+description = ""
 max_stack = 1
 weight = 0.2
 category = "container"

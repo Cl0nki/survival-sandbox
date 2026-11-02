@@ -16,7 +16,7 @@ from godot.surface_index import load_grounds, load_surfaces
 _ITEM_ID = re.compile(r"[a-z0-9_]+")
 _SURFACE_ID = re.compile(
     r"^(?:(?:wall|floor|post|stairs)_(?:scrap|wood|brick|stone|concrete|composite)"
-    r"|ground_(?:grass|dirt|sand|clay|gravel|water|gas|oil))$"
+    r"|ground_(?:grass|dirt|rock|meadow|sand|clay|gravel|water|gas|oil))$"
 )
 _DESCRIPTION_LIMIT = 400
 _IMAGE_LIMIT = 1500

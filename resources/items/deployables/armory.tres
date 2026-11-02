@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "armory"
 display_name = "Armory"
-description = "2x2 armory. Rounds, grenades, mines, and charges. 600 HP."
+description = "2x2 armory. Round, grenade, mine, and demolition charge. 600 HP."
 max_stack = 1
 weight = 32.0
 category = "deployable"

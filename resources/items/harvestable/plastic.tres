@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "plastic"
 display_name = "Plastic"
-description = "Broken housings and bottles."
+description = ""
 max_stack = 50
 weight = 0.15
 category = "harvest"

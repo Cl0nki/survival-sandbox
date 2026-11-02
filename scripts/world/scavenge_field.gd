@@ -18,7 +18,7 @@ static func build(arena: Node3D) -> void:
 	var root := Node3D.new()
 	root.name = "Scavenge"
 	arena.add_child(root)
-	ShowcasePad.add(root, ShowcasePad.SCAVENGE, Color(0.30, 0.28, 0.26))
+	ShowcasePad.add(root, ShowcasePad.SCAVENGE, Color(0.48, 0.46, 0.44), "ground_rock")
 	ShowcasePad.label(root, "SCAVENGE", ShowcasePad.SCAVENGE + Vector3(0.0, 2.6, -4.2), 52, Color(0.76, 0.62, 0.44))
 	ShowcasePad.label(root, "CROWBARS", ShowcasePad.SCAVENGE + Vector3(1.4, 1.15, 3.6), 22, Color(0.80, 0.66, 0.48))
 	var loot := arena.get_node_or_null("Loot") as Node3D

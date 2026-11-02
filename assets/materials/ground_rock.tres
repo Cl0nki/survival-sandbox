@@ -1,0 +1,26 @@
+[gd_resource type="StandardMaterial3D" load_steps=7 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/ground_rock/albedo.png" id="1_alb"]
+[ext_resource type="Texture2D" path="res://assets/textures/ground_rock/normal.png" id="2_nor"]
+[ext_resource type="Texture2D" path="res://assets/textures/ground_rock/roughness.png" id="3_rou"]
+[ext_resource type="Texture2D" path="res://assets/textures/ground_rock/ao.png" id="4_ao"]
+[ext_resource type="Texture2D" path="res://assets/textures/ground_rock/metallic.png" id="5_met"]
+[ext_resource type="Texture2D" path="res://assets/textures/ground_rock/height.png" id="6_hei"]
+
+[resource]
+albedo_texture = ExtResource("1_alb")
+normal_enabled = true
+normal_texture = ExtResource("2_nor")
+roughness_texture = ExtResource("3_rou")
+roughness_texture_channel = 0
+roughness = 0.920
+metallic_texture = ExtResource("5_met")
+metallic_texture_channel = 0
+metallic = 0.000
+ao_enabled = true
+ao_texture = ExtResource("4_ao")
+ao_texture_channel = 0
+heightmap_enabled = true
+heightmap_texture = ExtResource("6_hei")
+heightmap_scale = 0.04
+texture_filter = 5

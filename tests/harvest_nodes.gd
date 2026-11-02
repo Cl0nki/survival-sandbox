@@ -16,13 +16,13 @@ const EXPECTED := {
 }
 
 const EXPECTED_TREES := {
-	"oak": [55, "hatchet", 1.2, [["logs", 6], ["sticks", 4], ["plant_resin", 1]]],
-	"birch": [32, "hatchet", 0.8, [["logs", 3], ["sticks", 8], ["plant_resin", 2]]],
-	"spruce": [48, "hatchet", 1.0, [["logs", 5], ["sticks", 6], ["plant_resin", 3]]],
+	"oak": [55, "hatchet", 1.2, [["log", 6], ["stick", 4], ["plant_resin", 1]]],
+	"birch": [32, "hatchet", 0.8, [["log", 3], ["stick", 8], ["plant_resin", 2]]],
+	"spruce": [48, "hatchet", 1.0, [["log", 5], ["stick", 6], ["plant_resin", 3]]],
 }
 
 const EXPECTED_SCAVENGE := {
-	"broken_car": [56, "crowbar", 1.4, [["scrap_metal", 6], ["steel_scrap", 3], ["rubber", 2], ["mechanical_parts", 1], ["glass", 2], ["plastic", 2]]],
+	"broken_car": [56, "crowbar", 1.4, [["scrap_metal", 6], ["steel_scrap", 3], ["rubber", 2], ["mechanical_part", 1], ["glass", 2], ["plastic", 2]]],
 	"scrap_pile": [32, "crowbar", 0.8, [["scrap_metal", 10], ["steel_scrap", 2], ["plastic", 4]]],
 	"rubble_pile": [40, "crowbar", 1.1, [["stone", 6], ["limestone", 4], ["scrap_metal", 2]]],
 	"tire_pile": [24, "crowbar", 0.7, [["rubber", 8]]],
@@ -41,7 +41,7 @@ func _boot() -> void:
 
 
 func _run() -> int:
-	for item_id in ["bauxite", "lead_ore", "quartz", "logs", "sticks", "plant_resin", "pickaxe_scrap", "shovel_scrap", "pickaxe_composite", "hatchet_scrap", "crowbar_scrap", "rubber", "mechanical_parts"]:
+	for item_id in ["bauxite", "lead_ore", "quartz", "log", "stick", "plant_resin", "pickaxe_scrap", "shovel_scrap", "pickaxe_composite", "hatchet_scrap", "crowbar_scrap", "rubber", "mechanical_part"]:
 		if not ItemCatalog.known(item_id):
 			print("FAIL catalog missing %s" % item_id)
 			return 1
@@ -221,10 +221,10 @@ func _run() -> int:
 	while not tree_node.depleted and tree_swings < 8:
 		tree_node.harvest("hatchet_scrap", bag)
 		tree_swings += 1
-	if not tree_node.depleted or bag.count_item("logs") != 3 or bag.count_item("sticks") != 8 or bag.count_item("plant_resin") != 2:
+	if not tree_node.depleted or bag.count_item("log") != 3 or bag.count_item("stick") != 8 or bag.count_item("plant_resin") != 2:
 		print(
-			"FAIL birch yield logs=%d sticks=%d resin=%d"
-			% [bag.count_item("logs"), bag.count_item("sticks"), bag.count_item("plant_resin")]
+			"FAIL birch yield log=%d stick=%d resin=%d"
+			% [bag.count_item("log"), bag.count_item("stick"), bag.count_item("plant_resin")]
 		)
 		return 1
 	var arena := Node3D.new()

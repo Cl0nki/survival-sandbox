@@ -1,0 +1,123 @@
+{
+  "asset_id": "897fef494e40",
+  "asset_name": "pipe",
+  "category": "item_icon",
+  "kind": "texture",
+  "created_at": "2026-11-02T21:28:56+00:00",
+  "provider": "openai",
+  "model": "gpt-image-2.5-flare",
+  "prompt": "just a straight part of pipe !",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "just a straight part of pipe !",
+    "godot_folder": "icons",
+    "roughness": 0.7,
+    "metallic": 0.0,
+    "variation": 1,
+    "quality": "medium",
+    "provider_parameters": {
+      "output_format": "png",
+      "reference_images": 1,
+      "background": "transparent"
+    },
+    "provider_resolution": "1024x1024",
+    "seam_score": 0.0
+  },
+  "original_files": [
+    "original/albedo.png",
+    "original/normal.png",
+    "original/roughness.png",
+    "original/ao.png",
+    "original/metallic.png",
+    "original/height.png"
+  ],
+  "processed_files": [
+    "processed/albedo.png",
+    "processed/normal.png",
+    "processed/roughness.png",
+    "processed/ao.png",
+    "processed/metallic.png",
+    "processed/height.png",
+    "preview/icon.png"
+  ],
+  "polygon_count": null,
+  "texture_resolution": 512,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-02T21:28:56+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "",
+      "prompt": "just a straight part of pipe !",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-02T21:29:07+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-image-2.5-flare",
+      "prompt": "just a straight part of pipe !",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/albedo.png",
+        "original/normal.png",
+        "original/roughness.png",
+        "original/ao.png",
+        "original/metallic.png",
+        "original/height.png"
+      ],
+      "processed_files": [
+        "processed/albedo.png",
+        "processed/normal.png",
+        "processed/roughness.png",
+        "processed/ao.png",
+        "processed/metallic.png",
+        "processed/height.png",
+        "preview/icon.png"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "87e944198cb4",
+  "production_files": [
+    "assets/icons/pipe/albedo.png",
+    "assets/icons/pipe/normal.png",
+    "assets/icons/pipe/roughness.png",
+    "assets/icons/pipe/ao.png",
+    "assets/icons/pipe/metallic.png",
+    "assets/icons/pipe/height.png",
+    "assets/materials/pipe.tres",
+    "assets/icons/pipe.png"
+  ],
+  "manual_steps": [],
+  "maps_origin": {
+    "albedo": "openai",
+    "normal": "derived_from_albedo",
+    "roughness": "derived_from_albedo",
+    "ao": "derived_from_albedo",
+    "metallic": "derived_from_albedo",
+    "height": "derived_from_albedo"
+  },
+  "modular": null
+}

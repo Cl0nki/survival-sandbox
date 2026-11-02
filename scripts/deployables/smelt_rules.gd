@@ -3,8 +3,7 @@ class_name SmeltRules
 
 ## One smelt job for a furnace, smelter, or foundry.
 ## A station runs a single batch. Higher tiers melt more, faster, on less coal.
-## The foundry also burns fuel, and it is the only one that makes aluminum
-## and composite stock.
+## The foundry also burns fuel, and it is the only one that makes aluminum.
 
 const INPUT := 0
 const FUEL := 1
@@ -193,15 +192,14 @@ static func _warm() -> void:
 	_put("furnace_scrap", 1, 1, 8.0, 2, 1, 0, 1, false, 200, "Scrap Furnace", Vector2i(1, 1), Color(0.55, 0.32, 0.22), "1 iron or copper ore, 2 coal.")
 	_put("smelter_iron", 2, 5, 4.0, 1, 1, 0, 1, false, 400, "Iron Smelter", Vector2i(2, 2), Color(0.42, 0.42, 0.46), "5 ore, 1 coal each. Iron, copper, and lead.")
 	_put("smelter_steel", 3, 10, 2.5, 1, 2, 1, 1, false, 800, "Steel Smelter", Vector2i(2, 3), Color(0.34, 0.40, 0.48), "10 at a time, half the coal. Steel and glass.")
-	_put("foundry", 4, 20, 1.5, 1, 2, 1, 2, true, 1600, "Foundry", Vector2i(3, 3), Color(0.28, 0.22, 0.20), "20 at a time. Coal or fuel. Aluminum and composite stock.")
+	_put("foundry", 4, 20, 1.5, 1, 2, 1, 2, true, 1600, "Foundry", Vector2i(3, 3), Color(0.28, 0.22, 0.20), "20 at a time. Coal or fuel. Aluminum.")
 	_recipes = [
-		{"input": "iron_ore", "output": "iron_ingots", "tier": 1, "alloy": false},
-		{"input": "copper_ore", "output": "copper_ingots", "tier": 1, "alloy": false},
-		{"input": "lead_ore", "output": "lead_ingots", "tier": 2, "alloy": false},
-		{"input": "iron_ingots", "output": "steel_ingots", "tier": 3, "alloy": true},
+		{"input": "iron_ore", "output": "iron_ingot", "tier": 1, "alloy": false},
+		{"input": "copper_ore", "output": "copper_ingot", "tier": 1, "alloy": false},
+		{"input": "lead_ore", "output": "lead_ingot", "tier": 2, "alloy": false},
+		{"input": "iron_ingot", "output": "steel_ingot", "tier": 3, "alloy": true},
 		{"input": "sand", "output": "glass", "tier": 3, "alloy": false},
-		{"input": "bauxite", "output": "aluminum_ingots", "tier": 4, "alloy": false},
-		{"input": "quartz", "output": "composite_stock", "tier": 4, "alloy": false},
+		{"input": "bauxite", "output": "aluminum_ingot", "tier": 4, "alloy": false},
 	]
 
 
