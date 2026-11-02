@@ -1,0 +1,125 @@
+{
+  "asset_id": "ba80c37987f6",
+  "asset_name": "stairs_concrete",
+  "category": "concrete_wall",
+  "kind": "texture",
+  "created_at": "2026-11-02T00:13:13+00:00",
+  "provider": "openai",
+  "model": "gpt-image-2.5-flare",
+  "prompt": "cast concrete wall surface, faint form-tie holes, soft panel joints, hand-painted plaster noise. Seamless tileable surface, no object, no text.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "cast concrete wall surface, faint form-tie holes, soft panel joints, hand-painted plaster noise. Seamless tileable surface, no object, no text.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "godot_folder": "textures",
+    "roughness": 0.86,
+    "metallic": 0.0,
+    "variation": 1,
+    "quality": "medium",
+    "provider_parameters": {
+      "model": "gpt-image-2.5-flare",
+      "size": "1024x1024",
+      "n": 1,
+      "quality": "medium",
+      "output_format": "png"
+    },
+    "provider_resolution": "1024x1024",
+    "seam_score": 11.386
+  },
+  "original_files": [
+    "original/albedo.png",
+    "original/normal.png",
+    "original/roughness.png",
+    "original/ao.png",
+    "original/metallic.png",
+    "original/height.png"
+  ],
+  "processed_files": [
+    "processed/albedo.png",
+    "processed/normal.png",
+    "processed/roughness.png",
+    "processed/ao.png",
+    "processed/metallic.png",
+    "processed/height.png",
+    "preview/tiled.png"
+  ],
+  "polygon_count": null,
+  "texture_resolution": 1024,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-02T00:13:13+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "",
+      "prompt": "cast concrete wall surface, faint form-tie holes, soft panel joints, hand-painted plaster noise. Seamless tileable surface, no object, no text.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-02T00:13:30+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-image-2.5-flare",
+      "prompt": "cast concrete wall surface, faint form-tie holes, soft panel joints, hand-painted plaster noise. Seamless tileable surface, no object, no text.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/albedo.png",
+        "original/normal.png",
+        "original/roughness.png",
+        "original/ao.png",
+        "original/metallic.png",
+        "original/height.png"
+      ],
+      "processed_files": [
+        "processed/albedo.png",
+        "processed/normal.png",
+        "processed/roughness.png",
+        "processed/ao.png",
+        "processed/metallic.png",
+        "processed/height.png",
+        "preview/tiled.png"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "f55b8c7640bf",
+  "production_files": [
+    "assets/textures/stairs_concrete/albedo.png",
+    "assets/textures/stairs_concrete/normal.png",
+    "assets/textures/stairs_concrete/roughness.png",
+    "assets/textures/stairs_concrete/ao.png",
+    "assets/textures/stairs_concrete/metallic.png",
+    "assets/textures/stairs_concrete/height.png",
+    "assets/textures/stairs_concrete/preview_tiled.png",
+    "assets/materials/stairs_concrete.tres"
+  ],
+  "manual_steps": [],
+  "maps_origin": {
+    "albedo": "openai",
+    "normal": "derived_from_albedo",
+    "roughness": "derived_from_albedo",
+    "ao": "derived_from_albedo",
+    "metallic": "derived_from_albedo",
+    "height": "derived_from_albedo"
+  },
+  "modular": null
+}
