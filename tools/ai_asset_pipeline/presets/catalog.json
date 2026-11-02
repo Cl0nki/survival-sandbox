@@ -1,0 +1,382 @@
+{
+  "textures": {
+    "concrete_wall": {
+      "label": "Concrete wall",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.86,
+      "palette": ["concrete_gray", "blue_gray", "dark_slate"],
+      "prompt": "cast concrete wall surface, faint form-tie holes, soft panel joints, hand-painted plaster noise"
+    },
+    "concrete_floor": {
+      "label": "Concrete floor",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.9,
+      "palette": ["concrete_gray", "sand", "dark_slate"],
+      "prompt": "troweled concrete floor, subtle trowel arcs, faint expansion joints, dusty hand-painted wear"
+    },
+    "asphalt": {
+      "label": "Asphalt",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.92,
+      "palette": ["dark_slate", "blue_gray", "concrete_gray"],
+      "prompt": "worn asphalt road surface, fine aggregate, faint cracks, no painted markings"
+    },
+    "dirt": {
+      "label": "Dirt",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.95,
+      "palette": ["sand", "rust_orange", "olive_green"],
+      "prompt": "packed dry dirt, small pebbles, hand-painted clumps, no plants"
+    },
+    "grass": {
+      "label": "Grass",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.88,
+      "palette": ["olive_green", "muted_forest", "sand"],
+      "prompt": "stylized short grass ground cover, clumped blades as painted shapes, patches of dry soil"
+    },
+    "sand": {
+      "label": "Sand",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.93,
+      "palette": ["sand", "concrete_gray", "rust_orange"],
+      "prompt": "fine wind-brushed sand, soft ripples, hand-painted grain, no footprints"
+    },
+    "wood": {
+      "label": "Wood",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.72,
+      "palette": ["rust_orange", "sand", "dark_slate"],
+      "prompt": "sawn timber planks, painted wood grain, subtle gaps between boards"
+    },
+    "metal": {
+      "label": "Metal",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.85,
+      "roughness": 0.42,
+      "palette": ["blue_gray", "concrete_gray", "dark_slate"],
+      "prompt": "brushed sheet metal, soft panel breaks, hand-painted mill finish, no mirror reflections"
+    },
+    "rusted_metal": {
+      "label": "Rusted metal",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.55,
+      "roughness": 0.68,
+      "palette": ["rust_orange", "dark_slate", "sand"],
+      "prompt": "oxidized steel plate, flaking rust streaks, remaining blue-gray metal, hand-painted"
+    },
+    "painted_metal": {
+      "label": "Painted metal",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.35,
+      "roughness": 0.5,
+      "palette": ["olive_green", "dark_slate", "concrete_gray"],
+      "prompt": "olive painted metal panel, chipped edges revealing dark metal, soft rivet hints"
+    },
+    "fabric": {
+      "label": "Fabric",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.84,
+      "palette": ["olive_green", "dark_slate", "sand"],
+      "prompt": "heavy canvas weave, hand-painted thread clumps, soft folds as color only, no garment silhouette"
+    },
+    "military_camouflage": {
+      "label": "Military camouflage",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.8,
+      "palette": ["olive_green", "muted_forest", "sand", "dark_slate"],
+      "prompt": "stylized woodland camouflage cloth, large readable shapes, muted olive sand and slate, no insignia"
+    },
+    "brick": {
+      "label": "Brick",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.87,
+      "palette": ["rust_orange", "sand", "dark_slate"],
+      "prompt": "running-bond brick wall, thick painted mortar, chipped corners, no perspective"
+    },
+    "stone": {
+      "label": "Stone",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.9,
+      "palette": ["concrete_gray", "blue_gray", "sand"],
+      "prompt": "cut stone blocks, irregular joints, hand-painted pits, muted gray"
+    },
+    "roof": {
+      "label": "Roof",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.4,
+      "roughness": 0.62,
+      "palette": ["dark_slate", "rust_orange", "blue_gray"],
+      "prompt": "standing-seam metal roof surface, long panels, painted oxidation, no sky"
+    },
+    "terrain": {
+      "label": "Terrain",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.94,
+      "palette": ["olive_green", "sand", "dark_slate", "muted_forest"],
+      "prompt": "mixed survival terrain surface, dirt grass and gravel patches, large readable shapes"
+    },
+    "item_icon": {
+      "label": "Item icon",
+      "implementation": "texture",
+      "godot_folder": "icons",
+      "metallic": 0.0,
+      "roughness": 0.7,
+      "palette": ["dark_slate", "blue_gray", "concrete_gray", "sand", "rust_orange"],
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame",
+      "suffix": "Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show every object from the side, in profile. Guns always point to the right. The area outside the object is empty alpha. No numbers. Generate the square at 1024 pixels so it stays sharp at that size. This is not a seamless texture.",
+      "negative": ["seamless texture", "tiled pattern", "text", "watermark", "number", "multiple objects", "frame", "front view", "three-quarter view", "top view", "barrel pointing left", "solid background", "backdrop"]
+    }
+  },
+  "props": {
+    "weapon": {
+      "label": "Weapon",
+      "implementation": "ai_mesh",
+      "godot_folder": "weapons",
+      "prompt": "stylized modern tactical firearm prop, readable silhouette, no hands, no character"
+    },
+    "backpack": {
+      "label": "Backpack",
+      "implementation": "ai_mesh",
+      "godot_folder": "equipment",
+      "prompt": "military backpack prop, straps and buckles as simple shapes, empty, no wearer"
+    },
+    "helmet": {
+      "label": "Helmet",
+      "implementation": "ai_mesh",
+      "godot_folder": "equipment",
+      "prompt": "tactical helmet prop, short brim or rail, no head inside, no face"
+    },
+    "medical": {
+      "label": "Medical equipment",
+      "implementation": "ai_mesh",
+      "godot_folder": "equipment",
+      "prompt": "field medical kit or trauma pouch, canvas and plastic, no people, no gore"
+    },
+    "ammunition": {
+      "label": "Ammunition",
+      "implementation": "ai_mesh",
+      "godot_folder": "equipment",
+      "prompt": "ammunition box or magazine prop, sturdy silhouette, no explosions"
+    },
+    "tool": {
+      "label": "Tool",
+      "implementation": "ai_mesh",
+      "godot_folder": "equipment",
+      "prompt": "survival hand tool such as a hatchet, pick, shovel, or crowbar, one object"
+    },
+    "container": {
+      "label": "Container",
+      "implementation": "procedural",
+      "godot_folder": "props",
+      "procedural_piece": "crate",
+      "prompt": "supply crate"
+    },
+    "furniture": {
+      "label": "Furniture",
+      "implementation": "ai_mesh",
+      "godot_folder": "props",
+      "prompt": "worn camp or barracks furniture, one piece, strong silhouette"
+    },
+    "military_equipment": {
+      "label": "Military equipment",
+      "implementation": "ai_mesh",
+      "godot_folder": "props",
+      "prompt": "tactical military equipment prop, radio, ammo can, or field case, one object"
+    },
+    "vehicle": {
+      "label": "Vehicle",
+      "implementation": "ai_mesh",
+      "godot_folder": "vehicles",
+      "prompt": "stylized light tactical vehicle, grounded proportions, no driver, no motion blur"
+    },
+    "building_prop": {
+      "label": "Building prop",
+      "implementation": "ai_mesh",
+      "godot_folder": "props",
+      "prompt": "small architectural prop such as a crate stack, sandbag pile, or utility box"
+    },
+    "environmental": {
+      "label": "Environmental object",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "prompt": "environmental survival prop, rock, stump, or debris pile, one object"
+    }
+  },
+  "characters": {
+    "military": {
+      "label": "Military",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "prompt": "stylized tactical soldier, layered uniform, boots, gloves, vest, helmet optional"
+    },
+    "mercenary": {
+      "label": "Mercenary",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "prompt": "stylized mercenary, mismatched tactical kit, practical clothing, no logos"
+    },
+    "survivor": {
+      "label": "Survivor",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots"
+    },
+    "civilian": {
+      "label": "Civilian",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "prompt": "stylized civilian survivor, ordinary clothes in the palette, no armor plates"
+    },
+    "security": {
+      "label": "Security",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "prompt": "stylized site security officer, vest, cap or helmet, flashlight, no insignia text"
+    },
+    "npc": {
+      "label": "NPC",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "prompt": "stylized background survivor NPC, readable outfit, neutral stance"
+    }
+  },
+  "buildings": {
+    "concrete_wall": {
+      "label": "Concrete wall",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "concrete_wall",
+      "prompt": "modular concrete wall"
+    },
+    "metal_fence": {
+      "label": "Metal fence",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "metal_fence",
+      "prompt": "modular metal fence bay"
+    },
+    "gate": {
+      "label": "Gate",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "gate",
+      "prompt": "modular metal gate"
+    },
+    "door": {
+      "label": "Door",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "door_leaf",
+      "prompt": "modular door leaf"
+    },
+    "window": {
+      "label": "Window",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "window",
+      "prompt": "modular window wall"
+    },
+    "watchtower": {
+      "label": "Watchtower",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "watchtower",
+      "prompt": "modular watchtower"
+    },
+    "stairs": {
+      "label": "Stairs",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "stairs",
+      "prompt": "modular stairs"
+    },
+    "floor": {
+      "label": "Floor",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "concrete_floor",
+      "prompt": "modular floor slab"
+    },
+    "roof": {
+      "label": "Roof",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "roof",
+      "prompt": "modular roof cap"
+    },
+    "industrial_building": {
+      "label": "Industrial building",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "industrial_shell",
+      "prompt": "small industrial shell"
+    },
+    "military_structure": {
+      "label": "Military structure",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "military_shell",
+      "prompt": "small military shelter"
+    },
+    "container": {
+      "label": "Container",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "shipping_container",
+      "prompt": "shipping container"
+    },
+    "barricade": {
+      "label": "Barricade",
+      "implementation": "procedural",
+      "godot_folder": "buildings",
+      "procedural_piece": "barricade",
+      "prompt": "modular barricade"
+    },
+    "modular_kit": {
+      "label": "Full modular kit",
+      "implementation": "procedural_kit",
+      "godot_folder": "buildings",
+      "prompt": "complete modular building kit"
+    }
+  },
+  "customization": {
+    "body_type": ["average", "broad", "lean", "short", "tall"],
+    "clothing": ["field uniform", "layered jacket", "shirt and cargos", "coveralls"],
+    "helmet": ["none", "bump helmet", "tactical helmet", "cap"],
+    "backpack": ["none", "small daypack", "military rucksack"],
+    "weapon": ["none", "slung rifle", "holstered sidearm"],
+    "boots": ["combat boots", "work boots"],
+    "vest": ["none", "light chest rig", "tactical vest"],
+    "gloves": ["none", "tactical gloves"],
+    "face": ["neutral", "weathered", "young adult", "middle aged"]
+  }
+}

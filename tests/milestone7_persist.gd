@@ -58,7 +58,7 @@ func _body() -> int:
 	if net.debug_spawn(3, "persist02") != "":
 		return _fail("second token failed")
 
-	net.debug_place(2, Vector3(10.0, 0.15, 12.0))
+	net.debug_place(2, Vector3(-6.0, 0.15, 16.0))
 	net.debug_reset_item_rate(2)
 	if net.debug_collect(2, "scrap_pile") != "":
 		return _fail("scrap collect failed")

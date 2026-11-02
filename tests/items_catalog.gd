@@ -4,8 +4,10 @@ extends SceneTree
 ## godot --headless --path <project> --script res://tests/items_catalog.gd
 
 const REQUIRED := [
-	"logs", "sticks", "plant_resin", "stone", "limestone", "clay", "sand", "gravel", "ground_water", "natural_gas", "iron_ore", "copper_ore",
-	"coal", "sulfur", "bauxite", "lead_ore", "quartz", "oil", "scrap_metal", "steel_scrap",
+	"logs", "sticks", "plant_resin", "stone", "limestone", "clay", "sand", "gravel", "iron_ore", "copper_ore",
+	"coal", "sulfur", "bauxite", "lead_ore", "quartz", "scrap_metal", "steel_scrap",
+	"bucket_empty", "bucket_full", "water_bottle_empty", "water_bottle_full",
+	"gas_bottle_empty", "gas_bottle_full", "oil_drum_empty", "oil_drum_full",
 	"electronics", "plastic", "rubber", "glass", "mechanical_parts",
 	"chemicals", "fuel", "batteries",
 	"planks", "bricks", "mortar", "cut_stone", "cement", "concrete_mix",
@@ -19,6 +21,7 @@ const REQUIRED := [
 	"ammo_50bmg", "explosive_rounds", "grenades", "demolition_charges",
 	"mines", "rocket_warheads",
 	"chest", "workbench", "furnace_scrap", "smelter_iron", "smelter_steel", "foundry",
+	"water_well", "pump_jack_gas", "pump_jack_oil",
 	"door_scrap", "door_wood", "door_brick", "door_stone", "door_concrete", "door_composite",
 	"window_scrap", "window_wood", "window_brick", "window_stone", "window_concrete", "window_composite",
 	"hatchet_scrap", "hatchet_iron", "hatchet_steel", "hatchet_composite",
@@ -26,6 +29,13 @@ const REQUIRED := [
 	"shovel_scrap", "shovel_iron", "shovel_steel", "shovel_composite",
 	"crowbar_scrap", "crowbar_iron", "crowbar_steel", "crowbar_composite",
 	"cloth", "medical_supplies", "canned_food",
+	"raw_meat", "cooked_meat", "raw_fish", "cooked_fish",
+	"potato", "baked_potato", "mushroom", "cooked_mushroom",
+	"egg", "fried_egg", "corn", "cooked_corn", "meat_stew", "fish_stew",
+	"sawbench", "sawmill", "kiln", "kiln_shed",
+	"workbench_iron", "workbench_steel", "workbench_composite", "machine_shop",
+	"chem_bench", "refinery", "ammo_bench", "armory",
+	"campfire", "fire_pit", "cooking_pot", "stove", "kitchen",
 ]
 
 
@@ -60,6 +70,9 @@ func _run() -> int:
 	if ItemCatalog.known("ammunition"):
 		print("FAIL generic ammunition should be gone")
 		return 1
+	if ItemCatalog.known("ground_water") or ItemCatalog.known("natural_gas") or ItemCatalog.known("oil"):
+		print("FAIL ground water, natural gas, and crude oil should not be items")
+		return 1
 	if ItemCatalog.known("door") or ItemCatalog.known("window_bars"):
 		print("FAIL generic door and window bars should be split by building tier")
 		return 1
@@ -88,6 +101,16 @@ func _run() -> int:
 		return 1
 	if not _crate_filled(arena, "refined_crate", LootLayout.REFINED):
 		return 1
+	if not _crate_filled(arena, "mill_stock_crate", LootLayout.MILL_STOCK):
+		return 1
+	if not _crate_filled(arena, "bench_stock_crate", LootLayout.BENCH_STOCK):
+		return 1
+	if not _crate_filled(arena, "chem_stock_crate", LootLayout.CHEM_STOCK):
+		return 1
+	if not _crate_filled(arena, "smelt_stock_crate", LootLayout.SMELT_STOCK):
+		return 1
+	if not _crate_filled(arena, "cook_stock_crate", LootLayout.COOK_STOCK):
+		return 1
 	if not _crate_filled(arena, "component_crate", LootLayout.COMPONENTS):
 		return 1
 	if not _crate_filled(arena, "military_crate", LootLayout.MILITARY):
@@ -102,7 +125,16 @@ func _run() -> int:
 		return 1
 	if not _crate_filled(arena, "tier_concrete_crate", LootLayout.TIER_CONCRETE):
 		return 1
-	if not _crate_filled(arena, "deployables_crate", LootLayout.deployable_contents()):
+	if arena.get_node_or_null("Loot/deployables_crate") != null:
+		print("FAIL deployables crate should be split")
+		return 1
+	if not _crate_filled(arena, "smelters_crate", LootLayout.smelter_contents()):
+		return 1
+	if not _crate_filled(arena, "crafting_crate", LootLayout.crafting_contents()):
+		return 1
+	if not _crate_filled(arena, "cooking_crate", LootLayout.cooking_contents()):
+		return 1
+	if not _crate_filled(arena, "pumps_crate", LootLayout.pump_contents()):
 		return 1
 	if not _crate_filled(arena, "doors_crate", LootLayout.opening_contents()):
 		return 1

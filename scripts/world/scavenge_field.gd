@@ -5,10 +5,10 @@ class_name ScavengeField
 ## walk to the wall stay clear. Crowbars sit on the south edge.
 
 const NODE_AT := {
-	"broken_car": Vector3(-3.4, 0.0, -12.8),
-	"scrap_pile": Vector3(-1.6, 0.0, -12.8),
-	"rubble_pile": Vector3(-3.4, 0.0, -10.4),
-	"tire_pile": Vector3(-1.6, 0.0, -10.4),
+	"broken_car": Vector3(-18.4, 0.0, -6.8),
+	"scrap_pile": Vector3(-16.6, 0.0, -6.8),
+	"rubble_pile": Vector3(-18.4, 0.0, -4.4),
+	"tire_pile": Vector3(-16.6, 0.0, -4.4),
 }
 
 
@@ -54,7 +54,7 @@ static func build(arena: Node3D) -> void:
 	]
 	for index in tools.size():
 		var entry: Array = tools[index]
-		_pickup(loot, str(entry[0]), str(entry[1]), 1, Vector3(-0.4 + float(index) * 1.3, 0.15, -7.2))
+		_pickup(loot, str(entry[0]), str(entry[1]), 1, Vector3(-15.4 + float(index) * 1.3, 0.15, -1.2))
 
 
 static func _pickup(folder: Node3D, pickup_id: String, item_id: String, quantity: int, pos: Vector3) -> void:

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "workbench_composite"
+display_name = "Composite Workbench"
+description = "1x1 bench. Composite tools, motors, and panels. 800 HP."
+max_stack = 1
+weight = 16.0
+category = "deployable"
+can_pickup = true
+can_store = true
+swatch = Color(0.42, 0.4, 0.48, 1)

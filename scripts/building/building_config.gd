@@ -18,8 +18,8 @@ class_name BuildingConfig
 ## World position of grid vertex (0, 0) on level 0. Y is the ground height.
 @export var grid_origin := Vector3.ZERO
 ## Inclusive cell bounds for placement.
-@export var build_min_cell := Vector2i(-17, -17)
-@export var build_max_cell := Vector2i(16, 16)
+@export var build_min_cell := Vector2i(-21, -21)
+@export var build_max_cell := Vector2i(20, 20)
 ## Fraction of a cell the aim must travel past a boundary before the preview
 ## switches to the neighbouring anchor. Stops flicker at cell borders.
 @export var snap_hysteresis := 0.15

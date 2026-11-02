@@ -107,7 +107,7 @@ func _body() -> int:
 		return _fail("owner presentation snapped instead of blending %s" % smoother.global_position)
 	smoother.queue_free()
 
-	net.debug_place(2, Vector3(0.0, 0.15, -14.0))
+	net.debug_place(2, Vector3(0.0, 0.15, -18.0))
 	for _step in 8:
 		await physics_frame
 	for _step in 45:
@@ -118,9 +118,9 @@ func _body() -> int:
 		await physics_frame
 	var blocked := net.debug_position(2)
 	print("wall_stop=", blocked)
-	if blocked.z > -16.5:
+	if blocked.z > -20.5:
 		return _fail("player did not reach the north wall from %s" % blocked)
-	if blocked.z < -17.6:
+	if blocked.z < -21.6:
 		return _fail("player walked through the north wall to %s" % blocked)
 
 	var before_invalid := net.debug_position(2)
@@ -178,11 +178,11 @@ func _body() -> int:
 
 	await create_timer(0.45).timeout
 	net.debug_reset_cooldown(2)
-	net.debug_place(2, Vector3(0.0, 0.15, -16.0))
+	net.debug_place(2, Vector3(0.0, 0.15, -20.0))
 	for _step in 3:
 		await physics_frame
 	var covered_before := covered_server.health
-	var covered_aim := _aim_from_server(net.debug_player(2), Vector3(0.0, 1.2, -22.0))
+	var covered_aim := _aim_from_server(net.debug_player(2), Vector3(0.0, 1.2, -26.0))
 	var origin_before := net.debug_player(2).shot_origin()
 	var blocked_accepted := net.accepted_shots
 	_fire(net, 2, covered_aim)
@@ -195,13 +195,13 @@ func _body() -> int:
 	print("blocked_origin=", shot_origin)
 	if shot_origin.distance_to(origin_before) > 2.5:
 		return _fail("shot origin moved away from the pawn")
-	if shot_origin.z < -17.7:
+	if shot_origin.z < -21.7:
 		return _fail("shot origin crossed the north wall %s" % shot_origin)
 	if shot_origin.distance_to(net.debug_position(2)) > 2.5:
 		return _fail("shot origin was not taken from the player %s" % shot_origin)
 
 	net.debug_reset_cooldown(2)
-	net.debug_place(2, Vector3(15.0, 0.15, -4.8))
+	net.debug_place(2, Vector3(19.0, 0.15, -9.5))
 	for _step in 5:
 		await physics_frame
 	var side_aim := _aim_from_server(net.debug_player(2), covered_server.global_position)
@@ -216,8 +216,8 @@ func _body() -> int:
 		return _fail("covered health mirror diverged")
 
 	net.debug_reset_cooldown(2)
-	net.debug_place(2, Vector3(0.0, 0.15, -16.0))
-	net.debug_place(3, Vector3(0.0, 0.15, -20.5))
+	net.debug_place(2, Vector3(0.0, 0.15, -20.0))
+	net.debug_place(3, Vector3(0.0, 0.15, -24.5))
 	for _step in 5:
 		await physics_frame
 	var hidden := net.debug_player(3)

@@ -4,8 +4,6 @@ class_name GroundDeposit
 ## One-meter colored square on the floor. Not a terrain material.
 ## Wells and pumps later call covering() / compatible_at() / take().
 
-const SIZE := 1.0
-const HALF := 0.5
 const PATCH_Y := 0.03
 
 var node_id := ""
@@ -15,6 +13,9 @@ var remaining := 0
 var yield_amount := 0
 var resistance := 0
 var depleted := false
+
+var footprint := Vector2i(1, 1)
+var cells: Array[Vector2i] = []
 
 var _mesh: MeshInstance3D
 var _label: Label3D
@@ -41,10 +42,26 @@ func definition() -> GroundDepositDefinition:
 	return GroundDepositCatalog.get_definition(definition_id)
 
 
+## Anchor is the minimum cell. The mesh center sits on the middle of that rectangle.
+func set_footprint(anchor: Vector2i, size: Vector2i) -> void:
+	footprint = Vector2i(maxi(size.x, 1), maxi(size.y, 1))
+	cells.clear()
+	for x in footprint.x:
+		for y in footprint.y:
+			cells.append(anchor + Vector2i(x, y))
+	position = Vector3(float(anchor.x) + float(footprint.x) * 0.5, 0.0, float(anchor.y) + float(footprint.y) * 0.5)
+
+
+func covers_cell(cell: Vector2i) -> bool:
+	return cells.has(cell)
+
+
 func covers_world_point(point: Vector3) -> bool:
 	if depleted:
 		return false
-	return absf(point.x - global_position.x) <= HALF and absf(point.z - global_position.z) <= HALF
+	var half_x := float(footprint.x) * 0.5
+	var half_z := float(footprint.y) * 0.5
+	return absf(point.x - global_position.x) <= half_x and absf(point.z - global_position.z) <= half_z
 
 
 func can_extract_with(kind: String) -> bool:
@@ -124,6 +141,16 @@ func apply_network_remaining(current: int) -> void:
 		_refresh_label()
 
 
+static func covering_cell(from: Node, cell: Vector2i) -> GroundDeposit:
+	if from == null or from.get_tree() == null:
+		return null
+	for node in from.get_tree().get_nodes_in_group(&"ground_deposit"):
+		var deposit := node as GroundDeposit
+		if deposit != null and deposit.covers_cell(cell):
+			return deposit
+	return null
+
+
 static func covering(from: Node, point: Vector3) -> GroundDeposit:
 	if from == null or from.get_tree() == null:
 		return null
@@ -154,9 +181,11 @@ func _apply_definition() -> void:
 
 
 func _extractor_notice(spec: GroundDepositDefinition) -> String:
-	if spec.can_extract_with("pump"):
+	if spec.can_extract_with("pump_jack_oil") or spec.can_extract_with("pump"):
 		return "Needs a pump."
-	if spec.can_extract_with("well"):
+	if spec.can_extract_with("pump_jack_gas"):
+		return "Needs a gas pump."
+	if spec.can_extract_with("water_well") or spec.can_extract_with("well"):
 		return "Needs a well."
 	return "Cannot harvest by hand."
 
@@ -195,7 +224,7 @@ func _mark_depleted() -> void:
 
 func _build_visual() -> void:
 	var box := BoxMesh.new()
-	box.size = Vector3(SIZE, 0.04, SIZE)
+	box.size = Vector3(float(footprint.x), 0.04, float(footprint.y))
 	_mesh = MeshInstance3D.new()
 	_mesh.mesh = box
 	_mesh.position.y = PATCH_Y

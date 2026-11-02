@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "meat_stew"
+display_name = "Meat Stew"
+description = "Meat and potato cooked in a pot."
+max_stack = 10
+weight = 0.55
+category = "food"
+can_pickup = true
+can_store = true
+swatch = Color(0.46, 0.28, 0.16, 1)

@@ -202,6 +202,10 @@ func plan_cells(kind: String, anchor: Vector2i, rotation: int = 0, level: int = 
 	if clip != "":
 		plan["reason"] = "Clips a %s" % clip
 		return plan
+	var patch := _patch_block(kind, cells)
+	if patch != "":
+		plan["reason"] = patch
+		return plan
 	plan["ok"] = true
 	return plan
 
@@ -342,6 +346,13 @@ func _spawn_cell(kind: String, piece_id: int, body: Vector3, steps: int, center:
 		crate.slot_count = NetConfig.CONTAINER_SLOTS
 		crate.box_color = Color(0.42, 0.28, 0.16)
 		node = crate
+	elif CraftRules.known(kind):
+		var crafter := Crafter.new()
+		crafter.station_kind = kind
+		crafter.body_size = body
+		crafter.box_color = CraftRules.color_of(kind)
+		crafter.container_id = "craft_%d" % piece_id
+		node = crafter
 	elif SmeltRules.known(kind):
 		var smelter := Smelter.new()
 		smelter.station_kind = kind
@@ -349,6 +360,13 @@ func _spawn_cell(kind: String, piece_id: int, body: Vector3, steps: int, center:
 		smelter.box_color = SmeltRules.color_of(kind)
 		smelter.container_id = "smelter_%d" % piece_id
 		node = smelter
+	elif FillRules.known(kind):
+		var station := FillStation.new()
+		station.station_kind = kind
+		station.body_size = body
+		station.box_color = FillRules.color_of(kind)
+		station.container_id = "fill_%d" % piece_id
+		node = station
 	else:
 		var bench := Workbench.new()
 		bench.body_size = body
@@ -642,6 +660,39 @@ func _clearance() -> float:
 	return _building.grid.config.wall_thickness * 0.5 + EDGE_GAP
 
 
+## A well or pump has to cover a patch of its own fluid. Worlds with no
+## patches of that kind still accept a placement, so isolated tests can build.
+func _patch_block(kind: String, cells: Array[Vector2i]) -> String:
+	if not FillRules.known(kind) or get_tree() == null:
+		return ""
+	var patches: Array[GroundDeposit] = []
+	for node in get_tree().get_nodes_in_group(&"ground_deposit"):
+		var deposit := node as GroundDeposit
+		if deposit != null and deposit.can_extract_with(kind):
+			patches.append(deposit)
+	if patches.is_empty():
+		return ""
+	for cell in cells:
+		var matched := false
+		for deposit in patches:
+			if deposit.covers_cell(cell):
+				matched = true
+				break
+		if not matched:
+			return _patch_reason(kind)
+	return ""
+
+
+func _patch_reason(kind: String) -> String:
+	if kind == "water_well":
+		return "Needs the water patch"
+	if kind == "pump_jack_gas":
+		return "Needs the gas patch"
+	if kind == "pump_jack_oil":
+		return "Needs the oil patch"
+	return "Needs the matching patch"
+
+
 func _fail(reason: String) -> Dictionary:
 	return {"ok": false, "reason": reason, "id": 0}
 
@@ -668,9 +719,13 @@ func publish_smelt(piece_id: int, text: String) -> void:
 func sync_smelt_label(piece_id: int, text: String) -> void:
 	if local_authority():
 		return
-	var node := piece_node(piece_id) as Smelter
-	if node != null:
-		node.set_smelt_status(text)
+	var node := piece_node(piece_id)
+	if node is Smelter:
+		(node as Smelter).set_smelt_status(text)
+	elif node is Crafter:
+		(node as Crafter).set_craft_status(text)
+	elif node is FillStation:
+		(node as FillStation).set_fill_status(text)
 
 
 ## The character solver stalls when a new solid contains the capsule center.

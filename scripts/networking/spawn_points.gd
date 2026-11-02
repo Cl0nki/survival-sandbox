@@ -1,21 +1,21 @@
 extends RefCounted
 class_name SpawnPoints
 
-## South deployables tile. Clear of the deployables chest and the other showcase chests.
+## South-west deployables tile. Clear of the station chests.
 ## Separation is above two capsule diameters so spawned bodies do not overlap.
 
 const POINTS: Array[Vector3] = [
-	Vector3(-3.0, 0.15, 8.0),
-	Vector3(0.0, 0.15, 8.0),
-	Vector3(3.0, 0.15, 8.0),
-	Vector3(-3.0, 0.15, 11.0),
-	Vector3(0.0, 0.15, 11.0),
-	Vector3(3.0, 0.15, 11.0),
-	Vector3(-3.0, 0.15, 14.0),
-	Vector3(0.0, 0.15, 14.0),
-	Vector3(3.0, 0.15, 14.0),
-	Vector3(0.0, 0.15, 5.0),
+	Vector3(-18.0, 0.15, 12.2),
+	Vector3(-15.0, 0.15, 12.2),
+	Vector3(-12.0, 0.15, 12.2),
+	Vector3(-18.0, 0.15, 14.6),
+	Vector3(-15.0, 0.15, 14.6),
+	Vector3(-12.0, 0.15, 14.6),
+	Vector3(-18.0, 0.15, 18.2),
+	Vector3(-15.0, 0.15, 18.2),
+	Vector3(-12.0, 0.15, 18.2),
 ]
+
 
 const MIN_SEPARATION := 2.0
 

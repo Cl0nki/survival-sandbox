@@ -165,6 +165,141 @@ function Reset-SandboxServer {
     return Start-SandboxServer -Port $Port
 }
 
+function Get-PythonExe {
+    if ($env:PIPELINE_PYTHON -and (Test-Path $env:PIPELINE_PYTHON)) {
+        return $env:PIPELINE_PYTHON
+    }
+    $commands = @(Get-Command python -All -ErrorAction SilentlyContinue)
+    foreach ($command in $commands) {
+        $path = [string]$command.Source
+        if ($path -like "*WindowsApps*") { continue }
+        if (Test-Path $path) { return $path }
+    }
+    $fallback = "C:\Python311\python.exe"
+    if (Test-Path $fallback) { return $fallback }
+    return ""
+}
+
+function Get-DashboardEndpoint {
+    $hostName = "127.0.0.1"
+    $port = 8765
+    $defaults = Join-Path $PSScriptRoot "ai_asset_pipeline\config\defaults.json"
+    if (Test-Path $defaults) {
+        $json = Get-Content -Path $defaults -Raw | ConvertFrom-Json
+        if ($json.host) { $hostName = [string]$json.host }
+        if ($json.port) { $port = [int]$json.port }
+    }
+    $envFile = Join-Path $PSScriptRoot "ai_asset_pipeline\.env"
+    if (Test-Path $envFile) {
+        foreach ($line in Get-Content -Path $envFile) {
+            if ($line -match '^\s*PIPELINE_HOST\s*=\s*"?([^"#\s]+)') { $hostName = $Matches[1].Trim("'") }
+            if ($line -match '^\s*PIPELINE_PORT\s*=\s*"?(\d+)') { $port = [int]$Matches[1] }
+        }
+    }
+    if ($env:PIPELINE_HOST) { $hostName = $env:PIPELINE_HOST }
+    if ($env:PIPELINE_PORT) { $port = [int]$env:PIPELINE_PORT }
+    $browseHost = if ($hostName -eq "0.0.0.0" -or $hostName -eq "::") { "127.0.0.1" } else { $hostName }
+    return @{ Host = $hostName; BrowseHost = $browseHost; Port = $port; Url = "http://${browseHost}:$port" }
+}
+
+function Get-DashboardProcesses {
+    $found = @()
+    $procs = Get-CimInstance Win32_Process -Filter "Name = 'python.exe' OR Name = 'pythonw.exe'" -ErrorAction SilentlyContinue
+    foreach ($proc in $procs) {
+        $cmd = [string]$proc.CommandLine
+        if (-not $cmd) { continue }
+        if ($cmd -notlike "*$($script:Project)*") { continue }
+        if ($cmd -notlike "*ai_asset_pipeline*") { continue }
+        if ($cmd -notlike "*run.py*") { continue }
+        if ($cmd -notlike "*serve*") { continue }
+        $found += $proc
+    }
+    return $found
+}
+
+function Test-DashboardPort {
+    param($Endpoint)
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $wait = $client.BeginConnect($Endpoint.BrowseHost, $Endpoint.Port, $null, $null)
+        if (-not $wait.AsyncWaitHandle.WaitOne(250)) { return $false }
+        $client.EndConnect($wait)
+        return $true
+    } catch {
+        return $false
+    } finally {
+        $client.Dispose()
+    }
+}
+
+function Wait-Dashboard {
+    param($Endpoint, [int]$TimeoutSec = 12)
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        if ($script:LogBox) { [System.Windows.Forms.Application]::DoEvents() }
+        if (Test-DashboardPort -Endpoint $Endpoint) { return $true }
+        Start-Sleep -Milliseconds 150
+    }
+    return $false
+}
+
+function Start-AssetDashboard {
+    $endpoint = Get-DashboardEndpoint
+    $running = @(Get-DashboardProcesses)
+    if ($running.Count -gt 0 -or (Test-DashboardPort -Endpoint $endpoint)) {
+        Write-Log "Asset dashboard is already available at $($endpoint.Url)."
+        Start-Process $endpoint.Url | Out-Null
+        return $true
+    }
+    $python = Get-PythonExe
+    $run = Join-Path $PSScriptRoot "ai_asset_pipeline\run.py"
+    if (-not $python) {
+        Write-Log "Python was not found. Install Python 3.11 or set PIPELINE_PYTHON."
+        return $false
+    }
+    if (-not (Test-Path $run)) {
+        Write-Log "Asset pipeline entry point was not found."
+        return $false
+    }
+    Write-Log "Starting the asset dashboard."
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = $python
+    $info.Arguments = "`"$run`" serve"
+    $info.WorkingDirectory = $script:Project
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $info
+    if (-not $process.Start()) {
+        Write-Log "The dashboard process did not start."
+        return $false
+    }
+    $script:DashboardProcess = $process
+    if (Wait-Dashboard -Endpoint $endpoint) {
+        Write-Log "Asset dashboard is ready at $($endpoint.Url)."
+        Start-Process $endpoint.Url | Out-Null
+        return $true
+    }
+    if ($process.HasExited) {
+        Write-Log "The dashboard exited with code $($process.ExitCode)."
+    } else {
+        Write-Log "The dashboard did not open on $($endpoint.Url)."
+        Stop-AssetDashboard | Out-Null
+    }
+    return $false
+}
+
+function Stop-AssetDashboard {
+    $procs = @(Get-DashboardProcesses)
+    foreach ($proc in $procs) {
+        Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+    if ($script:DashboardProcess -and -not $script:DashboardProcess.HasExited) {
+        Stop-Process -Id $script:DashboardProcess.Id -Force -ErrorAction SilentlyContinue
+    }
+    return $procs.Count
+}
+
 function Start-SandboxClient {
     param([string]$Address, [int]$Port)
     if (-not (Test-Path $script:Gui)) {
@@ -189,15 +324,21 @@ function Update-StatusLabel {
     if (-not $script:StatusLabel) { return }
     $state = Get-ServerState
     $clients = @(Get-ProjectProcesses -Role "client").Count
+    $dashboard = Get-DashboardEndpoint
+    $dashboardText = if ((@(Get-DashboardProcesses).Count -gt 0) -or (Test-DashboardPort -Endpoint $dashboard)) {
+        "Dashboard: $($dashboard.Url)"
+    } else {
+        "Dashboard stopped."
+    }
     if (-not $state.Running) {
-        $script:StatusLabel.Text = "Server stopped. Clients open: $clients"
+        $script:StatusLabel.Text = "Server stopped. Clients open: $clients`r`n$dashboardText"
         $script:StatusLabel.ForeColor = [System.Drawing.Color]::FromArgb(120, 40, 40)
         return
     }
     $readyText = if ($state.Ready) { "ready" } else { "starting" }
     $ports = @($state.Ports)
     $extra = if ($ports.Count -gt 1) { " Warning: servers on ports $($ports -join ', ')." } else { "" }
-    $script:StatusLabel.Text = "Server $readyText on port $($state.Port). Clients open: $clients$extra"
+    $script:StatusLabel.Text = "Server $readyText on port $($state.Port). Clients open: $clients$extra`r`n$dashboardText"
     $script:StatusLabel.ForeColor = if ($state.Ready) {
         [System.Drawing.Color]::FromArgb(20, 90, 40)
     } else {
@@ -263,7 +404,7 @@ $form.Text = "Survival Sandbox"
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
-$form.ClientSize = New-Object System.Drawing.Size(520, 464)
+$form.ClientSize = New-Object System.Drawing.Size(520, 516)
 $form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $form.BackColor = [System.Drawing.Color]::FromArgb(244, 242, 236)
 
@@ -308,7 +449,7 @@ $form.Controls.Add($script:PortBox)
 
 $script:StatusLabel = New-Object System.Windows.Forms.Label
 $script:StatusLabel.AutoSize = $false
-$script:StatusLabel.Size = New-Object System.Drawing.Size(476, 24)
+$script:StatusLabel.Size = New-Object System.Drawing.Size(476, 42)
 $script:StatusLabel.Location = New-Object System.Drawing.Point(22, 154)
 $form.Controls.Add($script:StatusLabel)
 
@@ -324,32 +465,32 @@ function New-ActionButton {
     return $button
 }
 
-$form.Controls.Add((New-ActionButton "Start server" 22 188 150 {
+$form.Controls.Add((New-ActionButton "Start server" 22 206 150 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Start-SandboxServer -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Reset server" 182 188 156 {
+$form.Controls.Add((New-ActionButton "Reset server" 182 206 156 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Reset-SandboxServer -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Stop server" 348 188 150 {
+$form.Controls.Add((New-ActionButton "Stop server" 348 206 150 {
     Invoke-LauncherAction {
         $removed = Stop-ProjectProcesses -Role "server"
         if ($removed -eq 0) { Write-Log "No server was running." }
         else { Write-Log "Stopped the server." }
     }
 }))
-$form.Controls.Add((New-ActionButton "Start client" 22 234 150 {
+$form.Controls.Add((New-ActionButton "Start client" 22 252 150 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Start-SandboxClient -Address $fields.Address -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Start two clients" 182 234 156 {
+$form.Controls.Add((New-ActionButton "Start two clients" 182 252 156 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Start-SandboxClient -Address $fields.Address -Port $fields.Port | Out-Null
@@ -357,11 +498,23 @@ $form.Controls.Add((New-ActionButton "Start two clients" 182 234 156 {
         Start-SandboxClient -Address $fields.Address -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Close clients" 348 234 150 {
+$form.Controls.Add((New-ActionButton "Close clients" 348 252 150 {
     Invoke-LauncherAction {
         $removed = Stop-ProjectProcesses -Role "client"
         if ($removed -eq 0) { Write-Log "No clients were open." }
         else { Write-Log "Closed $removed client process(es)." }
+    }
+}))
+$form.Controls.Add((New-ActionButton "Open dashboard" 22 298 316 {
+    Invoke-LauncherAction {
+        Start-AssetDashboard | Out-Null
+    }
+}))
+$form.Controls.Add((New-ActionButton "Stop dashboard" 348 298 150 {
+    Invoke-LauncherAction {
+        $removed = Stop-AssetDashboard
+        if ($removed -eq 0) { Write-Log "The asset dashboard was not running." }
+        else { Write-Log "Stopped the asset dashboard." }
     }
 }))
 $script:LogBox = New-Object System.Windows.Forms.TextBox
@@ -369,8 +522,8 @@ $script:LogBox.Multiline = $true
 $script:LogBox.ReadOnly = $true
 $script:LogBox.ScrollBars = "Vertical"
 $script:LogBox.Font = New-Object System.Drawing.Font("Consolas", 9)
-$script:LogBox.Location = New-Object System.Drawing.Point(22, 282)
-$script:LogBox.Size = New-Object System.Drawing.Size(476, 156)
+$script:LogBox.Location = New-Object System.Drawing.Point(22, 346)
+$script:LogBox.Size = New-Object System.Drawing.Size(476, 150)
 $script:LogBox.BackColor = [System.Drawing.Color]::White
 $form.Controls.Add($script:LogBox)
 

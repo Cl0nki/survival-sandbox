@@ -2,7 +2,7 @@ extends CanvasLayer
 class_name InventoryUI
 
 const _Icons = preload("res://scripts/items/item_icons.gd")
-const SLOT_SIZE := 72
+const SLOT_SIZE := 96
 const NAME_DELAY_MSEC := 1000
 
 ## Minecraft-style inventory. Clicks are requests. The picture updates only
@@ -91,7 +91,7 @@ func _ready() -> void:
 	column.add_child(_hotbar_grid)
 	_hud = CenterContainer.new()
 	_hud.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_hud.offset_top = -128
+	_hud.offset_top = -160
 	_hud.offset_bottom = -16
 	_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_hud)
@@ -104,13 +104,15 @@ func _ready() -> void:
 	_hud_grid.columns = 9
 	hud_box.add_child(_hud_grid)
 	_cursor_icon = TextureRect.new()
-	_cursor_icon.custom_minimum_size = Vector2(48, 48)
+	_cursor_icon.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	_cursor_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_cursor_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_cursor_icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_cursor_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_cursor_icon.visible = false
 	_cursor_icon.z_index = 30
 	add_child(_cursor_icon)
-	_cursor_qty = Label.new()
-	_cursor_qty.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cursor_qty = _count_label()
 	_cursor_qty.visible = false
 	_cursor_qty.z_index = 31
 	add_child(_cursor_qty)
@@ -129,13 +131,15 @@ func _process(_delta: float) -> void:
 		return
 	var held := _player.cursor_qty > 0 and _player.cursor_item_id != ""
 	_cursor_icon.visible = held
-	_cursor_qty.visible = held
+	_cursor_qty.visible = held and _player.cursor_qty > 1
 	if held:
 		var mouse := get_viewport().get_mouse_position()
 		_cursor_icon.global_position = mouse + Vector2(12, 12)
-		_cursor_qty.global_position = mouse + Vector2(36, 36)
 		_cursor_icon.texture = _Icons.texture_for(ItemCatalog.get_item(_player.cursor_item_id))
-		_cursor_qty.text = str(_player.cursor_qty)
+		if _cursor_qty.visible:
+			_cursor_qty.text = str(_player.cursor_qty)
+			_cursor_qty.size = Vector2(48, 22)
+			_cursor_qty.global_position = _cursor_icon.global_position + Vector2(SLOT_SIZE - 48, SLOT_SIZE - 22)
 	_update_name_tip()
 
 
@@ -276,19 +280,33 @@ func _add_slot(grid: GridContainer, area: int, index: int, hotbar: bool, interac
 	var button := Button.new()
 	button.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	button.focus_mode = Control.FOCUS_NONE
-	button.expand_icon = true
+	button.clip_contents = true
 	var bag := _player.container_view if area == SlotOps.AREA_CONTAINER else _player.inventory
 	var slot: Dictionary = bag.slots[index]
 	var item_id := str(slot["id"])
 	var qty := int(slot["qty"])
 	if item_id.is_empty() or qty <= 0:
 		button.text = _slot_caption(area, index)
-		button.icon = null
 	else:
-		button.text = str(qty)
-		button.icon = _Icons.texture_for(ItemCatalog.get_item(item_id))
+		var picture := TextureRect.new()
+		picture.set_anchors_preset(Control.PRESET_FULL_RECT)
+		picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		picture.texture = _Icons.texture_for(ItemCatalog.get_item(item_id))
+		button.add_child(picture)
+		if qty > 1:
+			var count := _count_label()
+			count.text = str(qty)
+			count.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+			count.offset_left = -48
+			count.offset_top = -22
+			count.offset_right = -4
+			count.offset_bottom = -2
+			button.add_child(count)
 	if hotbar and index == _player.hotbar_index and area == SlotOps.AREA_PLAYER:
-		button.modulate = Color(1.0, 0.9, 0.45, 1)
+		button.add_child(_active_border())
 	elif _hover_area == area and _hover_index == index:
 		button.modulate = Color(1.0, 1.0, 0.75, 1)
 	button.gui_input.connect(_on_slot_input.bind(area, index))
@@ -302,6 +320,33 @@ func _add_slot(grid: GridContainer, area: int, index: int, hotbar: bool, interac
 	_buttons.append(button)
 	_areas.append(area)
 	_indices.append(index)
+
+
+func _active_border() -> Panel:
+	var frame := Panel.new()
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame.z_index = 3
+	var style := StyleBoxFlat.new()
+	style.draw_center = false
+	style.bg_color = Color(0, 0, 0, 0)
+	style.border_color = Color(1, 1, 1, 0.95)
+	style.set_border_width_all(2)
+	frame.add_theme_stylebox_override(&"panel", style)
+	return frame
+
+
+func _count_label() -> Label:
+	var count := Label.new()
+	count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	count.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	count.add_theme_font_size_override(&"font_size", 16)
+	count.add_theme_color_override(&"font_color", Color.WHITE)
+	count.add_theme_color_override(&"font_outline_color", Color(0, 0, 0, 1))
+	count.add_theme_constant_override(&"outline_size", 5)
+	count.z_index = 2
+	return count
 
 
 func _clear_grid(grid: GridContainer) -> void:

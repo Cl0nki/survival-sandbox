@@ -271,6 +271,7 @@ static func _box_lines(lines: PackedVector3Array, box: AABB) -> void:
 class _Builder:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
+	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
 
 	func quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3) -> void:
@@ -278,6 +279,7 @@ class _Builder:
 		for point in [a, b, c, d]:
 			vertices.append(point)
 			normals.append(normal)
+			uvs.append(_uv(point, normal))
 		var ccw_from_front := (b - a).cross(c - a).dot(normal) > 0.0
 		if ccw_from_front == BuildingGeometry.CLOCKWISE_FRONT:
 			indices.append_array([start, start + 2, start + 1, start, start + 3, start + 2])
@@ -289,6 +291,7 @@ class _Builder:
 		for point in [a, b, c]:
 			vertices.append(point)
 			normals.append(normal)
+			uvs.append(_uv(point, normal))
 		var ccw_from_front := (b - a).cross(c - a).dot(normal) > 0.0
 		if ccw_from_front == BuildingGeometry.CLOCKWISE_FRONT:
 			indices.append_array([start, start + 2, start + 1])
@@ -300,7 +303,17 @@ class _Builder:
 		arrays.resize(Mesh.ARRAY_MAX)
 		arrays[Mesh.ARRAY_VERTEX] = vertices
 		arrays[Mesh.ARRAY_NORMAL] = normals
+		arrays[Mesh.ARRAY_TEX_UV] = uvs
 		arrays[Mesh.ARRAY_INDEX] = indices
 		var mesh := ArrayMesh.new()
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 		return mesh
+
+	## One texture repeat per meter, measured on the face.
+	static func _uv(point: Vector3, normal: Vector3) -> Vector2:
+		var axis := normal.abs()
+		if axis.x >= axis.y and axis.x >= axis.z:
+			return Vector2(point.z, point.y)
+		if axis.y >= axis.z:
+			return Vector2(point.x, point.z)
+		return Vector2(point.x, point.y)

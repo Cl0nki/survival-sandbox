@@ -61,6 +61,10 @@ func _body() -> int:
 			return _fail("screen-center aim is not in front of the camera look: %s" % aim)
 
 	player.set_physics_process(false)
+	var north_wall := arena.get_node("Geometry/WallNorth") as Node3D
+	var west_wall := arena.get_node("Geometry/WallWest") as Node3D
+	var north_face := north_wall.global_position.z + 0.25
+	var west_face := west_wall.global_position.x + 0.25
 	var space := player.get_world_3d().direct_space_state
 	var spawn_chest := Vector3(0, 1.2, 8)
 	var covered := arena.get_node("CoveredDummy") as Damageable
@@ -79,7 +83,7 @@ func _body() -> int:
 	if covered_hit["collider"] != covered:
 		return _fail("expected Covered Dummy in the open yard, got %s" % _node_name(covered_hit["collider"]))
 
-	player.global_position = Vector3(0, 0.2, -14.0)
+	player.global_position = Vector3(0, 0.2, north_face + 4.0)
 	player.velocity = Vector3.ZERO
 	await physics_frame
 	for _step in 30:
@@ -87,12 +91,12 @@ func _body() -> int:
 		player.move_and_slide()
 		await physics_frame
 	print("collision_stop=", player.global_position)
-	if player.global_position.z > -16.5:
+	if player.global_position.z > north_face + 1.25:
 		return _fail("player did not move into the north wall from %s" % player.global_position)
-	if player.global_position.z < -17.55:
+	if player.global_position.z < north_face - 0.2:
 		return _fail("player walked through the north wall to %s" % player.global_position)
 
-	player.global_position = Vector3(-17.05, 0.1, 0.0)
+	player.global_position = Vector3(west_face + 0.7, 0.1, 0.0)
 	player.velocity = Vector3.ZERO
 	player.rotation = Vector3.ZERO
 	var visual := player.get_node("VisualRoot") as Node3D
@@ -119,7 +123,7 @@ func _body() -> int:
 	player.set_lean_visual(lean_left)
 	var blocked_origin := player.shot_origin()
 	print("shot_into_cover=", blocked_origin)
-	if blocked_origin.x < -17.72:
+	if blocked_origin.x < west_face + 0.03:
 		return _fail("leaned shot origin crossed the west wall: %s" % blocked_origin)
 	player.set_lean_visual(0.0)
 	var standing_origin := player.shot_origin()
@@ -137,20 +141,20 @@ func _body() -> int:
 		return _fail("high aim stayed flat: %s" % high_aim)
 	if low_aim.y > -0.2:
 		return _fail("low aim stayed flat: %s" % low_aim)
-	var into_wall := HitscanWeapon.resolve_shot(space, Vector3(0.0, 0.75, -14.0), Vector3(0.0, 0.0, -1.0))
+	var into_wall := HitscanWeapon.resolve_shot(space, Vector3(0.0, 0.75, north_face + 4.0), Vector3(0.0, 0.0, -1.0))
 	if _node_name(into_wall["collider"]) != "WallNorth":
 		return _fail("low shot missed the north wall, got %s" % _node_name(into_wall["collider"]))
 	player.snap_stance_for_shot(0.0)
 	player.set_aim_pitch(0.0)
 
-	player.global_position = Vector3(0, 0.1, -16.6)
+	player.global_position = Vector3(0, 0.1, north_face + 1.15)
 	await physics_frame
 	rig.set_yaw(PI)
 	var cam_pos := rig.get_camera().global_position
 	print("clipped_camera=", cam_pos)
-	if cam_pos.z > -16.7:
+	if cam_pos.z > north_face + 1.05:
 		return _fail("camera did not pull toward the north wall: %s" % cam_pos)
-	if cam_pos.z < -17.9:
+	if cam_pos.z < north_face - 0.15:
 		return _fail("camera passed through the north wall to %s" % cam_pos)
 	if cam_pos.y < 1.5:
 		return _fail("clipped camera is too low: %s" % cam_pos)

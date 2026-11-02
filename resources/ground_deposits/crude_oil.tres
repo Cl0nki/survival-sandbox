@@ -6,9 +6,9 @@
 script = ExtResource("1_def")
 id = "crude_oil"
 display_name = "Crude Oil"
-item_id = "oil"
+item_id = ""
 resistance = 450
 yield_amount = 800
 color = Color(0.22352941, 0.19215687, 0.1764706, 1)
 harvest_kind = ""
-extractor_kinds = PackedStringArray("pump")
+extractor_kinds = PackedStringArray("pump_jack_oil")

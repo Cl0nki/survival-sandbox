@@ -1,10 +1,13 @@
 extends RefCounted
 class_name ItemIcons
 
-## Flat placeholder pictures generated from each item's swatch.
-## There are no art files. The shape marks the category.
+## Inventory icons. An approved file at res://assets/icons/<id>.png replaces the
+## swatch placeholder. The slot draws that file across its whole face, so the
+## source stays at the generated size instead of being reduced to the old 48px mark.
+## The world mesh is separate.
 
 const SIZE := 48
+const SOURCE_LIMIT := 1024
 
 static var _cache: Dictionary = {}
 
@@ -14,6 +17,10 @@ static func texture_for(definition: ItemDefinition) -> Texture2D:
 		return null
 	if _cache.has(definition.id):
 		return _cache[definition.id] as Texture2D
+	var art := _load_art(definition.id)
+	if art != null:
+		_cache[definition.id] = art
+		return art
 	var image := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
 	image.fill(definition.swatch)
 	var edge := definition.swatch.darkened(0.5)
@@ -58,6 +65,25 @@ static func texture_for(definition: ItemDefinition) -> Texture2D:
 	var texture := ImageTexture.create_from_image(image)
 	_cache[definition.id] = texture
 	return texture
+
+
+static func _load_art(item_id: String) -> Texture2D:
+	var path := "res://assets/icons/%s.png" % item_id
+	if not FileAccess.file_exists(path) and not ResourceLoader.exists(path):
+		return null
+	var image := Image.new()
+	if image.load(path) != OK:
+		var loaded := load(path) as Texture2D
+		if loaded == null:
+			return null
+		image = loaded.get_image()
+		if image == null:
+			return null
+	var largest := maxi(image.get_width(), image.get_height())
+	if largest > SOURCE_LIMIT:
+		var scale := float(SOURCE_LIMIT) / float(largest)
+		image.resize(maxi(int(round(image.get_width() * scale)), 1), maxi(int(round(image.get_height() * scale)), 1), Image.INTERPOLATE_LANCZOS)
+	return ImageTexture.create_from_image(image)
 
 
 static func _rect(image: Image, x: int, y: int, width: int, height: int, color: Color) -> void:

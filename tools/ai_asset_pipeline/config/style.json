@@ -1,0 +1,52 @@
+{
+  "name": "tactical-survival-stylized",
+  "summary": "Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry.",
+  "use_palette": false,
+  "palette": {
+    "dark_slate": "#354451",
+    "blue_gray": "#536575",
+    "olive_green": "#596B3D",
+    "muted_forest": "#78864C",
+    "sand": "#B4A071",
+    "rust_orange": "#B66B49",
+    "concrete_gray": "#89929D"
+  },
+  "requirements": [
+    "stylized low-poly or semi-low-poly",
+    "modern stylized survival and tactical military aesthetic",
+    "isometric-friendly proportions",
+    "hand-painted appearance",
+    "subtle PBR material definition",
+    "strong readable silhouette",
+    "clean geometry",
+    "consistent texel density",
+    "optimized for real-time 3D"
+  ],
+  "avoid": [
+    "photorealism",
+    "photographs",
+    "anime",
+    "manga",
+    "cartoon outlines",
+    "cel shading",
+    "toon outlines",
+    "excessively saturated colors",
+    "inconsistent art styles",
+    "extremely detailed realistic textures",
+    "watermark",
+    "text",
+    "logo",
+    "frame",
+    "border"
+  ],
+  "texture_suffix": "Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density.",
+  "prop_suffix": "One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text.",
+  "character_suffix": "One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing.",
+  "building_suffix": "Modular architectural piece, orthographic, grid-aligned, neutral background, no extra props.",
+  "texel_density_px_per_meter": 512,
+  "character_height_m": 1.8,
+  "image_prompt": "i need conecept art for my game mix from doorkickers and rust low poly this is a screenshot now, make it look like a good looking game :)",
+  "image_screenshots": [
+    "shot-a81eaa7b5ec646da.png"
+  ]
+}

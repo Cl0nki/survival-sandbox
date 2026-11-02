@@ -4,9 +4,9 @@ class_name WoodsField
 ## North-west 10x10 grove. Hatches sit on the south edge, beside the woods chest.
 
 const TREE_AT := {
-	"oak": Vector3(-13.6, 0.0, -12.6),
-	"birch": Vector3(-9.4, 0.0, -13.0),
-	"spruce": Vector3(-11.6, 0.0, -10.2),
+	"oak": Vector3(-17.6, 0.0, -16.6),
+	"birch": Vector3(-13.4, 0.0, -17.0),
+	"spruce": Vector3(-15.6, 0.0, -14.2),
 }
 
 
@@ -50,7 +50,7 @@ static func build(arena: Node3D) -> void:
 	]
 	for index in tools.size():
 		var entry: Array = tools[index]
-		_pickup(loot, str(entry[0]), str(entry[1]), 1, Vector3(-14.6 + float(index) * 1.3, 0.15, -7.2))
+		_pickup(loot, str(entry[0]), str(entry[1]), 1, Vector3(-18.6 + float(index) * 1.3, 0.15, -11.2))
 
 
 static func _pickup(folder: Node3D, pickup_id: String, item_id: String, quantity: int, pos: Vector3) -> void:

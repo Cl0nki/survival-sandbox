@@ -54,27 +54,27 @@ func _body() -> int:
 	if seen_remote.distance_to(net.debug_position(3)) > 0.4:
 		return _fail("visible snapshot pose was wrong %s" % seen_remote)
 
-	net.debug_place(2, Vector3(0.0, 0.15, -15.5))
-	net.debug_place(3, Vector3(0.0, 0.15, -20.5))
+	net.debug_place(2, Vector3(0.0, 0.15, -19.5))
+	net.debug_place(3, Vector3(0.0, 0.15, -24.5))
 	await physics_frame
 	if net.debug_visible(2, 3) or net.debug_visible(3, 2):
 		return _fail("north wall did not block sight")
 
-	net.debug_place(2, Vector3(-8.0, 0.15, -15.0))
-	net.debug_place(3, Vector3(8.0, 0.15, -15.0))
+	net.debug_place(2, Vector3(-8.0, 0.15, -19.0))
+	net.debug_place(3, Vector3(8.0, 0.15, -19.0))
 	await physics_frame
 	if not net.debug_visible(2, 3):
 		return _fail("players along the inside of the wall stayed hidden")
 
-	net.debug_place(2, Vector3(0.0, 0.15, -14.0))
-	net.debug_place(3, Vector3(11.25, 0.15, -20.5))
+	net.debug_place(2, Vector3(0.0, 0.15, -18.0))
+	net.debug_place(3, Vector3(11.25, 0.15, -24.5))
 	await physics_frame
 	var hidden: Dictionary = net.debug_known_positions(2)
 	if hidden.has(3):
 		return _fail("hidden enemy was still in the snapshot %s" % hidden[3])
 	if not hidden.has(2):
 		return _fail("observer lost their own snapshot")
-	if net.debug_snapshot_has_value(2, 11.25) or net.debug_snapshot_has_value(2, -20.5):
+	if net.debug_snapshot_has_value(2, 11.25) or net.debug_snapshot_has_value(2, -24.5):
 		return _fail("hidden coordinates were present in the outbound snapshot")
 	var moved_hidden := net.debug_position(3)
 	if not net.debug_visible(2, 3) and hidden.has(3):
@@ -96,8 +96,8 @@ func _body() -> int:
 		return _fail("open pair inside gun range stayed hidden")
 
 	var peeker := net.debug_player(2)
-	net.debug_place(2, Vector3(0.0, 0.15, -16.2))
-	net.debug_place(3, Vector3(0.4, 0.15, -20.2))
+	net.debug_place(2, Vector3(0.0, 0.15, -20.2))
+	net.debug_place(3, Vector3(0.4, 0.15, -24.2))
 	peeker.apply_facing_yaw(0.0)
 	peeker.set_lean_visual(0.45)
 	net._refresh_visibility()

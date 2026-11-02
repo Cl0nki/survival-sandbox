@@ -1,20 +1,18 @@
 extends RefCounted
 class_name GroundDepositField
 
-## North-east 10x10. Clay digs like sand. Shovels sit on the south edge.
+## North-east 10x10. Each patch is one or more building cells.
+## The well is 1x1, the gas pump is 3x3, and the oil pump is 2x2.
+## Shovels sit on the south edge.
 
-const ORDER: PackedStringArray = [
-	"sand",
-	"clay",
-	"gravel",
-	"ground_water",
-	"natural_gas",
-	"crude_oil",
+const PATCHES := [
+	["sand", Vector2i(11, -19), Vector2i(1, 1)],
+	["clay", Vector2i(13, -19), Vector2i(1, 1)],
+	["gravel", Vector2i(15, -19), Vector2i(1, 1)],
+	["ground_water", Vector2i(17, -19), Vector2i(1, 1)],
+	["natural_gas", Vector2i(11, -17), Vector2i(3, 3)],
+	["crude_oil", Vector2i(16, -17), Vector2i(2, 2)],
 ]
-const ORIGIN := Vector3(8.6, 0.0, -12.8)
-const COL_SPACING := 2.4
-const ROW_SPACING := 2.4
-const COLS := 3
 
 
 static func build(arena: Node3D) -> void:
@@ -29,22 +27,18 @@ static func build(arena: Node3D) -> void:
 	var loot := arena.get_node_or_null("Loot") as Node3D
 	if loot == null:
 		loot = root
-	for index in ORDER.size():
-		var deposit_id := ORDER[index]
-		var col := index % COLS
-		var row := int(index / COLS)
+	for entry in PATCHES:
+		var deposit_id := str(entry[0])
+		var anchor: Vector2i = entry[1]
+		var size: Vector2i = entry[2]
 		var deposit := GroundDeposit.new()
 		deposit.name = deposit_id
+		deposit.set_footprint(anchor, size)
 		deposit.configure("ground_%s" % deposit_id, deposit_id)
-		deposit.position = Vector3(
-			ORIGIN.x + float(col) * COL_SPACING,
-			0.0,
-			ORIGIN.z + float(row) * ROW_SPACING
-		)
 		root.add_child(deposit)
 		var definition := GroundDepositCatalog.get_definition(deposit_id)
-		if definition != null:
-			_pickup(loot, "ground_drop_%s" % deposit_id, definition.item_id, 8, deposit.position + Vector3(0.0, 0.15, 0.85))
+		if definition != null and definition.item_id != "" and ItemCatalog.known(definition.item_id):
+			_pickup(loot, "ground_drop_%s" % deposit_id, definition.item_id, 8, deposit.position + Vector3(0.0, 0.15, float(size.y) * 0.5 + 0.35))
 	var tools := [
 		["ground_shovel_scrap", "shovel_scrap"],
 		["ground_shovel_iron", "shovel_iron"],
@@ -53,7 +47,7 @@ static func build(arena: Node3D) -> void:
 	]
 	for index in tools.size():
 		var tool: Array = tools[index]
-		_pickup(loot, str(tool[0]), str(tool[1]), 1, Vector3(8.6 + float(index) * 1.3, 0.15, -7.2))
+		_pickup(loot, str(tool[0]), str(tool[1]), 1, Vector3(12.0 + float(index) * 1.3, 0.15, -10.6))
 
 
 static func _pickup(folder: Node3D, pickup_id: String, item_id: String, quantity: int, pos: Vector3) -> void:

@@ -44,23 +44,27 @@ At startup the camera sits south of the character and looks toward the north wal
 
 ## What you should see
 
-- A 3 by 3 grid of **10x10** tiles. A blue capsule with a dark visor and a gun stands on **DEPLOYABLES**.
+- A 4 by 4 grid of **10x10** tiles. **Building** is the middle 2 by 2. A blue capsule with a dark visor and a gun stands on **DEPLOYABLES**.
 - **WOODS** north-west: Oak, Birch, and Spruce, tall enough to walk under the canopy. A pickup of each yield sits beside the trunk. Hatchets on the south edge, and a **Woods** chest in the south-east corner.
-- **SCAVENGE** north: Broken Down Car, Scrap Pile, Rubble Pile, and Tire Pile, still cubes, each with its yield pickups beside it. Crowbars on the south edge. A **Scavenge** chest on the east side.
-- **GROUND** north-east: Sand, Clay, Gravel, Ground Water, Natural Gas, and Crude Oil, each with a pickup. Sand, clay, and gravel take a shovel. The fluids wait for a well or pump. A **Ground** chest on the east side.
-- **MINE** west: nine ore nodes, each with a pickup. Pickaxes on the south edge. A **Mine** chest on the north edge.
-- **BUILDING** in the middle: one chest per tier (Scrap, Wood, Brick, Stone, Concrete, Composite), stocked with that tier's materials. A gap down the middle stays open to walk through.
+- **SCAVENGE** west: Broken Down Car, Scrap Pile, Rubble Pile, and Tire Pile, still cubes, each with its yield pickups beside it. Crowbars on the south edge. A **Scavenge** chest on the east side.
+- **GROUND** north-east: Sand, Clay, and Gravel on single cells, a 1x1 Ground Water cell, a 3x3 Natural Gas patch, and a 2x2 Crude Oil patch. Sand, clay, and gravel take a shovel. The fluids are not items. A well only sits on the water cell. The gas pump is 3x3 and only sits on the gas patch. The crude pump only sits on the oil patch. The **Ground** chest holds empty buckets, water bottles, gas bottles, and oil drums.
+- **MINE** north, west of smelting: nine ore nodes, each with a pickup. Pickaxes on the south edge. A **Mine** chest on the north edge.
+- **SMELTING** north: two columns. The steel smelter and foundry stand on the north row, the iron smelter and scrap furnace line up under them, and a **Smelt Stock** chest sits on the south edge.
+- **BUILDING** the middle 20x20: one chest per tier (Scrap, Wood, Brick, Stone, Concrete, Composite), stocked with that tier's materials. A gap down the middle stays open to walk through.
 - **RANGE** east: red **Open Dummy**, orange **Covered Dummy**, and the **Military** chest on the south-west corner.
-- **CRAFTING** south-west: Refining and Parts chests.
-- **DEPLOYABLES** south: spawn pads, a **Deployables** chest (Chest and Workbench at 100 HP, plus the Scrap Furnace, Iron Smelter, Steel Smelter, and Foundry), and a **Doors and Windows** chest with one door and one set of window bars for every building tier, at half that tier's health. Put one on the hotbar and a blueprint shows where it will sit. Left click places it within 5 m. R rotates a footprint. Doors and window bars fit the matching opening. **F** opens and closes a door, and opens a furnace. A furnace runs one batch at a time: load input and coal (the Foundry also takes fuel) and the ingots land in the output slot. A shot that spends the last HP destroys the piece. A deployable on an upper floor is also destroyed when that floor falls.
-- **SUPPLIES** south-east: the Collectables chest, plus cloth, food, scrap, and medical pickups.
+- **MILLS** west: sawbench over the sawmill, kiln over the kiln shed. A **Mill Stock** chest and the **Refined** chest sit on the south edge.
+- **FOOD** east: campfire and fire pit in the west column, cooking pot and stove in the east column, kitchen centered under them. A **Cook Stock** chest of raw food, sticks, logs, and coal sits on the south edge.
+- **DEPLOYABLES** south: spawn pads, a **Smelters** chest, a **Crafting** chest (the chest, four workbench tiers, sawbench, sawmill, kiln, kiln shed, chem bench, refinery, machine shop, ammo bench, and armory), a **Cooking** chest (campfire, fire pit, cooking pot, stove, and kitchen), a **Pumps** chest (Water Well, Gas Pump Jack, Crude Pump Jack), and a **Doors and Windows** chest with one door and one set of window bars for every building tier, at half that tier's health. Put one on the hotbar and a blueprint shows where it will sit. Left click places it within 5 m. R rotates a footprint. Doors and window bars fit the matching opening. **F** opens and closes a door, and opens a furnace, crafting station, fire, well, or pump. A station runs one batch at a time and burns fuel. A well fills an empty bucket or water bottle. The gas pump fills a gas bottle. The crude pump fills an oil drum. A footprint that would leave you inside the solid is refused. A shot that spends the last HP destroys the piece. A deployable on an upper floor is also destroyed when that floor falls.
+- **SUPPLIES** south: the Collectables chest (electronics, chemicals, fuel, batteries, and raw meat, fish, potato, mushroom, egg, and corn), plus cloth, food, scrap, and medical pickups.
+- **BENCHES** south: the four workbench tiers in one row, the machine shop centered under them, with a **Bench Stock** chest and the **Parts** chest on the south edge.
+- **CHEM** south-east: chem bench over the refinery, ammo bench over the armory, and a **Chem Stock** chest on the south edge.
 - Resource and ground labels stay hidden until **F1**. Chests are solid. A standing shot still passes over a chest.
 
 Three hits destroy a dummy (100 HP, 34 damage). It turns dark, the label says `DESTROYED`, and the body still blocks movement and shots.
 
 ## Manual checklist
 
-1. The game window opens on the arena. The character stands near `(0, 0, 8)`, looking north. No debug panel is on screen.
+1. The game window opens on the arena. The character stands on **DEPLOYABLES**, looking north. No debug panel is on screen.
 2. W A S D move the character. The outer walls and both dummies stop the body.
 3. Walk into the north wall. The character stops on the near side. The wall has no NORTH label.
 4. Scroll the wheel. The view moves closer and farther while staying above the character. The closest and farthest distances stop changing at the limits.

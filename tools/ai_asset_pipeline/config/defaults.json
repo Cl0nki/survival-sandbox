@@ -1,0 +1,21 @@
+{
+  "resolution": 1024,
+  "allowed_resolutions": [512, 1024, 2048, 4096],
+  "variations": 1,
+  "max_variations": 8,
+  "polycount": 8000,
+  "character_polycount": 12000,
+  "lod_ratios": [0.5, 0.25],
+  "poll_timeout_sec": 900,
+  "poll_interval_sec": 5,
+  "host": "127.0.0.1",
+  "port": 8765,
+  "openai_image_model": "gpt-image-2.5-flare",
+  "openai_quality": "medium",
+  "meshy_ai_model": "latest",
+  "meshy_texture_resolution": "1024",
+  "tripo_model_version": "v2.5-20250123",
+  "character_height_m": 1.8,
+  "max_mesh_download_mb": 400,
+  "max_rig_data_uri_mb": 100
+}

@@ -7,9 +7,9 @@ const EXPECTED := {
 	"sand": ["sand", "sand", 100, 500, "shovel", "shovel"],
 	"clay": ["clay", "clay", 80, 500, "shovel", "shovel"],
 	"gravel": ["gravel", "gravel", 180, 400, "shovel", "shovel"],
-	"ground_water": ["Ground Water", "ground_water", 250, 1000, "", "well"],
-	"natural_gas": ["Natural Gas", "natural_gas", 350, 600, "", "well"],
-	"crude_oil": ["Crude Oil", "oil", 450, 800, "", "pump"],
+	"ground_water": ["Ground Water", "", 250, 1000, "", "water_well"],
+	"natural_gas": ["Natural Gas", "", 350, 600, "", "pump_jack_gas"],
+	"crude_oil": ["Crude Oil", "", 450, 800, "", "pump_jack_oil"],
 }
 
 
@@ -25,7 +25,7 @@ func _boot() -> void:
 
 
 func _run() -> int:
-	for item_id in ["sand", "clay", "gravel", "ground_water", "natural_gas", "oil"]:
+	for item_id in ["sand", "clay", "gravel"]:
 		if not ItemCatalog.known(item_id):
 			print("FAIL catalog missing %s" % item_id)
 			return 1

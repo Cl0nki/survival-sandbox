@@ -13,3 +13,8 @@ Thumbs.db
 *.tmp.*
 .vs/
 *.blend1
+
+# Asset pipeline secrets and working files. Approved Godot assets stay in the project.
+tools/ai_asset_pipeline/.env
+tools/ai_asset_pipeline/library/
+**/__pycache__/

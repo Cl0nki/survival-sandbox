@@ -26,7 +26,7 @@ Controls, the manual checklist, and the decisions for the local prototype are in
 
 ## Multiplayer
 
-Double-click `tools\launcher.vbs`. The window can start, reset, and stop the server, and it can open client windows.
+Double-click `tools\launcher.vbs`. The window can start, reset, and stop the server, open client windows, and open the asset pipeline dashboard.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "C:\Users\Admin\Documents\VSC\survival-sandbox\tools\start_multiplayer.ps1"
@@ -57,3 +57,11 @@ Press F5, or start a server and a client from `tools\launcher.vbs`. Select hotba
 ```
 
 A passing run prints `BUILDING_PHASE1_OK`. Status, architecture, controls, and known issues are in [BUILDING_SYSTEM_STATUS.md](BUILDING_SYSTEM_STATUS.md).
+
+## Asset pipeline
+
+Generated textures, props, characters, and modular building pieces are produced by `tools/ai_asset_pipeline`. It does not replace the live building solver or the primitive player mesh. Setup, provider keys, and the dashboard are documented in [tools/ai_asset_pipeline/README.md](tools/ai_asset_pipeline/README.md).
+
+```powershell
+python tools\ai_asset_pipeline\run.py serve
+```

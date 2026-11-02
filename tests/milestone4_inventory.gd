@@ -57,8 +57,8 @@ func _body() -> int:
 	if scrap.quantity != 8:
 		return _fail("far pickup changed")
 
-	net.debug_place(2, Vector3(10.0, 0.15, 12.0))
-	net.debug_place(3, Vector3(10.2, 0.15, 12.0))
+	net.debug_place(2, Vector3(-6.0, 0.15, 16.0))
+	net.debug_place(3, Vector3(-5.8, 0.15, 16.0))
 	net.debug_reset_item_rate(2)
 	net.debug_reset_item_rate(3)
 	if net.debug_collect(2, "scrap_pile") != "":

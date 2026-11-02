@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "fire_pit"
+display_name = "Fire Pit"
+description = "2x1 fire. Cooks four at a time. 120 HP."
+max_stack = 1
+weight = 8.0
+category = "deployable"
+can_pickup = true
+can_store = true
+swatch = Color(0.46, 0.28, 0.16, 1)

@@ -140,6 +140,50 @@ static func roughness_of(tier: int) -> float:
 			return 0.28
 
 
+static var _textures: Dictionary = {}
+
+
+static func _piece_slug(kind: int) -> String:
+	match kind:
+		BuildTypes.Kind.SLAB:
+			return "floor"
+		BuildTypes.Kind.POST:
+			return "post"
+		BuildTypes.Kind.STAIRS:
+			return "stairs"
+		_:
+			return "wall"
+
+
+static func _tier_slug(tier: int) -> String:
+	match clamp_tier(tier):
+		2:
+			return "wood"
+		3:
+			return "brick"
+		4:
+			return "stone"
+		5:
+			return "concrete"
+		6:
+			return "composite"
+		_:
+			return "scrap"
+
+
+static func _load_texture(path: String) -> Texture2D:
+	if _textures.has(path):
+		return _textures[path]
+	if not FileAccess.file_exists(path):
+		return null
+	var image := Image.new()
+	if image.load(path) != OK:
+		return null
+	var texture := ImageTexture.create_from_image(image)
+	_textures[path] = texture
+	return texture
+
+
 static func make_material(tier: int, kind: int = BuildTypes.Kind.WALL) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	style_material(material, tier, 1.0, kind)
@@ -150,10 +194,42 @@ static func style_material(material: StandardMaterial3D, tier: int, ratio: float
 	var color := color_for(tier, kind)
 	if ratio < 0.999:
 		color = color.lerp(Color(0.22, 0.1, 0.07), 1.0 - clampf(ratio, 0.0, 1.0))
-	material.albedo_color = color
-	material.roughness = roughness_of(tier)
-	if kind == BuildTypes.Kind.POST:
-		material.roughness = minf(material.roughness + 0.06, 1.0)
-	material.metallic = 0.45 if clamp_tier(tier) == MAX and kind != BuildTypes.Kind.SLAB else 0.0
-	if clamp_tier(tier) == MAX and kind == BuildTypes.Kind.POST:
-		material.metallic = 0.28
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var folder := "res://assets/textures/%s_%s" % [_piece_slug(kind), _tier_slug(tier)]
+	var albedo := _load_texture("%s/albedo.png" % folder)
+	if albedo == null:
+		material.albedo_texture = null
+		material.normal_enabled = false
+		material.normal_texture = null
+		material.roughness_texture = null
+		material.ao_enabled = false
+		material.ao_texture = null
+		material.metallic_texture = null
+		material.albedo_color = color
+		material.roughness = roughness_of(tier)
+		if kind == BuildTypes.Kind.POST:
+			material.roughness = minf(material.roughness + 0.06, 1.0)
+		material.metallic = 0.45 if clamp_tier(tier) == MAX and kind != BuildTypes.Kind.SLAB else 0.0
+		if clamp_tier(tier) == MAX and kind == BuildTypes.Kind.POST:
+			material.metallic = 0.28
+		return
+	var tint := Color.WHITE
+	if ratio < 0.999:
+		tint = Color.WHITE.lerp(Color(0.22, 0.1, 0.07), 1.0 - clampf(ratio, 0.0, 1.0))
+	material.albedo_texture = albedo
+	material.albedo_color = tint
+	var normal := _load_texture("%s/normal.png" % folder)
+	material.normal_enabled = normal != null
+	material.normal_texture = normal
+	var rough := _load_texture("%s/roughness.png" % folder)
+	material.roughness_texture = rough
+	material.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+	material.roughness = 1.0 if rough != null else roughness_of(tier)
+	var ao := _load_texture("%s/ao.png" % folder)
+	material.ao_enabled = ao != null
+	material.ao_texture = ao
+	material.ao_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+	var metal := _load_texture("%s/metallic.png" % folder)
+	material.metallic_texture = metal
+	material.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+	material.metallic = 1.0 if metal != null else 0.0

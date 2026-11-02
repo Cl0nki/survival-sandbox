@@ -54,6 +54,10 @@ func refresh() -> void:
 			material.albedo_color = definition.swatch
 	if _icon != null:
 		_icon.texture = _Icons.texture_for(definition)
+		var pixels := 48
+		if _icon.texture != null:
+			pixels = maxi(_icon.texture.get_width(), 1)
+		_icon.pixel_size = 0.384 / float(pixels)
 
 
 func _build_visual() -> void:
@@ -68,6 +72,9 @@ func _build_visual() -> void:
 	add_child(_mesh)
 	_icon = Sprite3D.new()
 	_icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_icon.shaded = false
+	_icon.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
+	_icon.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
 	_icon.pixel_size = 0.008
 	_icon.position = Vector3(0.0, 0.48, 0.0)
 	add_child(_icon)

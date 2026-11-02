@@ -42,17 +42,22 @@ func _ready() -> void:
 	_GroundDepositField.build(self)
 	_ScavengeField.build(self)
 	_CraftingField.build(self)
-	_ShowcasePad.add(self, _ShowcasePad.BUILDING, Color(0.34, 0.40, 0.34))
+	_ShowcasePad.add_rect(self, _ShowcasePad.BUILDING, _ShowcasePad.BUILDING_SIZE, Color(0.34, 0.40, 0.34))
 	_ShowcasePad.add(self, _ShowcasePad.DEPLOYABLES, Color(0.30, 0.36, 0.30))
-	_ShowcasePad.label(self, "BUILDING", _ShowcasePad.BUILDING + Vector3(0.0, 2.6, -3.6), 52, Color(0.78, 0.82, 0.74))
+	_ShowcasePad.add(self, _ShowcasePad.SMELTING, Color(0.40, 0.28, 0.22))
+	_ShowcasePad.add(self, _ShowcasePad.FOOD, Color(0.46, 0.32, 0.22))
+	_ShowcasePad.label(self, "BUILDING", _ShowcasePad.BUILDING + Vector3(0.0, 2.6, -8.6), 52, Color(0.78, 0.82, 0.74))
 	_ShowcasePad.label(self, "DEPLOYABLES", _ShowcasePad.DEPLOYABLES + Vector3(0.0, 2.4, -3.6), 36, Color(0.70, 0.76, 0.68))
+	_ShowcasePad.label(self, "SMELTING", _ShowcasePad.SMELTING + Vector3(0.0, 2.6, -4.2), 52, Color(0.90, 0.62, 0.40))
+	_ShowcasePad.label(self, "FOOD", _ShowcasePad.FOOD + Vector3(0.0, 2.6, -4.2), 52, Color(0.92, 0.62, 0.36))
 	_sun.rotation_degrees = Vector3(-50.0, 35.0, 0.0)
 	_sun.shadow_enabled = true
 	_sun.light_energy = 1.15
-	_sun.directional_shadow_max_distance = 70.0
+	_sun.directional_shadow_max_distance = 90.0
 	var mode := _resolved_mode()
 	_add_building()
 	_add_deployables()
+	_seed_stations()
 	if mode == NetConfig.MODE_LOCAL:
 		return
 	_discard("Player")
@@ -68,11 +73,46 @@ func _add_building() -> void:
 	add_child(BuildingSystem.new())
 
 
-## Chests and workbenches. The sample pair sits on the deployables tile.
+## Chests, workbenches, and the stations already standing on their tiles.
 func _add_deployables() -> void:
 	if get_node_or_null("DeployableSystem") != null:
 		return
 	add_child(DeployableSystem.new())
+
+
+## Smelters, crafting stations, and cooking stations are already placed.
+func _seed_stations() -> void:
+	var deployables := get_node_or_null("DeployableSystem") as DeployableSystem
+	if deployables == null:
+		return
+	var spots: Array = [
+		["smelter_steel", Vector2i(2, -18)],
+		["foundry", Vector2i(6, -18)],
+		["smelter_iron", Vector2i(2, -13)],
+		["furnace_scrap", Vector2i(6, -13)],
+		["sawbench", Vector2i(-19, 2)],
+		["kiln", Vector2i(-15, 2)],
+		["sawmill", Vector2i(-19, 5)],
+		["kiln_shed", Vector2i(-15, 5)],
+		["workbench", Vector2i(2, 12)],
+		["workbench_iron", Vector2i(4, 12)],
+		["workbench_steel", Vector2i(6, 12)],
+		["workbench_composite", Vector2i(8, 12)],
+		["machine_shop", Vector2i(3, 15)],
+		["chem_bench", Vector2i(11, 12)],
+		["ammo_bench", Vector2i(16, 12)],
+		["refinery", Vector2i(11, 14)],
+		["armory", Vector2i(16, 14)],
+		["campfire", Vector2i(11, 3)],
+		["fire_pit", Vector2i(11, 5)],
+		["cooking_pot", Vector2i(16, 3)],
+		["stove", Vector2i(16, 5)],
+		["kitchen", Vector2i(14, 7)],
+	]
+	for spot in spots:
+		var placed: Dictionary = deployables.try_place(str(spot[0]), spot[1], 0, 0)
+		if not bool(placed.get("ok", false)):
+			push_error("demo %s refused: %s" % [str(spot[0]), str(placed.get("reason", ""))])
 
 
 func _unhandled_input(event: InputEvent) -> void:

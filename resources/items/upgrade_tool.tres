@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "upgrade_tool"
 display_name = "Upgrade Tool"
-description = "Left click a standing building piece to raise it to the next tier. Cost is ignored for now."
+description = "Debug tool. Left click a standing piece to raise its tier. Cost is ignored."
 max_stack = 1
 weight = 1.2
 category = "tool"

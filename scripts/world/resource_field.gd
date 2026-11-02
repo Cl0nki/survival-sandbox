@@ -3,7 +3,7 @@ class_name ResourceField
 
 ## West 10x10 mine. Nine pickaxe nodes, pickaxes along the south edge.
 
-const ORIGIN := Vector3(-13.3, 0.0, -2.3)
+const ORIGIN := Vector3(-7.3, 0.0, -17.3)
 const SPACING := 2.3
 const COLS := 3
 
@@ -40,7 +40,7 @@ static func build(arena: Node3D) -> void:
 	]
 	for index in tools.size():
 		var entry: Array = tools[index]
-		_pickup(loot, str(entry[0]), str(entry[1]), 1, Vector3(-13.6 + float(index) * 1.3, 0.15, 3.9))
+		_pickup(loot, str(entry[0]), str(entry[1]), 1, Vector3(-7.6 + float(index) * 1.3, 0.15, -11.1))
 
 
 static func _pickup(folder: Node3D, pickup_id: String, item_id: String, quantity: int, pos: Vector3) -> void:
