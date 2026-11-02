@@ -1,0 +1,122 @@
+{
+  "asset_id": "fad397874043",
+  "asset_name": "floor_composite",
+  "category": "painted_metal",
+  "kind": "texture",
+  "created_at": "2026-11-02T12:48:33+00:00",
+  "provider": "openai",
+  "model": "gpt-image-2.5-flare",
+  "prompt": "Seamless tileable orthographic game texture filling the entire frame. Match the example material: large aluminum composite panels, cool gray, smooth matte metal, even rectangles, dark joints that stay visible and even, broad enough to read from a few meters, not hairlines. No sky, no logo, no text, no perspective, no building corner, no rivets, no chips, no rust, no teal. This is a floor surface viewed straight down.",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "Seamless tileable orthographic game texture filling the entire frame. Match the example material: large aluminum composite panels, cool gray, smooth matte metal, even rectangles, dark joints that stay visible and even, broad enough to read from a few meters, not hairlines. No sky, no logo, no text, no perspective, no building corner, no rivets, no chips, no rust, no teal. This is a floor surface viewed straight down.",
+    "godot_folder": "textures",
+    "roughness": 0.42,
+    "metallic": 0.45,
+    "variation": 1,
+    "quality": "medium",
+    "provider_parameters": {
+      "output_format": "png",
+      "reference_images": 1
+    },
+    "provider_resolution": "1024x1024",
+    "seam_score": 11.765
+  },
+  "original_files": [
+    "original/albedo.png",
+    "original/normal.png",
+    "original/roughness.png",
+    "original/ao.png",
+    "original/metallic.png",
+    "original/height.png"
+  ],
+  "processed_files": [
+    "processed/albedo.png",
+    "processed/normal.png",
+    "processed/roughness.png",
+    "processed/ao.png",
+    "processed/metallic.png",
+    "processed/height.png",
+    "preview/tiled.png"
+  ],
+  "polygon_count": null,
+  "texture_resolution": 512,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-02T12:48:33+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "",
+      "prompt": "Seamless tileable orthographic game texture filling the entire frame. Match the example material: large aluminum composite panels, cool gray, smooth matte metal, even rectangles, dark joints that stay visible and even, broad enough to read from a few meters, not hairlines. No sky, no logo, no text, no perspective, no building corner, no rivets, no chips, no rust, no teal. This is a floor surface viewed straight down.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-02T12:48:47+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-image-2.5-flare",
+      "prompt": "Seamless tileable orthographic game texture filling the entire frame. Match the example material: large aluminum composite panels, cool gray, smooth matte metal, even rectangles, dark joints that stay visible and even, broad enough to read from a few meters, not hairlines. No sky, no logo, no text, no perspective, no building corner, no rivets, no chips, no rust, no teal. This is a floor surface viewed straight down.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/albedo.png",
+        "original/normal.png",
+        "original/roughness.png",
+        "original/ao.png",
+        "original/metallic.png",
+        "original/height.png"
+      ],
+      "processed_files": [
+        "processed/albedo.png",
+        "processed/normal.png",
+        "processed/roughness.png",
+        "processed/ao.png",
+        "processed/metallic.png",
+        "processed/height.png",
+        "preview/tiled.png"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "0ab6bf65c48c",
+  "production_files": [
+    "assets/textures/floor_composite/albedo.png",
+    "assets/textures/floor_composite/normal.png",
+    "assets/textures/floor_composite/roughness.png",
+    "assets/textures/floor_composite/ao.png",
+    "assets/textures/floor_composite/metallic.png",
+    "assets/textures/floor_composite/height.png",
+    "assets/textures/floor_composite/preview_tiled.png",
+    "assets/materials/floor_composite.tres"
+  ],
+  "manual_steps": [],
+  "maps_origin": {
+    "albedo": "openai",
+    "normal": "derived_from_albedo",
+    "roughness": "derived_from_albedo",
+    "ao": "derived_from_albedo",
+    "metallic": "derived_from_albedo",
+    "height": "derived_from_albedo"
+  },
+  "modular": null
+}

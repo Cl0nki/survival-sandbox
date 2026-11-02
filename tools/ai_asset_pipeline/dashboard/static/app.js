@@ -2,6 +2,11 @@ const state = { bootstrap: null, assets: [], jobs: [], selected: null, yaw: 0.6,
 
 const $ = (id) => document.getElementById(id);
 
+function showTab(name) {
+  document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.tab === name));
+  document.querySelectorAll("main section").forEach((section) => { section.hidden = section.id !== name; });
+}
+
 async function api(path, options) {
   const response = await fetch(path, options);
   const data = await response.json().catch(() => ({}));
@@ -80,15 +85,43 @@ function renderLibrary() {
 function renderQueue() {
   const list = $("queue-list");
   list.innerHTML = "";
+  const summary = $("queue-summary");
+  if (summary) {
+    summary.textContent = state.jobs.length
+      ? `${state.jobs.length} job${state.jobs.length === 1 ? "" : "s"} in the queue.`
+      : "No jobs yet. Generate from Preview and stay on that tab while they run.";
+  }
+  if (!state.jobs.length) {
+    const empty = document.createElement("li");
+    empty.className = "muted";
+    empty.textContent = "The queue is empty.";
+    list.appendChild(empty);
+    return;
+  }
   state.jobs.forEach((job) => {
-    const card = document.createElement("article");
-    const errors = (job.errors || []).join("\n");
+    const row = document.createElement("li");
+    row.className = "queue-row";
     const request = job.request || {};
-    card.innerHTML = `<h2>${request.name || job.job_id}</h2>
-      <p>${request.kind || "job"} / ${request.category || ""}</p>
-      <p class="${job.status === "failed" ? "bad" : "ok"}">${job.status}</p>
-      <p>${job.message || ""}</p>
-      <pre>${errors}</pre>`;
+    const name = document.createElement("strong");
+    name.textContent = request.name || job.job_id;
+    const kind = document.createElement("span");
+    kind.textContent = [request.kind || "job", request.category || ""].filter(Boolean).join(" · ");
+    const status = document.createElement("span");
+    status.className = job.status === "failed" ? "bad" : "ok";
+    status.textContent = job.status;
+    const message = document.createElement("span");
+    message.className = "muted";
+    message.textContent = (job.errors || []).join(" ") || job.message || "";
+    const actions = document.createElement("span");
+    actions.className = "queue-actions";
+    const assetId = (job.asset_ids || [])[0];
+    if (assetId && (job.status === "ready_for_review" || job.status === "approved")) {
+      const open = document.createElement("button");
+      open.type = "button";
+      open.textContent = "Open";
+      open.addEventListener("click", () => selectAsset(assetId));
+      actions.appendChild(open);
+    }
     if (job.status === "failed" || job.status === "ready_for_review") {
       const button = document.createElement("button");
       button.type = "button";
@@ -97,9 +130,10 @@ function renderQueue() {
         await api(`/api/jobs/${job.job_id}/retry`, { method: "POST" });
         await refresh();
       });
-      card.appendChild(button);
+      actions.appendChild(button);
     }
-    list.appendChild(card);
+    row.append(name, kind, status, message, actions);
+    list.appendChild(row);
   });
 }
 
@@ -115,10 +149,9 @@ function reviewLabel(asset) {
   return asset.processing_status || "Review";
 }
 
-async function selectAsset(id) {
+async function selectAsset(id, options) {
   state.selected = await api(`/api/assets/${id}`);
-  document.querySelectorAll("nav button").forEach((button) => button.classList.toggle("active", button.dataset.tab === "preview"));
-  document.querySelectorAll("main section").forEach((section) => { section.hidden = section.id !== "preview"; });
+  showTab("preview");
   const asset = state.selected;
   const icon = asset.category === "item_icon";
   $("preview-title").textContent = asset.asset_name;
@@ -152,7 +185,21 @@ async function selectAsset(id) {
     notes.appendChild(item);
   });
   const sent = (asset.generation_parameters && asset.generation_parameters.sent_prompt) || asset.prompt || "";
-  $("preview-prompt").value = sent;
+  const match = recordForName(asset.asset_name);
+  if (match) {
+    if (!state.iconEdit || state.iconEdit.id !== match.record.id) fillEditor(match.kind, match.record);
+  } else if (!options || !options.keepPrompt) {
+    state.iconEdit = null;
+    state.copyKind = null;
+    $("copy-ingame").value = "";
+    $("copy-image").value = "";
+    $("copy-ingame-hint").textContent = "";
+    $("copy-image-hint").textContent = "";
+  }
+  if (!options || !options.keepPrompt) {
+    $("preview-prompt").value = sent;
+    state.promptTouched = true;
+  }
   $("preview-json").textContent = JSON.stringify(asset, null, 2);
   const strip = $("preview-strip");
   strip.innerHTML = "";
@@ -315,7 +362,9 @@ async function refresh() {
   if (state.itemSignature !== itemArtSignature()) {
     state.itemSignature = itemArtSignature();
     if (state.items) renderIcons();
-    if (state.items || state.surfaces) renderIngame();
+    if (state.surfaces && !$("surfaces").hidden) loadSurfaces().catch(() => {});
+    else if (state.surfaces) renderSurfaces();
+    if (state.items) renderIngame();
   }
 }
 
@@ -465,7 +514,7 @@ function paintCards(options) {
   const art = $(options.artId).value;
   const visible = records.filter((item) => {
     const group = options.group ? options.group(item) : item.category;
-    const haystack = `${item.display_name} ${item.id} ${item.description} ${group}`.toLowerCase();
+    const haystack = `${item.display_name} ${item.id} ${item.description} ${item.image_description || ""} ${group}`.toLowerCase();
     if (query && !haystack.includes(query)) return false;
     if (category && group !== category) return false;
     if (art === "missing" && item.has_art) return false;
@@ -496,13 +545,21 @@ function paintCards(options) {
     title.textContent = item.display_name;
     const meta = document.createElement("p");
     const group = options.group ? options.group(item) : item.category;
-    meta.textContent = `${group} · ${item.id}`;
+    meta.textContent = options.meta ? options.meta(item, group) : `${group} · ${item.id}`;
     const description = document.createElement("p");
     description.textContent = item.description;
     const badge = document.createElement("p");
     badge.className = item.has_art ? "badge ok" : "badge bad";
     badge.textContent = item.has_art ? options.readyLabel : options.missingLabel;
-    card.append(title, meta, description, badge);
+    const parts = [title, meta, description];
+    if (options.detail) {
+      const extra = document.createElement("p");
+      extra.className = "muted";
+      extra.textContent = options.detail(item);
+      parts.push(extra);
+    }
+    parts.push(badge);
+    card.append(...parts);
     if (options.queue && (!options.queueWhen || options.queueWhen(item))) {
       const running = (state.jobs || []).some((job) => job.request && job.request.name === item.id && ["waiting", "generating", "downloading", "processing"].includes(job.status));
       const button = document.createElement("button");
@@ -513,14 +570,6 @@ function paintCards(options) {
       const row = document.createElement("div");
       row.className = "actions";
       row.append(button);
-      if (options.editPrompt) {
-        const edit = document.createElement("button");
-        edit.type = "button";
-        edit.textContent = "Edit prompt";
-        edit.disabled = running;
-        edit.addEventListener("click", () => options.editPrompt(item));
-        row.append(edit);
-      }
       card.appendChild(row);
     }
     grid.appendChild(card);
@@ -545,22 +594,25 @@ function renderIcons() {
     readyLabel: "Icon",
     missingLabel: "Placeholder",
     artUrl: (item) => `/item-art/${item.art_file}`,
-    queue: queueIcon,
-    editPrompt: editIconPrompt,
+    queue: (item) => openCopy("item", item),
+    detail: (item) => item.image_description ? `Image: ${item.image_description}` : "Image: name only, until you write an image description.",
     buttonLabel: (item) => item.has_art ? "New icon" : "Make icon",
   });
 }
 
 function iconRequest(item, extra) {
+  const visual = (item.image_description || "").trim();
   return {
     kind: "texture",
     category: "item_icon",
     name: item.id,
-    prompt: `Inventory icon of one ${item.display_name}. ${item.description} Side view. Guns point to the right.`,
+    prompt: visual
+      ? `Inventory icon of one ${item.display_name}. ${visual}`
+      : `Inventory icon of one ${item.display_name}.`,
     provider: "openai",
     icon_category: item.category,
     swatch: item.swatch,
-    resolution: 1024,
+    resolution: 512,
     variations: 1,
     quality: "medium",
     ...extra,
@@ -592,7 +644,7 @@ function addIconDraftFiles(files) {
   if (!state.iconDraft) state.iconDraft = [];
   const room = 16 - state.iconDraft.length;
   if (room <= 0) {
-    $("icon-prompt-note").textContent = "A prompt can include at most 16 images.";
+    $("preview-hint").textContent = "A prompt can include at most 16 images.";
     return;
   }
   [...files].slice(0, room).forEach((file) => {
@@ -602,50 +654,125 @@ function addIconDraftFiles(files) {
   renderIconDraft();
 }
 
-async function editIconPrompt(item) {
+function presetPrompt(surface) {
+  const textures = state.bootstrap && state.bootstrap.catalog && state.bootstrap.catalog.textures;
+  const preset = textures && textures[surface.pipeline_category];
+  return (preset && preset.prompt) || "";
+}
+
+function surfaceRequest(surface, extra) {
+  const visual = (surface.image_description || "").trim();
+  return {
+    kind: "texture",
+    category: surface.pipeline_category,
+    name: surface.id,
+    prompt: "",
+    subject_override: visual,
+    provider: "openai",
+    resolution: 512,
+    variations: 1,
+    quality: "medium",
+    ...extra,
+  };
+}
+
+function recordForName(name) {
+  const surface = (state.surfaces || []).find((item) => item.id === name);
+  if (surface) return { kind: "surface", record: surface };
+  const item = (state.items || []).find((entry) => entry.id === name);
+  if (item) return { kind: "item", record: item };
+  return null;
+}
+
+function fillEditor(kind, record) {
+  state.iconEdit = record;
+  state.copyKind = kind;
+  $("preview-title").textContent = record.display_name;
+  $("copy-ingame").value = record.description || "";
+  $("copy-image").value = record.image_description || (kind === "surface" ? presetPrompt(record) : "");
+  $("copy-ingame-hint").textContent = kind === "item"
+    ? "Shown on the item in the game. The image model does not read this."
+    : "Kept with this surface. The image model does not read this.";
+  $("copy-image-hint").textContent = kind === "item"
+    ? "What the object looks like. Leave this empty to send only the name."
+    : "The material the image model paints for this wall or floor. Edit it, then generate. Clear it to go back to the category preset.";
+  $("icon-prompt-ref-note").textContent = kind === "item"
+    ? "Optional. The example is sent with the prompt. The icon still asks for a transparent background."
+    : "Optional. The example is sent with the prompt so the texture can follow it.";
+}
+
+function clearReviewPicture() {
+  state.selected = null;
+  state.mesh = null;
+  $("preview-meta").textContent = "Write the prompt, then generate. The picture shows up here when one is ready.";
+  $("preview-status").textContent = "";
+  $("preview-image").hidden = true;
+  $("preview-image").removeAttribute("src");
+  $("preview-3d").hidden = true;
+  $("preview-strip").innerHTML = "";
+  $("preview-notes").innerHTML = "";
+  $("preview-json").textContent = "";
+  $("preview-edit").value = "";
+  $("preview-edit-image").disabled = true;
+}
+
+async function openCopy(kind, record) {
   (state.iconDraft || []).forEach((entry) => URL.revokeObjectURL(entry.url));
   state.iconDraft = [];
-  state.iconEdit = item;
   renderIconDraft();
-  $("icon-prompt-title").textContent = item.display_name;
-  $("icon-prompt-text").value = "";
-  $("icon-prompt-note").textContent = "Loading the prompt.";
-  $("icon-prompt").showModal();
+  fillEditor(kind, record);
+  state.promptTouched = false;
+  $("preview-prompt").value = "";
+  $("preview-hint").textContent = "Loading the prompt.";
+  showTab("preview");
+  const existing = chosenPicture(record.id);
+  if (existing) await selectAsset(existing.asset_id, { keepPrompt: true });
+  else clearReviewPicture();
+  $("preview-title").textContent = record.display_name;
   try {
     const preview = await api("/api/prompt-preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(iconRequest(item)),
+      body: JSON.stringify(kind === "item" ? iconRequest(record) : surfaceRequest(record)),
     });
-    if (state.iconEdit === item) {
-      $("icon-prompt-text").value = preview.prompt || "";
-      $("icon-prompt-note").textContent = "";
+    if (state.iconEdit === record) {
+      $("preview-prompt").value = preview.prompt || "";
+      state.promptTouched = false;
+      $("preview-hint").textContent = "Generate uses this prompt and any example images. Edit image changes the picture shown here.";
     }
   } catch (error) {
-    $("icon-prompt-note").textContent = error.message;
+    $("preview-hint").textContent = error.message;
   }
 }
 
-async function queueIcon(item) {
-  state.statusNote = `Queuing an icon for ${item.display_name}.`;
-  $("status-line").textContent = state.statusNote;
-  try {
-    await api("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(iconRequest(item)),
-    });
-    state.statusNote = null;
-    document.querySelector('[data-tab="queue"]').click();
-    await refresh();
-  } catch (error) {
-    state.statusNote = error.message;
-    $("status-line").textContent = error.message;
-  }
+async function saveCopy() {
+  const record = state.iconEdit;
+  const kind = state.copyKind;
+  if (!record || !kind) return null;
+  const data = await api("/api/copy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      kind,
+      id: record.id,
+      description: $("copy-ingame").value,
+      image_description: $("copy-image").value,
+    }),
+  });
+  const saved = kind === "item" ? data.item : data.surface;
+  const list = kind === "item" ? state.items : state.surfaces;
+  const index = (list || []).findIndex((item) => item.id === saved.id);
+  if (index >= 0) list[index] = saved;
+  state.iconEdit = saved;
+  $("copy-ingame").value = saved.description || "";
+  $("copy-image").value = saved.image_description || "";
+  if (kind === "item") renderIcons();
+  else renderSurfaces();
+  return saved;
 }
 
 function ingameRecords() {
-  const world = (state.items || []).map((item) => ({
+  return (state.items || []).map((item) => ({
     id: item.id,
     display_name: item.display_name,
     description: item.category === "deployable"
@@ -657,16 +784,10 @@ function ingameRecords() {
     needs_art: true,
     art_file: "",
   }));
-  const surfaces = (state.surfaces || []).map((item) => ({
-    ...item,
-    category: "building surface",
-    description: `${item.category} is still a flat color. ${item.description}`,
-  }));
-  return [...world, ...surfaces];
 }
 
 function renderIngame() {
-  if (!state.items && !state.surfaces) return;
+  if (!state.items) return;
   paintCards({
     records: ingameRecords(),
     gridId: "ingame-grid",
@@ -674,42 +795,36 @@ function renderIngame() {
     categoryId: "ingame-category",
     artId: "ingame-art",
     summaryId: "ingame-summary",
-    summary: (total, missing) => `${total} world graphics. ${missing} are still a box or a flat color. Wall, floor, post, and stair textures ask the image API.`,
+    summary: (total, missing) => `${total} world objects. ${missing} are still a colored box. Wall and floor textures are on Surfaces.`,
     draw: drawSurface,
     readyLabel: "World art",
     missingLabel: "Needs a model",
-    artUrl: (item) => `/texture-art/${item.id}/albedo.png`,
-    queue: queueSurface,
-    queueWhen: (item) => Boolean(item.pipeline_category),
-    buttonLabel: () => "New texture",
   });
 }
 
-async function queueSurface(surface) {
-  state.statusNote = `Queuing a texture for ${surface.display_name}.`;
-  $("status-line").textContent = state.statusNote;
-  try {
-    await api("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        kind: "texture",
-        category: surface.pipeline_category,
-        name: surface.id,
-        prompt: `${surface.display_name}. ${surface.description} Seamless tileable surface, no object, no text.`,
-        provider: "openai",
-        resolution: 1024,
-        variations: 1,
-        quality: "medium",
-      }),
-    });
-    state.statusNote = null;
-    document.querySelector('[data-tab="queue"]').click();
-    await refresh();
-  } catch (error) {
-    state.statusNote = error.message;
-    $("status-line").textContent = error.message;
-  }
+function renderSurfaces() {
+  if (!state.surfaces) return;
+  const piece = $("surface-piece").value;
+  const pieces = piece ? piece.split(" ") : null;
+  const records = state.surfaces.filter((item) => !pieces || pieces.includes(item.category));
+  paintCards({
+    records,
+    gridId: "surface-grid",
+    searchId: "surface-search",
+    categoryId: "surface-material",
+    artId: "surface-art",
+    summaryId: "surface-summary",
+    group: (item) => item.material,
+    summary: (total, missing) => `${total} surfaces in this view. ${missing} still use a flat color. New pictures are saved at 512 pixels.`,
+    meta: (item) => `${item.category} · roughness ${Number(item.roughness).toFixed(2)} · ${item.id}`,
+    detail: (item) => item.image_description ? `Image: ${item.image_description}` : `Image preset: ${presetPrompt(item)}`,
+    draw: drawSurface,
+    readyLabel: "Texture",
+    missingLabel: "Flat color",
+    artUrl: (item) => `/texture-art/${item.id}/albedo.png`,
+    queue: (item) => openCopy("surface", item),
+    buttonLabel: () => "New texture",
+  });
 }
 
 function fillSelect(id, names) {
@@ -738,19 +853,22 @@ async function loadIngame() {
     state.items = payload.items;
     fillSelect("item-category", state.items.map((item) => item.category));
   }
-  if (!state.surfaces) {
-    const payload = await api("/api/surfaces");
-    state.surfaces = payload.surfaces;
-  }
-  fillSelect("ingame-category", ["world pickup", "deployable", "building surface"]);
+  fillSelect("ingame-category", ["world pickup", "deployable"]);
   renderIngame();
+}
+
+async function loadSurfaces() {
+  const payload = await api("/api/surfaces");
+  state.surfaces = payload.surfaces;
+  fillSelect("surface-material", state.surfaces.map((item) => item.material));
+  renderSurfaces();
 }
 
 document.querySelectorAll("nav button").forEach((button) => {
   button.addEventListener("click", () => {
-    document.querySelectorAll("nav button").forEach((item) => item.classList.toggle("active", item === button));
-    document.querySelectorAll("main section").forEach((section) => { section.hidden = section.id !== button.dataset.tab; });
+    showTab(button.dataset.tab);
     if (button.dataset.tab === "style") loadStyle().catch((error) => { $("style-note").textContent = error.message; });
+    if (button.dataset.tab === "surfaces") loadSurfaces().catch((error) => { $("surface-summary").textContent = error.message; });
     if (button.dataset.tab === "icons") loadItems().catch((error) => { $("item-summary").textContent = error.message; });
     if (button.dataset.tab === "ingame") loadIngame().catch((error) => { $("ingame-summary").textContent = error.message; });
   });
@@ -759,6 +877,10 @@ document.querySelectorAll("nav button").forEach((button) => {
 $("item-search").addEventListener("input", renderIcons);
 $("item-category").addEventListener("change", renderIcons);
 $("item-art").addEventListener("change", renderIcons);
+$("surface-search").addEventListener("input", renderSurfaces);
+$("surface-piece").addEventListener("change", renderSurfaces);
+$("surface-material").addEventListener("change", renderSurfaces);
+$("surface-art").addEventListener("change", renderSurfaces);
 $("ingame-search").addEventListener("input", renderIngame);
 $("ingame-category").addEventListener("change", renderIngame);
 $("ingame-art").addEventListener("change", renderIngame);
@@ -970,53 +1092,57 @@ $("icon-prompt-file").addEventListener("change", (event) => {
   event.target.value = "";
 });
 
-$("icon-prompt").addEventListener("paste", (event) => {
+$("preview").addEventListener("paste", (event) => {
   const files = clipboardImages(event.clipboardData);
   if (!files.length) return;
   event.preventDefault();
   addIconDraftFiles(files);
 });
 
-$("icon-prompt-cancel").addEventListener("click", () => {
-  $("icon-prompt").close();
+$("preview-prompt").addEventListener("input", () => {
+  state.promptTouched = true;
 });
 
-$("icon-prompt-generate").addEventListener("click", async () => {
-  const item = state.iconEdit;
-  const prompt = $("icon-prompt-text").value.trim();
-  if (!item || !prompt) {
-    $("icon-prompt-note").textContent = "Write a prompt first.";
-    return;
-  }
-  const button = $("icon-prompt-generate");
-  button.disabled = true;
-  $("icon-prompt-note").textContent = state.iconDraft && state.iconDraft.length
-    ? "Queuing the icon with the reference image."
-    : "Queuing the icon.";
+$("copy-save").addEventListener("click", async () => {
+  $("preview-hint").textContent = "Saving descriptions.";
   try {
-    const paths = [];
-    for (const entry of state.iconDraft || []) {
-      const body = new FormData();
-      body.append("file", entry.file);
-      const response = await fetch("/api/upload", { method: "POST", body });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "The reference image was not uploaded.");
-      paths.push(data.path);
-    }
-    await api("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(iconRequest(item, { prompt_override: prompt, reference_images: paths })),
-    });
-    $("icon-prompt").close();
-    document.querySelector('[data-tab="queue"]').click();
-    await refresh();
+    await saveCopy();
+    $("preview-hint").textContent = "Descriptions saved.";
   } catch (error) {
-    $("icon-prompt-note").textContent = error.message;
-  } finally {
-    button.disabled = false;
+    $("preview-hint").textContent = error.message;
   }
 });
+
+$("copy-rebuild").addEventListener("click", async () => {
+  $("preview-hint").textContent = "Saving descriptions and rebuilding the prompt.";
+  try {
+    const saved = await saveCopy();
+    if (!saved) return;
+    const preview = await api("/api/prompt-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state.copyKind === "item" ? iconRequest(saved) : surfaceRequest(saved)),
+    });
+    $("preview-prompt").value = preview.prompt || "";
+    state.promptTouched = false;
+    $("preview-hint").textContent = "Prompt rebuilt from the saved descriptions.";
+  } catch (error) {
+    $("preview-hint").textContent = error.message;
+  }
+});
+
+async function uploadDrafts() {
+  const paths = [];
+  for (const entry of state.iconDraft || []) {
+    const body = new FormData();
+    body.append("file", entry.file);
+    const response = await fetch("/api/upload", { method: "POST", body });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "The example image was not uploaded.");
+    paths.push(data.path);
+  }
+  return paths;
+}
 
 $("style-shots").addEventListener("change", async (event) => {
   const files = [...(event.target.files || [])];
@@ -1122,16 +1248,51 @@ async function queueReviewed(prompt, referenceImages) {
 }
 
 $("preview-generate").addEventListener("click", async () => {
-  const asset = state.selected;
   const prompt = $("preview-prompt").value.trim();
-  if (!asset || !prompt) return;
+  const record = state.iconEdit;
+  if (!prompt) {
+    $("preview-hint").textContent = "Write a prompt first.";
+    return;
+  }
+  if (!record && !state.selected) {
+    $("preview-hint").textContent = "Choose a surface, an icon, or a picture first.";
+    return;
+  }
+  const button = $("preview-generate");
+  button.disabled = true;
+  const name = (record && record.display_name) || (state.selected && state.selected.asset_name) || "image";
+  $("preview-hint").textContent = state.iconDraft && state.iconDraft.length
+    ? `Generating ${name} from the example.`
+    : `Generating ${name}.`;
   try {
-    await queueReviewed(prompt, []);
-    $("status-line").textContent = `Generating a new ${asset.asset_name} image.`;
-    document.querySelector('[data-tab="queue"]').click();
+    const paths = await uploadDrafts();
+    if (record && state.copyKind) {
+      const saved = await saveCopy();
+      let sent = prompt;
+      if (!state.promptTouched) {
+        const preview = await api("/api/prompt-preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state.copyKind === "item" ? iconRequest(saved || record) : surfaceRequest(saved || record)),
+        });
+        sent = (preview.prompt || prompt).trim();
+      }
+      const request = state.copyKind === "item" ? iconRequest(saved || record) : surfaceRequest(saved || record);
+      await api("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...request, prompt_override: sent, reference_images: paths }),
+      });
+    } else {
+      await queueReviewed(prompt, paths);
+    }
+    $("status-line").textContent = `Generating ${name}.`;
+    $("preview-hint").textContent = `Generating ${name}. It stays in the queue while you keep working here.`;
     await refresh();
   } catch (error) {
     $("preview-hint").textContent = error.message;
+  } finally {
+    button.disabled = false;
   }
 });
 
@@ -1159,10 +1320,11 @@ $("preview-edit-image").addEventListener("click", async () => {
     if (!uploaded.ok) throw new Error(data.error || "The review picture was not uploaded.");
     await queueReviewed(change, [data.path]);
     $("status-line").textContent = `Editing ${asset.asset_name}.`;
-    document.querySelector('[data-tab="queue"]').click();
+    $("preview-hint").textContent = `Editing ${asset.asset_name}. It stays in the queue while you keep working here.`;
     await refresh();
   } catch (error) {
     $("preview-hint").textContent = error.message;
+  } finally {
     button.disabled = false;
   }
 });
@@ -1206,7 +1368,7 @@ $("reprocess-file").addEventListener("change", async (event) => {
 api("/api/bootstrap").then((bootstrap) => {
   state.bootstrap = bootstrap;
   return refresh();
-}).then(() => loadItems()).catch((error) => {
+}).then(() => loadSurfaces()).catch((error) => {
   $("status-line").textContent = error.message;
 });
 setInterval(() => { refresh().catch(() => {}); }, 2000);

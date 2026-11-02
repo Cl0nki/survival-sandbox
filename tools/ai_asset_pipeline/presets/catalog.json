@@ -54,6 +54,51 @@
       "palette": ["sand", "concrete_gray", "rust_orange"],
       "prompt": "fine wind-brushed sand, soft ripples, hand-painted grain, no footprints"
     },
+    "clay": {
+      "label": "Clay",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.9,
+      "palette": ["rust_orange", "sand", "dark_slate"],
+      "prompt": "damp clay ground, broad hand-painted lumps, muted rust and sand, no objects"
+    },
+    "gravel": {
+      "label": "Gravel",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.94,
+      "palette": ["concrete_gray", "blue_gray", "sand"],
+      "prompt": "loose gravel ground, painted stones of a few sizes, muted gray, no plants"
+    },
+    "water": {
+      "label": "Ground water",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.22,
+      "palette": ["blue_gray", "concrete_gray", "sand"],
+      "prompt": "shallow ground water over sand, painted teal and slate patches, soft bottom shapes, no horizon, no object"
+    },
+    "gas": {
+      "label": "Natural gas seep",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.84,
+      "palette": ["olive_green", "sand", "dark_slate"],
+      "prompt": "stained dirt with a pale yellow-green gas seep, hand-painted patches, no flames, no pipes, no text"
+    },
+    "oil": {
+      "label": "Crude oil seep",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.08,
+      "roughness": 0.45,
+      "palette": ["dark_slate", "rust_orange", "sand"],
+      "prompt": "dark crude seep across packed dirt, dull brown-black sheen, hand-painted edges, no puddle silhouette, no equipment"
+    },
     "wood": {
       "label": "Wood",
       "implementation": "texture",
@@ -61,7 +106,7 @@
       "metallic": 0.0,
       "roughness": 0.72,
       "palette": ["rust_orange", "sand", "dark_slate"],
-      "prompt": "sawn timber planks, painted wood grain, subtle gaps between boards"
+      "prompt": "sawn timber planks, painted wood grain, broad gaps between boards, no hairline cracks"
     },
     "metal": {
       "label": "Metal",
@@ -70,7 +115,7 @@
       "metallic": 0.85,
       "roughness": 0.42,
       "palette": ["blue_gray", "concrete_gray", "dark_slate"],
-      "prompt": "brushed sheet metal, soft panel breaks, hand-painted mill finish, no mirror reflections"
+      "prompt": "brushed sheet metal, broad panel seams, hand-painted mill finish, no mirror reflections, no hairline cracks"
     },
     "rusted_metal": {
       "label": "Rusted metal",
@@ -82,13 +127,13 @@
       "prompt": "oxidized steel plate, flaking rust streaks, remaining blue-gray metal, hand-painted"
     },
     "painted_metal": {
-      "label": "Painted metal",
+      "label": "Composite panel",
       "implementation": "texture",
       "godot_folder": "textures",
-      "metallic": 0.35,
-      "roughness": 0.5,
-      "palette": ["olive_green", "dark_slate", "concrete_gray"],
-      "prompt": "olive painted metal panel, chipped edges revealing dark metal, soft rivet hints"
+      "metallic": 0.45,
+      "roughness": 0.42,
+      "palette": ["blue_gray", "concrete_gray", "dark_slate"],
+      "prompt": "large flat cool-gray aluminum composite panels, smooth matte metal, exactly four equal columns and four equal rows filling the frame. Solid near-black joints about one fifth as wide as each panel, running edge to edge so the tile repeats. Wall, floor, and ceiling use this same grid, the same panel count, the same joint width, and the same colors. If an example image is attached, copy only the flat gray panel color and draw the joints several times thicker than the example. No thin lines, no caulk, no rivets, no chips, no rust, no teal, no sky, no logo, no perspective, no building corner"
     },
     "fabric": {
       "label": "Fabric",
@@ -152,8 +197,8 @@
       "roughness": 0.7,
       "palette": ["dark_slate", "blue_gray", "concrete_gray", "sand", "rust_orange"],
       "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame",
-      "suffix": "Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show every object from the side, in profile. Guns always point to the right. The area outside the object is empty alpha. No numbers. Generate the square at 1024 pixels so it stays sharp at that size. This is not a seamless texture.",
-      "negative": ["seamless texture", "tiled pattern", "text", "watermark", "number", "multiple objects", "frame", "front view", "three-quarter view", "top view", "barrel pointing left", "solid background", "backdrop"]
+      "suffix": "Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture.",
+      "negative": ["seamless texture", "tiled pattern", "text", "watermark", "number", "multiple objects", "frame", "front view", "three-quarter view", "top view", "solid background", "backdrop"]
     }
   },
   "props": {

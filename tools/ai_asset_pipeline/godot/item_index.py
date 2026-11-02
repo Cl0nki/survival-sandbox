@@ -49,8 +49,9 @@ def art_path(project_root: Path, item_id: str) -> Path | None:
     return None
 
 
-def load_items(project_root: Path) -> list[dict]:
+def load_items(project_root: Path, copy: dict | None = None) -> list[dict]:
     root = project_root / "resources" / "items"
+    images = (copy or {}).get("items", {})
     items = []
     if not root.is_dir():
         return items
@@ -58,6 +59,8 @@ def load_items(project_root: Path) -> list[dict]:
         parsed = _parse_tres(path)
         if parsed is None:
             continue
+        saved = images.get(parsed["id"]) if isinstance(images, dict) else None
+        parsed["image_description"] = " ".join(str((saved or {}).get("image") or "").split()) if isinstance(saved, dict) else ""
         picture = art_path(project_root, parsed["id"])
         parsed["has_art"] = picture is not None
         parsed["art_file"] = picture.name if picture else ""

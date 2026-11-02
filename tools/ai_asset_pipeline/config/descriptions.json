@@ -1,0 +1,29 @@
+{
+  "items": {},
+  "surfaces": {
+    "wall_scrap": {
+      "ingame": "Scrap wall surface.",
+      "image": "corrugated-iron shack wall, hand-painted"
+    },
+    "floor_brick": {
+      "ingame": "Brick floor surface.",
+      "image": "running-bond brick floor, thick painted mortar, chipped corners, topdown perspective"
+    },
+    "floor_wood": {
+      "ingame": "Wood floor surface.",
+      "image": "sawn timber planks, wood grain, subtle gaps between boards"
+    },
+    "wall_composite": {
+      "ingame": "Composite wall surface.",
+      "image": "large flat cool-gray aluminum composite panels, smooth matte metal, exactly four equal columns and four equal rows filling the frame. Solid near-black joints about one fifth as wide as each panel, running edge to edge so the tile repeats. Wall, floor, and ceiling use this same grid, the same panel count, the same joint width, and the same colors. If an example image is attached, copy only the flat gray panel color and draw the joints several times thicker than the example. No thin lines, no caulk, no rivets, no chips, no rust, no teal, no sky, no logo, no perspective, no building corner"
+    },
+    "floor_composite": {
+      "ingame": "Composite floor surface.",
+      "image": "large flat cool-gray aluminum composite panels, smooth matte metal, exactly four equal columns and four equal rows filling the frame. Solid near-black joints about one fifth as wide as each panel, running edge to edge so the tile repeats. Wall, floor, and ceiling use this same grid, the same panel count, the same joint width, and the same colors. If an example image is attached, copy only the flat gray panel color and draw the joints several times thicker than the example. No thin lines, no caulk, no rivets, no chips, no rust, no teal, no sky, no logo, no perspective, no building corner"
+    },
+    "post_composite": {
+      "ingame": "Composite post surface.",
+      "image": "large flat cool-gray aluminum composite panels, smooth matte metal, exactly four equal columns and four equal rows filling the frame. Solid near-black joints about one fifth as wide as each panel, running edge to edge so the tile repeats. Wall, floor, and ceiling use this same grid, the same panel count, the same joint width, and the same colors. If an example image is attached, copy only the flat gray panel color and draw the joints several times thicker than the example. No thin lines, no caulk, no rivets, no chips, no rust, no teal, no sky, no logo, no perspective, no building corner"
+    }
+  }
+}

@@ -40,7 +40,9 @@ _PIPELINE = {
     ("stone", "floor"): "stone",
     ("stone", "post"): "stone",
     ("stone", "stairs"): "stone",
-    ("composite", "floor"): "metal",
+    ("composite", "wall"): "painted_metal",
+    ("composite", "post"): "painted_metal",
+    ("composite", "floor"): "painted_metal",
     ("scrap", "floor"): "dirt",
 }
 
@@ -79,9 +81,10 @@ def _pipeline_category(slug: str, piece: str) -> str:
     return _PIPELINE.get((slug, piece), "painted_metal" if slug == "composite" else "rusted_metal")
 
 
-def load_surfaces(project_root: Path) -> list[dict]:
+def load_surfaces(project_root: Path, copy: dict | None = None) -> list[dict]:
     script = project_root / "scripts" / "building" / "building_tier.gd"
     colors = _colors(script.read_text(encoding="utf-8"))
+    stored = (copy or {}).get("surfaces", {})
     surfaces = []
     for piece in ("wall", "floor", "post", "stairs"):
         for tier, (slug, label) in _TIERS.items():
@@ -96,11 +99,17 @@ def load_surfaces(project_root: Path) -> list[dict]:
                 roughness = min(1.0, roughness + 0.06)
             surface_id = f"{piece}_{slug}"
             albedo = project_root / "assets" / "textures" / surface_id / "albedo.png"
+            saved = stored.get(surface_id) if isinstance(stored, dict) else None
+            saved = saved if isinstance(saved, dict) else {}
+            ingame = " ".join(str(saved.get("ingame") or "").split())
+            image = " ".join(str(saved.get("image") or "").split())
             surfaces.append(
                 {
                     "id": surface_id,
                     "display_name": f"{label} {_PIECE_LABEL[piece]}",
-                    "description": f"Flat color in the game. Roughness {roughness:.2f}, metallic {metallic:.2f}.",
+                    "description": ingame or f"{label} {piece} surface.",
+                    "image_description": image,
+                    "material": label,
                     "category": piece,
                     "swatch": swatch,
                     "roughness": round(roughness, 2),
@@ -112,3 +121,45 @@ def load_surfaces(project_root: Path) -> list[dict]:
                 }
             )
     return surfaces
+
+
+def load_grounds(project_root: Path, copy: dict | None = None) -> list[dict]:
+    """World pads and deposit patches. A finished albedo is assets/textures/<id>/albedo.png."""
+    stored = (copy or {}).get("surfaces", {})
+    grounds = []
+    for surface_id, name, category, swatch, roughness, description in _GROUNDS:
+        albedo = project_root / "assets" / "textures" / surface_id / "albedo.png"
+        saved = stored.get(surface_id) if isinstance(stored, dict) else None
+        saved = saved if isinstance(saved, dict) else {}
+        ingame = " ".join(str(saved.get("ingame") or "").split())
+        image = " ".join(str(saved.get("image") or "").split())
+        grounds.append(
+            {
+                "id": surface_id,
+                "display_name": name,
+                "description": ingame or description,
+                "image_description": image,
+                "material": name,
+                "category": "ground",
+                "swatch": swatch,
+                "roughness": roughness,
+                "metallic": 0.0,
+                "pipeline_category": category,
+                "has_art": albedo.is_file(),
+                "art_file": "albedo.png" if albedo.is_file() else "",
+                "needs_art": not albedo.is_file(),
+            }
+        )
+    return grounds
+
+
+_GROUNDS = (
+    ("ground_grass", "Grass", "grass", [0.26, 0.34, 0.20, 1.0], 0.90, "Short grass on the woods pad."),
+    ("ground_dirt", "Dirt", "dirt", [0.42, 0.36, 0.24, 1.0], 0.95, "Packed dirt under the ground deposits."),
+    ("ground_sand", "Sand", "sand", [0.85, 0.76, 0.54, 1.0], 0.93, "Sand patch. A shovel gathers it."),
+    ("ground_clay", "Clay", "clay", [0.62, 0.36, 0.24, 1.0], 0.90, "Clay patch. A shovel gathers it."),
+    ("ground_gravel", "Gravel", "gravel", [0.52, 0.52, 0.52, 1.0], 0.94, "Gravel patch. A shovel gathers it."),
+    ("ground_water", "Ground Water", "water", [0.22, 0.49, 0.66, 1.0], 0.22, "Shallow water. A well draws from it."),
+    ("ground_gas", "Natural Gas", "gas", [0.65, 0.65, 0.29, 1.0], 0.84, "Gas seep. A gas pump draws from it."),
+    ("ground_oil", "Crude Oil", "oil", [0.22, 0.19, 0.18, 1.0], 0.45, "Oil seep. An oil pump draws from it."),
+)

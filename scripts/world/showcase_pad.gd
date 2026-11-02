@@ -7,6 +7,8 @@ class_name ShowcasePad
 
 const SIZE := 10.0
 const BUILDING_SIZE := 20.0
+const PAD_CENTER_Y := 0.02
+const PAD_THICKNESS := 0.025
 
 const WOODS := Vector3(-15.0, 0.0, -15.0)
 const MINE := Vector3(-5.0, 0.0, -15.0)
@@ -26,21 +28,48 @@ const CHEM := Vector3(15.0, 0.0, 15.0)
 const WOODS_CRATE := Vector3(-10.8, 0.15, -11.6)
 
 
-static func add(root: Node3D, center: Vector3, color: Color) -> void:
-	add_rect(root, center, SIZE, color)
+static func pad_top() -> float:
+	return PAD_CENTER_Y + PAD_THICKNESS * 0.5
 
 
-static func add_rect(root: Node3D, center: Vector3, size: float, color: Color) -> void:
+static func add(root: Node3D, center: Vector3, color: Color, texture_id := "") -> void:
+	add_rect(root, center, SIZE, color, texture_id)
+
+
+static func add_rect(root: Node3D, center: Vector3, size: float, color: Color, texture_id := "") -> void:
 	var mesh := MeshInstance3D.new()
 	var box := BoxMesh.new()
-	box.size = Vector3(size, 0.025, size)
+	box.size = Vector3(size, PAD_THICKNESS, size)
 	mesh.mesh = box
-	mesh.position = Vector3(center.x, 0.02, center.z)
+	mesh.position = Vector3(center.x, PAD_CENTER_Y, center.z)
 	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 1.0
+	paint(material, texture_id, Vector2(size, size), color)
 	mesh.set_surface_override_material(0, material)
 	root.add_child(mesh)
+
+
+static func paint(material: StandardMaterial3D, texture_id: String, repeats: Vector2, fallback: Color) -> void:
+	material.roughness = 1.0
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	var texture := albedo(texture_id)
+	if texture == null:
+		material.albedo_color = fallback
+		return
+	material.albedo_texture = texture
+	material.albedo_color = Color.WHITE
+	material.uv1_scale = Vector3(repeats.x, repeats.y, 1.0)
+
+
+static func albedo(texture_id: String) -> Texture2D:
+	if texture_id == "":
+		return null
+	var path := "res://assets/textures/%s/albedo.png" % texture_id
+	if not FileAccess.file_exists(path):
+		return null
+	var image := Image.new()
+	if image.load(path) != OK:
+		return null
+	return ImageTexture.create_from_image(image)
 
 
 static func label(root: Node3D, text: String, at: Vector3, size: int, color: Color) -> void:

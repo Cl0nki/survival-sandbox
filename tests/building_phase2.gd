@@ -488,12 +488,19 @@ func _test_upgrade_tiers() -> void:
 	var first := system.authority.upgrade(wall.id)
 	_check(bool(first.get("ok", false)) and wall.tier == 2 and wall.max_health == 400 and wall.health == 400, "upgrade to wood failed: %s" % first.get("reason", ""))
 	var wood := mesh.get_surface_override_material(0) as StandardMaterial3D
-	_check(wood != null and wood.albedo_color.is_equal_approx(BuildingTier.color_for(2, BuildTypes.Kind.WALL)), "wood wall kept the scrap colour")
+	_check(wood != null, "wood wall had no material")
+	if wood != null and wood.albedo_texture == null:
+		_check(wood.albedo_color.is_equal_approx(BuildingTier.color_for(2, BuildTypes.Kind.WALL)), "wood wall kept the scrap colour")
 	if post != null:
 		var post_mesh := system.world.node_for(post.id).get_node("Mesh") as MeshInstance3D
 		var post_mat := post_mesh.get_surface_override_material(0) as StandardMaterial3D if post_mesh != null else null
-		_check(post_mat != null and post_mat.albedo_color.is_equal_approx(BuildingTier.color_for(2, BuildTypes.Kind.POST)), "corner post did not follow the wall colour")
-		_check(post_mat.albedo_color.get_luminance() < wood.albedo_color.get_luminance(), "corner post was not darker than the wall")
+		_check(post_mat != null, "corner post had no material")
+		if post_mat != null:
+			var floor_mat := BuildingTier.make_material(2, BuildTypes.Kind.SLAB)
+			if floor_mat.albedo_texture != null:
+				_check(post_mat.albedo_texture == floor_mat.albedo_texture, "corner post did not use the floor texture")
+			else:
+				_check(post_mat.albedo_color.is_equal_approx(BuildingTier.color_for(2, BuildTypes.Kind.SLAB)), "corner post did not follow the floor colour")
 		_check(system.state.display_tier(post) == 2 and post.tier == 1, "corner post stored its own wood tier")
 		var before := wall.health
 		system.authority.apply_bullet(post.id, 20, Vector3.ZERO, "post-chip")

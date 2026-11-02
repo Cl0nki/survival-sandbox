@@ -77,7 +77,7 @@ static func color_for(tier: int, kind: int) -> Color:
 				5:
 					return Color(0.58, 0.54, 0.48)
 				6:
-					return Color(0.12, 0.28, 0.32)
+					return Color(0.40, 0.44, 0.48)
 				_:
 					return Color(0.36, 0.26, 0.18)
 		BuildTypes.Kind.SLAB:
@@ -119,7 +119,7 @@ static func color_for(tier: int, kind: int) -> Color:
 				5:
 					return Color(0.84, 0.80, 0.74)
 				6:
-					return Color(0.46, 0.64, 0.68)
+					return Color(0.62, 0.66, 0.70)
 				_:
 					return Color(0.72, 0.58, 0.44)
 
@@ -184,6 +184,25 @@ static func _load_texture(path: String) -> Texture2D:
 	return texture
 
 
+## Mesh UVs are local meters. Shift them onto the piece origin so a composite
+## ceiling continues the wall grid instead of starting its own.
+static func align_repeat(material: StandardMaterial3D, tier: int, kind: int, xform: Transform3D) -> void:
+	if clamp_tier(tier) != MAX:
+		material.uv1_offset = Vector3.ZERO
+		return
+	if kind == BuildTypes.Kind.STAIRS:
+		kind = BuildTypes.Kind.SLAB
+	var origin := xform.origin
+	if kind == BuildTypes.Kind.SLAB:
+		material.uv1_offset = Vector3(origin.x, origin.z, 0.0)
+	elif kind == BuildTypes.Kind.POST:
+		material.uv1_offset = Vector3.ZERO
+	elif absf(xform.basis.x.x) >= absf(xform.basis.x.z):
+		material.uv1_offset = Vector3(origin.x, origin.y, 0.0)
+	else:
+		material.uv1_offset = Vector3(origin.z, origin.y, 0.0)
+
+
 static func make_material(tier: int, kind: int = BuildTypes.Kind.WALL) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	style_material(material, tier, 1.0, kind)
@@ -191,6 +210,8 @@ static func make_material(tier: int, kind: int = BuildTypes.Kind.WALL) -> Standa
 
 
 static func style_material(material: StandardMaterial3D, tier: int, ratio: float, kind: int = BuildTypes.Kind.WALL) -> void:
+	if kind == BuildTypes.Kind.STAIRS or kind == BuildTypes.Kind.POST:
+		kind = BuildTypes.Kind.SLAB
 	var color := color_for(tier, kind)
 	if ratio < 0.999:
 		color = color.lerp(Color(0.22, 0.1, 0.07), 1.0 - clampf(ratio, 0.0, 1.0))
@@ -207,11 +228,7 @@ static func style_material(material: StandardMaterial3D, tier: int, ratio: float
 		material.metallic_texture = null
 		material.albedo_color = color
 		material.roughness = roughness_of(tier)
-		if kind == BuildTypes.Kind.POST:
-			material.roughness = minf(material.roughness + 0.06, 1.0)
 		material.metallic = 0.45 if clamp_tier(tier) == MAX and kind != BuildTypes.Kind.SLAB else 0.0
-		if clamp_tier(tier) == MAX and kind == BuildTypes.Kind.POST:
-			material.metallic = 0.28
 		return
 	var tint := Color.WHITE
 	if ratio < 0.999:

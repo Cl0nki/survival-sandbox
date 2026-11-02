@@ -39,14 +39,13 @@
     "frame",
     "border"
   ],
-  "texture_suffix": "Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density.",
+  "texture_direction": "Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop.",
+  "texture_suffix": "Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams.",
   "prop_suffix": "One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text.",
   "character_suffix": "One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing.",
   "building_suffix": "Modular architectural piece, orthographic, grid-aligned, neutral background, no extra props.",
   "texel_density_px_per_meter": 512,
   "character_height_m": 1.8,
   "image_prompt": "i need conecept art for my game mix from doorkickers and rust low poly this is a screenshot now, make it look like a good looking game :)",
-  "image_screenshots": [
-    "shot-a81eaa7b5ec646da.png"
-  ]
+  "image_screenshots": []
 }

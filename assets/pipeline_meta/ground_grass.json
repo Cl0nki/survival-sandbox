@@ -1,0 +1,122 @@
+{
+  "asset_id": "3401ad7bf175",
+  "asset_name": "ground_grass",
+  "category": "grass",
+  "kind": "texture",
+  "created_at": "2026-11-02T12:18:58+00:00",
+  "provider": "openai",
+  "model": "gpt-image-2.5-flare",
+  "prompt": "more small green grass inbetween",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "more small green grass inbetween",
+    "godot_folder": "textures",
+    "roughness": 0.88,
+    "metallic": 0.0,
+    "variation": 1,
+    "quality": "medium",
+    "provider_parameters": {
+      "output_format": "png",
+      "reference_images": 1
+    },
+    "provider_resolution": "1024x1024",
+    "seam_score": 15.942
+  },
+  "original_files": [
+    "original/albedo.png",
+    "original/normal.png",
+    "original/roughness.png",
+    "original/ao.png",
+    "original/metallic.png",
+    "original/height.png"
+  ],
+  "processed_files": [
+    "processed/albedo.png",
+    "processed/normal.png",
+    "processed/roughness.png",
+    "processed/ao.png",
+    "processed/metallic.png",
+    "processed/height.png",
+    "preview/tiled.png"
+  ],
+  "polygon_count": null,
+  "texture_resolution": 512,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-02T12:18:58+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "",
+      "prompt": "more small green grass inbetween",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-02T12:19:14+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-image-2.5-flare",
+      "prompt": "more small green grass inbetween",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/albedo.png",
+        "original/normal.png",
+        "original/roughness.png",
+        "original/ao.png",
+        "original/metallic.png",
+        "original/height.png"
+      ],
+      "processed_files": [
+        "processed/albedo.png",
+        "processed/normal.png",
+        "processed/roughness.png",
+        "processed/ao.png",
+        "processed/metallic.png",
+        "processed/height.png",
+        "preview/tiled.png"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "0cca64ec2f9a",
+  "production_files": [
+    "assets/textures/ground_grass/albedo.png",
+    "assets/textures/ground_grass/normal.png",
+    "assets/textures/ground_grass/roughness.png",
+    "assets/textures/ground_grass/ao.png",
+    "assets/textures/ground_grass/metallic.png",
+    "assets/textures/ground_grass/height.png",
+    "assets/textures/ground_grass/preview_tiled.png",
+    "assets/materials/ground_grass.tres"
+  ],
+  "manual_steps": [],
+  "maps_origin": {
+    "albedo": "openai",
+    "normal": "derived_from_albedo",
+    "roughness": "derived_from_albedo",
+    "ao": "derived_from_albedo",
+    "metallic": "derived_from_albedo",
+    "height": "derived_from_albedo"
+  },
+  "modular": null
+}

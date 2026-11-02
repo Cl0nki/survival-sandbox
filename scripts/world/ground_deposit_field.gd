@@ -21,7 +21,7 @@ static func build(arena: Node3D) -> void:
 	var root := Node3D.new()
 	root.name = "GroundDeposits"
 	arena.add_child(root)
-	ShowcasePad.add(root, ShowcasePad.GROUND, Color(0.42, 0.36, 0.24))
+	ShowcasePad.add(root, ShowcasePad.GROUND, Color(0.42, 0.36, 0.24), "ground_dirt")
 	ShowcasePad.label(root, "GROUND", ShowcasePad.GROUND + Vector3(0.0, 2.5, -4.2), 52, Color(0.82, 0.74, 0.48))
 	ShowcasePad.label(root, "SHOVELS", ShowcasePad.GROUND + Vector3(0.0, 1.15, 3.6), 22, Color(0.84, 0.76, 0.56))
 	var loot := arena.get_node_or_null("Loot") as Node3D

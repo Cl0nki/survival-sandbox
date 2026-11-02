@@ -364,3 +364,6 @@ func _apply_tint(mesh: MeshInstance3D, component: BuildComponent) -> void:
 	if component.max_health > 0 and not state.is_joint_post(component):
 		ratio = float(component.health) / float(component.max_health)
 	BuildingTier.style_material(material, tier, ratio, component.kind)
+	var piece := mesh.get_parent() as Node3D
+	if piece != null:
+		BuildingTier.align_repeat(material, tier, component.kind, piece.transform)

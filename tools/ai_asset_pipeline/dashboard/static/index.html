@@ -15,15 +15,39 @@
     <p id="status-line">Loading the local pipeline.</p>
   </header>
   <nav>
-    <button type="button" data-tab="icons" class="active">Icons</button>
-    <button type="button" data-tab="ingame">Ingame</button>
     <button type="button" data-tab="style">Style</button>
+    <button type="button" data-tab="surfaces" class="active">Surfaces</button>
+    <button type="button" data-tab="icons">Icons</button>
+    <button type="button" data-tab="ingame">Ingame</button>
     <button type="button" data-tab="library">Library</button>
     <button type="button" data-tab="queue">Queue</button>
     <button type="button" data-tab="preview">Preview</button>
   </nav>
   <main>
-    <section id="icons">
+    <section id="surfaces">
+      <div class="toolbar">
+        <input id="surface-search" placeholder="Search name, id, or description">
+        <select id="surface-piece">
+          <option value="wall floor ground">Walls, floors, and ground</option>
+          <option value="wall floor">Walls and floors</option>
+          <option value="">All pieces</option>
+          <option value="wall">Walls</option>
+          <option value="floor">Floors</option>
+          <option value="ground">Ground</option>
+          <option value="post">Posts</option>
+          <option value="stairs">Stairs</option>
+        </select>
+        <select id="surface-material"><option value="">All materials</option></select>
+        <select id="surface-art">
+          <option value="">All surfaces</option>
+          <option value="missing">Still a flat color</option>
+          <option value="has">Has a texture</option>
+        </select>
+      </div>
+      <p id="surface-summary">Walls, floors, and ground come first. Textures are saved at 512 pixels.</p>
+      <div id="surface-grid"></div>
+    </section>
+    <section id="icons" hidden>
       <div class="toolbar">
         <input id="item-search" placeholder="Search name, id, or description">
         <select id="item-category"><option value="">All categories</option></select>
@@ -104,7 +128,15 @@
       <div id="library-grid"></div>
     </section>
     <section id="queue" hidden>
-      <div id="queue-list"></div>
+      <p id="queue-summary" class="muted">Jobs stay here while pictures generate. Opening Preview keeps you on that tab.</p>
+      <div class="queue-head" aria-hidden="true">
+        <span>Name</span>
+        <span>Kind</span>
+        <span>Status</span>
+        <span>Message</span>
+        <span></span>
+      </div>
+      <ul id="queue-list"></ul>
     </section>
     <section id="preview" hidden>
       <div class="review">
@@ -130,19 +162,35 @@
           <div id="preview-strip" class="review-strip"></div>
         </div>
         <aside class="review-side">
+          <label>In-game description
+            <textarea id="copy-ingame" rows="3"></textarea>
+          </label>
+          <p id="copy-ingame-hint"></p>
+          <label>Image description
+            <textarea id="copy-image" rows="4"></textarea>
+          </label>
+          <p id="copy-image-hint"></p>
+          <div class="actions">
+            <button type="button" id="copy-save">Save descriptions</button>
+            <button type="button" id="copy-rebuild">Rebuild prompt</button>
+          </div>
           <label>Prompt
             <textarea id="preview-prompt" rows="10"></textarea>
           </label>
-          <p>Generate new image uses this text alone and does not start from the picture above.</p>
-          <label>Change this image
-            <textarea id="preview-edit" rows="4" placeholder="Describe what to change on this picture."></textarea>
+          <p>This is the text that will be sent. Your edit is used as written.</p>
+          <label>Example image
+            <input id="icon-prompt-file" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" multiple>
           </label>
-          <p>Edit image sends the picture you are reviewing together with that change.</p>
+          <p id="icon-prompt-ref-note">Add an example, or paste one here. It is sent with the prompt.</p>
+          <div id="icon-prompt-shots"></div>
+          <label>Change this image
+            <textarea id="preview-edit" rows="4" placeholder="Describe what to change on the picture shown here."></textarea>
+          </label>
           <div class="actions">
-            <button type="button" id="preview-generate">Generate new image</button>
+            <button type="button" id="preview-generate">Generate</button>
             <button type="button" id="preview-edit-image">Edit image</button>
           </div>
-          <p id="preview-hint">Keep copies the picture into the game. Remove deletes this review copy.</p>
+          <p id="preview-hint">Keep copies the picture into the game. Remove deletes this review copy. Generate uses the prompt and any example images. Edit image sends the picture shown here with the change above.</p>
           <ul id="preview-notes"></ul>
           <details>
             <summary>Extra</summary>
@@ -158,23 +206,6 @@
       </div>
     </section>
   </main>
-  <dialog id="icon-prompt">
-    <h2 id="icon-prompt-title">Edit prompt</h2>
-    <label>Prompt
-      <textarea id="icon-prompt-text" rows="10"></textarea>
-    </label>
-    <p>This is the text that will be sent. Your edit is used as written.</p>
-    <label>Reference image
-      <input id="icon-prompt-file" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" multiple>
-    </label>
-    <p>Add an image, or paste one here. It is sent with this prompt. The icon still asks for a transparent background.</p>
-    <div id="icon-prompt-shots"></div>
-    <div class="actions">
-      <button type="button" id="icon-prompt-generate">Generate</button>
-      <button type="button" id="icon-prompt-cancel">Cancel</button>
-    </div>
-    <p id="icon-prompt-note"></p>
-  </dialog>
   <script src="/app.js"></script>
 </body>
 </html>

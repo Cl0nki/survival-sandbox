@@ -305,9 +305,67 @@ class _Builder:
 		arrays[Mesh.ARRAY_NORMAL] = normals
 		arrays[Mesh.ARRAY_TEX_UV] = uvs
 		arrays[Mesh.ARRAY_INDEX] = indices
+		arrays[Mesh.ARRAY_TANGENT] = _tangents()
 		var mesh := ArrayMesh.new()
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 		return mesh
+
+	## Normal maps flicker as the camera moves when the mesh has no tangents.
+	func _tangents() -> PackedFloat32Array:
+		var tan1 := PackedVector3Array()
+		var tan2 := PackedVector3Array()
+		tan1.resize(vertices.size())
+		tan2.resize(vertices.size())
+		var index := 0
+		while index + 2 < indices.size():
+			var i0 := indices[index]
+			var i1 := indices[index + 1]
+			var i2 := indices[index + 2]
+			var v0 := vertices[i0]
+			var v1 := vertices[i1]
+			var v2 := vertices[i2]
+			var w0 := uvs[i0]
+			var w1 := uvs[i1]
+			var w2 := uvs[i2]
+			var x1 := v1.x - v0.x
+			var x2 := v2.x - v0.x
+			var y1 := v1.y - v0.y
+			var y2 := v2.y - v0.y
+			var z1 := v1.z - v0.z
+			var z2 := v2.z - v0.z
+			var s1 := w1.x - w0.x
+			var s2 := w2.x - w0.x
+			var t1 := w1.y - w0.y
+			var t2 := w2.y - w0.y
+			var denom := s1 * t2 - s2 * t1
+			if absf(denom) > 1e-8:
+				var r := 1.0 / denom
+				var sdir := Vector3((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r)
+				var tdir := Vector3((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r)
+				tan1[i0] += sdir
+				tan1[i1] += sdir
+				tan1[i2] += sdir
+				tan2[i0] += tdir
+				tan2[i1] += tdir
+				tan2[i2] += tdir
+			index += 3
+		var out := PackedFloat32Array()
+		out.resize(vertices.size() * 4)
+		for n in vertices.size():
+			var normal := normals[n].normalized()
+			var tangent := tan1[n]
+			tangent = tangent - normal * normal.dot(tangent)
+			if tangent.length_squared() < 1e-8:
+				var axis := Vector3.UP if absf(normal.y) < 0.9 else Vector3.RIGHT
+				tangent = normal.cross(axis)
+			tangent = tangent.normalized()
+			var sign := 1.0 if normal.cross(tangent).dot(tan2[n]) >= 0.0 else -1.0
+			var base := n * 4
+			out[base] = tangent.x
+			out[base + 1] = tangent.y
+			out[base + 2] = tangent.z
+			out[base + 3] = sign
+		return out
 
 	## One texture repeat per meter, measured on the face.
 	static func _uv(point: Vector3, normal: Vector3) -> Vector2:

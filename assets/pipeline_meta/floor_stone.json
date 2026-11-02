@@ -1,0 +1,125 @@
+{
+  "asset_id": "33e0306bfb90",
+  "asset_name": "floor_stone",
+  "category": "stone",
+  "kind": "texture",
+  "created_at": "2026-11-02T12:07:04+00:00",
+  "provider": "openai",
+  "model": "gpt-image-2.5-flare",
+  "prompt": "cut stone blocks, irregular joints, hand-painted pits, muted gray. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "cut stone blocks, irregular joints, hand-painted pits, muted gray. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "godot_folder": "textures",
+    "roughness": 0.9,
+    "metallic": 0.0,
+    "variation": 1,
+    "quality": "medium",
+    "provider_parameters": {
+      "model": "gpt-image-2.5-flare",
+      "size": "1024x1024",
+      "n": 1,
+      "quality": "medium",
+      "output_format": "png"
+    },
+    "provider_resolution": "1024x1024",
+    "seam_score": 4.285
+  },
+  "original_files": [
+    "original/albedo.png",
+    "original/normal.png",
+    "original/roughness.png",
+    "original/ao.png",
+    "original/metallic.png",
+    "original/height.png"
+  ],
+  "processed_files": [
+    "processed/albedo.png",
+    "processed/normal.png",
+    "processed/roughness.png",
+    "processed/ao.png",
+    "processed/metallic.png",
+    "processed/height.png",
+    "preview/tiled.png"
+  ],
+  "polygon_count": null,
+  "texture_resolution": 512,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-02T12:07:04+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "",
+      "prompt": "cut stone blocks, irregular joints, hand-painted pits, muted gray. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-02T12:07:18+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-image-2.5-flare",
+      "prompt": "cut stone blocks, irregular joints, hand-painted pits, muted gray. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/albedo.png",
+        "original/normal.png",
+        "original/roughness.png",
+        "original/ao.png",
+        "original/metallic.png",
+        "original/height.png"
+      ],
+      "processed_files": [
+        "processed/albedo.png",
+        "processed/normal.png",
+        "processed/roughness.png",
+        "processed/ao.png",
+        "processed/metallic.png",
+        "processed/height.png",
+        "preview/tiled.png"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "a8c0a8af59bc",
+  "production_files": [
+    "assets/textures/floor_stone/albedo.png",
+    "assets/textures/floor_stone/normal.png",
+    "assets/textures/floor_stone/roughness.png",
+    "assets/textures/floor_stone/ao.png",
+    "assets/textures/floor_stone/metallic.png",
+    "assets/textures/floor_stone/height.png",
+    "assets/textures/floor_stone/preview_tiled.png",
+    "assets/materials/floor_stone.tres"
+  ],
+  "manual_steps": [],
+  "maps_origin": {
+    "albedo": "openai",
+    "normal": "derived_from_albedo",
+    "roughness": "derived_from_albedo",
+    "ao": "derived_from_albedo",
+    "metallic": "derived_from_albedo",
+    "height": "derived_from_albedo"
+  },
+  "modular": null
+}

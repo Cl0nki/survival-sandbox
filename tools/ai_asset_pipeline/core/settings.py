@@ -72,6 +72,7 @@ class Settings:
         self.project_root = project_root or PROJECT_ROOT
         self.defaults = _read_json(PIPELINE_ROOT / "config" / "defaults.json")
         self.style_path = PIPELINE_ROOT / "config" / "style.json"
+        self.descriptions_path = PIPELINE_ROOT / "config" / "descriptions.json"
         self.grid_path = PIPELINE_ROOT / "config" / "building_grid.json"
         self.catalog_path = PIPELINE_ROOT / "presets" / "catalog.json"
         library = os.environ.get("PIPELINE_LIBRARY_DIR", "").strip()

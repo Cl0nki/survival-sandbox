@@ -9,6 +9,7 @@ const _WoodsField := preload("res://scripts/world/woods_field.gd")
 const _GroundDepositField := preload("res://scripts/world/ground_deposit_field.gd")
 const _ScavengeField := preload("res://scripts/world/scavenge_field.gd")
 const _CraftingField := preload("res://scripts/world/crafting_field.gd")
+const _TextureCompare := preload("res://scripts/world/texture_compare.gd")
 const _ShowcasePad := preload("res://scripts/world/showcase_pad.gd")
 
 var force_mode := -1
@@ -46,14 +47,17 @@ func _ready() -> void:
 	_ShowcasePad.add(self, _ShowcasePad.DEPLOYABLES, Color(0.30, 0.36, 0.30))
 	_ShowcasePad.add(self, _ShowcasePad.SMELTING, Color(0.40, 0.28, 0.22))
 	_ShowcasePad.add(self, _ShowcasePad.FOOD, Color(0.46, 0.32, 0.22))
-	_ShowcasePad.label(self, "BUILDING", _ShowcasePad.BUILDING + Vector3(0.0, 2.6, -8.6), 52, Color(0.78, 0.82, 0.74))
+	_ShowcasePad.label(self, "BUILDING", _ShowcasePad.BUILDING + Vector3(0.0, 2.6, 8.6), 52, Color(0.78, 0.82, 0.74))
 	_ShowcasePad.label(self, "DEPLOYABLES", _ShowcasePad.DEPLOYABLES + Vector3(0.0, 2.4, -3.6), 36, Color(0.70, 0.76, 0.68))
 	_ShowcasePad.label(self, "SMELTING", _ShowcasePad.SMELTING + Vector3(0.0, 2.6, -4.2), 52, Color(0.90, 0.62, 0.40))
 	_ShowcasePad.label(self, "FOOD", _ShowcasePad.FOOD + Vector3(0.0, 2.6, -4.2), 52, Color(0.92, 0.62, 0.36))
+	_TextureCompare.build(self)
 	_sun.rotation_degrees = Vector3(-50.0, 35.0, 0.0)
 	_sun.shadow_enabled = true
 	_sun.light_energy = 1.15
 	_sun.directional_shadow_max_distance = 90.0
+	# Split shadow maps change texel size with distance, so the walls shimmer while walking north or south.
+	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	var mode := _resolved_mode()
 	_add_building()
 	_add_deployables()

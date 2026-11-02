@@ -131,6 +131,7 @@ def normalize_request(settings: Settings, payload: dict) -> dict:
         "name": name,
         "prompt": str(payload.get("prompt") or "")[:2000],
         "prompt_override": " ".join(str(payload.get("prompt_override") or "").split())[:12000],
+        "subject_override": " ".join(str(payload.get("subject_override") or "").split())[:2000],
         "provider": provider,
         "mesh_provider": mesh_provider,
         "resolution": resolution,
@@ -761,6 +762,10 @@ def _prompts(settings: Settings, request: dict) -> dict:
             "prompt_truncated": len(override) > 800,
         }
     preset = preset_for(settings, request["kind"] if request["implementation"] != "procedural_kit" else "building", request["category"])
+    subject = request.get("subject_override") or ""
+    if subject:
+        preset = dict(preset)
+        preset["prompt"] = subject
     return build_prompts(
         settings.style(),
         preset,

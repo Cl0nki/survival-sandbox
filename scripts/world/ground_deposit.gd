@@ -4,7 +4,7 @@ class_name GroundDeposit
 ## One-meter colored square on the floor. Not a terrain material.
 ## Wells and pumps later call covering() / compatible_at() / take().
 
-const PATCH_Y := 0.03
+const PATCH_THICKNESS := 0.04
 
 var node_id := ""
 var definition_id := ""
@@ -224,13 +224,20 @@ func _mark_depleted() -> void:
 
 func _build_visual() -> void:
 	var box := BoxMesh.new()
-	box.size = Vector3(float(footprint.x), 0.04, float(footprint.y))
+	box.size = Vector3(float(footprint.x), PATCH_THICKNESS, float(footprint.y))
 	_mesh = MeshInstance3D.new()
 	_mesh.mesh = box
-	_mesh.position.y = PATCH_Y
+	_mesh.position.y = ShowcasePad.pad_top() + PATCH_THICKNESS * 0.5
 	_material = StandardMaterial3D.new()
-	_material.roughness = 1.0
-	_material.albedo_color = _alive_color
+	var texture_id := str({
+		"sand": "ground_sand",
+		"clay": "ground_clay",
+		"gravel": "ground_gravel",
+		"ground_water": "ground_water",
+		"natural_gas": "ground_gas",
+		"crude_oil": "ground_oil",
+	}.get(definition_id, ""))
+	ShowcasePad.paint(_material, texture_id, Vector2(footprint), _alive_color)
 	_mesh.set_surface_override_material(0, _material)
 	add_child(_mesh)
 	_label = Label3D.new()

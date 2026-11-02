@@ -18,9 +18,10 @@ from core.settings import Settings
 from core.store import AssetStore
 from dashboard.server import App, make_handler
 from generators.modular import build_piece
-from generators.orchestrator import approve_asset, discard_asset, execute_job
+from generators.orchestrator import approve_asset, discard_asset, execute_job, preview_prompt
+from godot.descriptions import load_descriptions, save_item_copy, save_surface_copy
 from godot.item_index import load_items
-from godot.surface_index import load_surfaces
+from godot.surface_index import load_grounds, load_surfaces
 from http.server import ThreadingHTTPServer
 from processors.gltf_write import Mesh, read_glb_json, write_glb
 from processors.maps import procedural_maps, seam_score
@@ -223,7 +224,8 @@ class PipelineTests(unittest.TestCase):
         prompts = build_prompts(self.settings.style(), preset, "Debug Weapon. A test pistol.", "texture", None, False)
         self.assertIn("one object", prompts["provider_prompt"].lower())
         self.assertIn("from the side", prompts["provider_prompt"].lower())
-        self.assertIn("guns always point to the right", prompts["provider_prompt"].lower())
+        self.assertNotIn("point to the right", prompts["provider_prompt"].lower())
+        self.assertNotIn("pointing left", prompts["provider_prompt"].lower())
         self.assertIn("empty alpha", prompts["provider_prompt"].lower())
         self.assertIn("5 percent empty margin", prompts["provider_prompt"].lower())
         self.assertNotIn("checkerboard", prompts["provider_prompt"].lower())
@@ -440,7 +442,91 @@ class PipelineTests(unittest.TestCase):
         self.assertAlmostEqual(by_id["post_scrap"]["swatch"][0], 0.36)
         self.assertAlmostEqual(by_id["floor_concrete"]["swatch"][0], 0.72)
         self.assertEqual(by_id["floor_concrete"]["pipeline_category"], "concrete_floor")
-        self.assertTrue(all(item["needs_art"] for item in surfaces))
+        self.assertTrue(by_id["wall_concrete"]["has_art"])
+        self.assertTrue(by_id["floor_concrete"]["has_art"])
+        self.assertTrue(by_id["wall_wood"]["needs_art"])
+        self.assertNotIn("flat color", by_id["wall_wood"]["description"].lower())
+        self.assertEqual(by_id["wall_wood"]["image_description"], "")
+
+    def test_ground_textures_are_listed_with_the_building_surfaces(self):
+        grounds = {item["id"]: item for item in load_grounds(PROJECT)}
+        self.assertEqual(set(grounds), {
+            "ground_grass",
+            "ground_dirt",
+            "ground_sand",
+            "ground_clay",
+            "ground_gravel",
+            "ground_water",
+            "ground_gas",
+            "ground_oil",
+        })
+        self.assertEqual(grounds["ground_grass"]["pipeline_category"], "grass")
+        self.assertEqual(grounds["ground_oil"]["pipeline_category"], "oil")
+        self.assertEqual(grounds["ground_water"]["category"], "ground")
+        self.assertTrue(grounds["ground_grass"]["needs_art"])
+
+    def test_subject_override_replaces_the_category_words(self):
+        prompts = preview_prompt(
+            self.settings,
+            {
+                "kind": "texture",
+                "category": "concrete_wall",
+                "name": "wall_concrete",
+                "provider": "procedural",
+                "subject_override": "wide painted concrete panels",
+                "prompt": "",
+            },
+        )
+        self.assertIn("wide painted concrete panels", prompts["prompt"])
+        self.assertNotIn("form-tie", prompts["prompt"])
+        self.assertIn("Seamless tileable", prompts["prompt"])
+        plain = preview_prompt(
+            self.settings,
+            {
+                "kind": "texture",
+                "category": "concrete_wall",
+                "name": "wall_concrete",
+                "provider": "procedural",
+            },
+        )
+        self.assertNotIn("strong readable silhouette", plain["prompt"].lower())
+        self.assertNotIn("isometric-friendly", plain["prompt"].lower())
+        self.assertNotIn("point to the right", plain["prompt"].lower())
+        self.assertIn("no object", plain["prompt"].lower())
+        self.assertIn("form-tie", plain["prompt"])
+
+    def test_item_and_surface_copy_stay_separate(self):
+        root = self.settings.project_root
+        item = root / "resources" / "items" / "sample.tres"
+        item.parent.mkdir(parents=True)
+        item.write_text(
+            '[gd_resource type="Resource" format=3]\n\n[resource]\nid = "sample"\ndisplay_name = "Sample"\ndescription = "Old text."\ncategory = "misc"\n',
+            encoding="utf-8",
+        )
+        self.settings.descriptions_path = self.temp / "descriptions.json"
+        saved = save_item_copy(self.settings, "sample", 'A "quoted" note.', "round tin, side view")
+        text = item.read_text(encoding="utf-8")
+        self.assertIn('description = "A \\"quoted\\" note."', text)
+        self.assertIn('id = "sample"', text)
+        self.assertEqual(saved["description"], 'A "quoted" note.')
+        self.assertEqual(saved["image_description"], "round tin, side view")
+        cleared = save_item_copy(self.settings, "sample", "A quoted note.", "")
+        self.assertEqual(cleared["image_description"], "")
+        stored = json.loads(self.settings.descriptions_path.read_text(encoding="utf-8"))
+        self.assertNotIn("sample", stored["items"])
+
+        self.settings.project_root = PROJECT
+        surface = save_surface_copy(self.settings, "wall_wood", "Warm boards.", "wide painted planks")
+        self.assertEqual(surface["description"], "Warm boards.")
+        self.assertEqual(surface["image_description"], "wide painted planks")
+        loaded = {item["id"]: item for item in load_surfaces(PROJECT, load_descriptions(self.settings))}
+        self.assertEqual(loaded["wall_wood"]["image_description"], "wide painted planks")
+        self.assertEqual(loaded["floor_wood"]["description"], "Wood floor surface.")
+        reset = save_surface_copy(self.settings, "wall_wood", "", "")
+        self.assertEqual(reset["description"], "Wood wall surface.")
+        self.assertEqual(reset["image_description"], "")
+        with self.assertRaises(PipelineError):
+            save_surface_copy(self.settings, "not_a_surface", "no", "no")
 
     def test_discard_removes_an_unapproved_review_copy(self):
         job = self.store.create_job(

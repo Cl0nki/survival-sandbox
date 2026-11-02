@@ -20,8 +20,9 @@ from generators.style_image import (
     remove_style_screenshot,
     screenshot_file,
 )
+from godot.descriptions import load_descriptions, save_item_copy, save_surface_copy
 from godot.item_index import load_items
-from godot.surface_index import load_surfaces
+from godot.surface_index import load_grounds, load_surfaces
 from jobqueue.worker import Worker
 from providers.registry import openai_from, provider_status
 
@@ -111,9 +112,13 @@ def make_handler(app: App):
                 elif path == "/api/assets":
                     self._send(200, {"assets": app.store.list_assets()})
                 elif path == "/api/items":
-                    self._send(200, {"items": load_items(app.settings.project_root)})
+                    copy = load_descriptions(app.settings)
+                    self._send(200, {"items": load_items(app.settings.project_root, copy)})
                 elif path == "/api/surfaces":
-                    self._send(200, {"surfaces": load_surfaces(app.settings.project_root)})
+                    copy = load_descriptions(app.settings)
+                    root = app.settings.project_root
+                    surfaces = load_surfaces(root, copy) + load_grounds(root, copy)
+                    self._send(200, {"surfaces": surfaces})
                 elif path == "/style-reference.png":
                     self._style_image()
                 elif path == "/style-candidate.png":
@@ -161,6 +166,9 @@ def make_handler(app: App):
                     return
                 if path == "/api/style/candidate/discard":
                     self._send(200, discard_style_candidate(app.settings))
+                    return
+                if path == "/api/copy":
+                    self._send(200, self._save_copy(self._read_json()))
                     return
                 if path == "/api/prompt-preview":
                     self._send(200, preview_prompt(app.settings, self._read_json()))
@@ -292,6 +300,19 @@ def make_handler(app: App):
                 self._error(404, missing)
                 return
             self._send(200, target.read_bytes(), "image/png")
+
+        def _save_copy(self, body: dict) -> dict:
+            kind = str(body.get("kind") or "")
+            record_id = str(body.get("id") or "")
+            description = body.get("description")
+            image = body.get("image_description")
+            if not isinstance(description, str) or not isinstance(image, str):
+                raise PipelineError("Descriptions must be text.")
+            if kind == "item":
+                return {"item": save_item_copy(app.settings, record_id, description, image)}
+            if kind == "surface":
+                return {"surface": save_surface_copy(app.settings, record_id, description, image)}
+            raise PipelineError("Copy kind must be item or surface.")
 
         def _save_style(self, body: dict) -> dict:
             style = app.settings.style()
