@@ -22,11 +22,21 @@ Open the editor with the same command plus `--editor`.
 
 A passing run prints `MILESTONE1_SMOKE_OK` and exits 0.
 
+Locomotion QA (stand BlendSpace on the Pro mannequin — rest mismatch, hip bob, unbound tracks):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "C:\Users\Admin\Documents\VSC\survival-sandbox\tools\check_loco.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\Users\Admin\Documents\VSC\survival-sandbox\tools\check_loco.ps1" -Rebuild
+powershell -ExecutionPolicy Bypass -File "C:\Users\Admin\Documents\VSC\survival-sandbox\tools\check_loco.ps1" -Capture
+```
+
+Manual eye-check: open `scenes/debug/loco_preview.tscn` (keys `1–9` directions, `C` crouch). Capture PNGs land in `user://loco_shots/`.
+
 Controls, the manual checklist, and the decisions for the local prototype are in [docs/milestone-1.md](docs/milestone-1.md).
 
 ## Multiplayer
 
-Double-click `tools\launcher.vbs`. The window can start, reset, and stop the server, open client windows, and open the asset pipeline dashboard.
+Double-click `tools\launcher.vbs`. The window can pick **debug** or **survival** map, start/reset/stop the server, open client windows, and open the asset pipeline dashboard. Survival is a larger resource yard with no chests and no debug loadout (`--map survival`, save `user://world_survival.json`); debug keeps the showcase pads and free tools.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "C:\Users\Admin\Documents\VSC\survival-sandbox\tools\start_multiplayer.ps1"

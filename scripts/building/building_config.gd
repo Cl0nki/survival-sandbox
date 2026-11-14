@@ -27,7 +27,7 @@ class_name BuildingConfig
 ## so resting contact with the ground does not count as a blocker.
 @export var obstruction_margin := 0.05
 ## Costs are always computed and shown. They are only charged when this is on
-## and the authority has a wallet.
+## and the authority has a wallet. Craftable Building Plan also charges.
 @export var require_resources := false
 @export var cost_item_id := "scrap_metal"
 @export var component_costs := {
@@ -38,6 +38,11 @@ class_name BuildingConfig
 	"Post": 1,
 	"Stairs": 6,
 }
+## Scrap spent by the craftable Repair Trowel per successful repair.
+@export var repair_cost := 1
+## Reach for Repair Trowel and Upgrade Hammer (meters from the player).
+@export var craft_tool_reach := 1.0
+
 ## Blast used by the local explosive key. Damage profiles scale the result.
 @export var blast_radius := 4.0
 @export var blast_damage := 120

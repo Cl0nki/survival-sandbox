@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "slots": {
+    "body": {
+      "mesh_names": ["Body", "body", "Character", "character", "Mesh"],
+      "required": true
+    },
+    "helmet": {
+      "mesh_names": ["Helmet", "helmet", "HeadEquipment", "Hat"],
+      "attach_bone": "Head",
+      "required": false
+    },
+    "vest": {
+      "mesh_names": ["Vest", "vest", "ChestRig", "Armor"],
+      "attach_bone": "Chest",
+      "required": false
+    },
+    "backpack": {
+      "mesh_names": ["Backpack", "backpack", "Pack"],
+      "attach_bone": "Chest",
+      "required": false
+    },
+    "primary_weapon": {
+      "mesh_names": ["PrimaryWeapon", "Rifle", "Gun"],
+      "attach_bone": "RightHand",
+      "required": false
+    }
+  },
+  "weight_transfer": {
+    "source_slot": "body",
+    "method": "data_transfer_nearest"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "profile": "godot_humanoid",
+  "required_bones": [
+    "Hips",
+    "Spine",
+    "Chest",
+    "Neck",
+    "Head",
+    "LeftUpperArm",
+    "LeftLowerArm",
+    "LeftHand",
+    "RightUpperArm",
+    "RightLowerArm",
+    "RightHand",
+    "LeftUpperLeg",
+    "LeftLowerLeg",
+    "LeftFoot",
+    "RightUpperLeg",
+    "RightLowerLeg",
+    "RightFoot"
+  ],
+  "optional_bones": [
+    "Root",
+    "UpperChest",
+    "LeftShoulder",
+    "RightShoulder",
+    "LeftToes",
+    "RightToes"
+  ],
+  "attachment_points": {
+    "PrimaryWeapon": {
+      "bone": "RightHand",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "SecondaryWeapon": {
+      "bone": "LeftHand",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "Backpack": {
+      "bone": "Chest",
+      "offset": [
+        0.0,
+        0.1,
+        -0.15
+      ]
+    },
+    "HeadEquipment": {
+      "bone": "Head",
+      "offset": [
+        0.0,
+        0.12,
+        0.0
+      ]
+    },
+    "HandEquipment": {
+      "bone": "RightHand",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "notes": "Humanoid characters approved by the pipeline should share this bone profile for animation retargeting."
+}

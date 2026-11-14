@@ -13,7 +13,7 @@
   "openai_image_model": "gpt-image-2.5-flare",
   "openai_quality": "medium",
   "meshy_ai_model": "latest",
-  "meshy_texture_resolution": "1024",
+  "meshy_texture_resolution": "2k",
   "tripo_model_version": "v2.5-20250123",
   "character_height_m": 1.8,
   "max_mesh_download_mb": 400,

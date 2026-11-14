@@ -61,6 +61,34 @@ def _combined_bounds():
     return low, high
 
 
+def _fit_target_size(size) -> bool:
+    """Uniform-scale visual meshes into size [x,y,z], pivot at bottom center on y=0."""
+    if not size or len(size) != 3:
+        return False
+    target = [max(float(axis), 0.01) for axis in size]
+    bounds = _combined_bounds()
+    if bounds is None:
+        return False
+    low, high = bounds
+    current = [max(high[axis] - low[axis], 0.001) for axis in range(3)]
+    factor = min(target[axis] / current[axis] for axis in range(3))
+    center_x = (low[0] + high[0]) * 0.5
+    center_z = (low[2] + high[2]) * 0.5
+    Vector = __import__("mathutils").Vector
+    Matrix = __import__("mathutils").Matrix
+    offset = Matrix.Translation(Vector((-center_x, -low[1], -center_z)))
+    scale = Matrix.Scale(factor, 4)
+    for obj in _mesh_objects():
+        if obj.name.endswith("-colonly") or obj.name.endswith("-col"):
+            continue
+        obj.matrix_world = scale @ offset @ obj.matrix_world
+        bpy.ops.object.select_all(action="DESELECT")
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    return True
+
+
 def _ensure_collision() -> bool:
     for obj in _mesh_objects():
         if obj.name.endswith("-colonly") or obj.name.endswith("-col"):
@@ -113,28 +141,48 @@ def main() -> None:
         if not _mesh_objects():
             raise RuntimeError("Blender imported no mesh objects.")
         target = int(job.get("target_polycount") or 0)
+        preserve_skin = bool(job.get("preserve_skin", False))
+        fitted = False
+        if job.get("target_size") and not preserve_skin:
+            fitted = _fit_target_size(job.get("target_size"))
         for obj in _mesh_objects():
+            if preserve_skin and obj.find_armature():
+                # Keep skinned meshes intact aside from normals.
+                if bool(job.get("recalc_normals", True)):
+                    bpy.ops.object.select_all(action="DESELECT")
+                    bpy.context.view_layer.objects.active = obj
+                    obj.select_set(True)
+                    bpy.ops.object.mode_set(mode="EDIT")
+                    bpy.ops.mesh.select_all(action="SELECT")
+                    bpy.ops.mesh.normals_make_consistent(inside=False)
+                    bpy.ops.object.mode_set(mode="OBJECT")
+                continue
             _apply_mesh(obj, target, bool(job.get("recalc_normals", True)))
         missing_uv = [obj.name for obj in _mesh_objects() if not obj.data.uv_layers]
-        collision_added = _ensure_collision()
+        collision_added = False
+        if bool(job.get("add_collision", True)):
+            collision_added = _ensure_collision()
         output = Path(job["output"])
         _export(output)
         lod_files = []
-        for index, ratio in enumerate(job.get("lod_ratios") or [], start=1):
-            created = _duplicate_decimated(float(ratio), f"LOD{index}")
-            lod_path = output.with_name(f"lod{index}.glb")
-            # Export only the LOD objects by hiding the others.
-            hidden = []
-            for obj in _mesh_objects():
-                if obj not in created:
-                    hidden.append((obj, obj.hide_render))
-                    obj.hide_set(True)
-            bpy.ops.export_scene.gltf(filepath=str(lod_path), export_format="GLB", use_visible=True)
-            for obj, _previous in hidden:
-                obj.hide_set(False)
-            for obj in created:
-                bpy.data.objects.remove(obj, do_unlink=True)
-            lod_files.append(str(lod_path))
+        skinned = any(obj.find_armature() for obj in _mesh_objects())
+        skip_lod = bool(job.get("skip_lod_if_skinned")) and skinned
+        if not skip_lod:
+            for index, ratio in enumerate(job.get("lod_ratios") or [], start=1):
+                created = _duplicate_decimated(float(ratio), f"LOD{index}")
+                lod_path = output.with_name(f"lod{index}.glb")
+                # Export only the LOD objects by hiding the others.
+                hidden = []
+                for obj in _mesh_objects():
+                    if obj not in created:
+                        hidden.append((obj, obj.hide_render))
+                        obj.hide_set(True)
+                bpy.ops.export_scene.gltf(filepath=str(lod_path), export_format="GLB", use_visible=True)
+                for obj, _previous in hidden:
+                    obj.hide_set(False)
+                for obj in created:
+                    bpy.data.objects.remove(obj, do_unlink=True)
+                lod_files.append(str(lod_path))
         triangles = sum(_triangle_count(obj) for obj in _mesh_objects() if not obj.name.endswith("-colonly"))
         result = {
             "ok": True,
@@ -143,6 +191,9 @@ def main() -> None:
             "collision_added": collision_added,
             "missing_uv": missing_uv,
             "triangles": triangles,
+            "optimization_profile": job.get("optimization_profile") or "",
+            "lod_skipped": skip_lod,
+            "fitted_target_size": fitted,
         }
     except Exception as exc:
         result = {"ok": False, "error": str(exc), "trace": traceback.format_exc()}

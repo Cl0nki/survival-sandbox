@@ -82,6 +82,89 @@ static func accepts_fuel(kind: String, item_id: String) -> bool:
 	return (spec["fuels"] as Dictionary).has(item_id)
 
 
+static func fuels_of(kind: String) -> Dictionary:
+	var spec := _spec(kind)
+	if spec.is_empty():
+		return {}
+	return (spec["fuels"] as Dictionary).duplicate()
+
+
+## Recipes this station can run, lowest tier first.
+static func recipes_for(kind: String) -> Array:
+	var spec := _spec(kind)
+	if spec.is_empty():
+		return []
+	var family := str(spec["family"])
+	var tier := int(spec["tier"])
+	var matched: Array = []
+	for recipe in _recipes:
+		if str(recipe["family"]) != family:
+			continue
+		if int(recipe["tier"]) > tier:
+			continue
+		matched.append(recipe.duplicate(true))
+	return matched
+
+
+## Every craft / cook recipe, for the tech tree encyclopedia.
+static func all_recipes() -> Array:
+	_warm()
+	var copied: Array = []
+	for recipe in _recipes:
+		copied.append(recipe.duplicate(true))
+	return copied
+
+
+static func category_label(item_category: String) -> String:
+	match item_category:
+		"tool":
+			return "Tools"
+		"component":
+			return "Parts"
+		"medical":
+			return "Meds"
+		"weapon":
+			return "Guns"
+		"ammo":
+			return "Ammunition"
+		"deployable":
+			return "Deployables"
+		"food":
+			return "Food"
+		"explosive":
+			return "Explosives"
+		"refined":
+			return "Refined"
+		"harvest", "material":
+			return "Materials"
+		"container":
+			return "Containers"
+		"debug":
+			return "Debug"
+		_:
+			return "Other"
+
+
+static func category_sort_key(label: String) -> int:
+	const ORDER := [
+		"Tools",
+		"Parts",
+		"Meds",
+		"Guns",
+		"Ammunition",
+		"Food",
+		"Materials",
+		"Refined",
+		"Explosives",
+		"Deployables",
+		"Containers",
+		"Debug",
+		"Other",
+	]
+	var at := ORDER.find(label)
+	return at if at >= 0 else ORDER.size()
+
+
 static func plan(
 	kind: String,
 	input_id: String,
@@ -91,7 +174,8 @@ static func plan(
 	fuel_id: String,
 	fuel_qty: int,
 	output_id: String,
-	output_qty: int
+	output_qty: int,
+	max_jobs: int = -1
 ) -> Dictionary:
 	var empty := {
 		"ok": false,
@@ -146,6 +230,8 @@ static func plan(
 		empty["reason"] = "Needs fuel"
 		return empty
 	jobs = _jobs_for_fuel(jobs, fuel_qty, int(spec["fuel_num"]), int(spec["fuel_den"]), value)
+	if max_jobs > 0:
+		jobs = mini(jobs, max_jobs)
 	if jobs < 1:
 		empty["reason"] = "Needs fuel"
 		return empty
@@ -236,10 +322,11 @@ static func _warm() -> void:
 	_station("sawmill", "craft", "saw", 2, 8, 1.5, 1, 2, coal, 400, 0.84, "Sawmill", Vector2i(2, 2), Color(0.50, 0.34, 0.18), "Eight log at a time, half the coal.")
 	_station("kiln", "craft", "kiln", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Kiln", Vector2i(1, 1), Color(0.64, 0.32, 0.24), "Clay, stone, or limestone. One coal.")
 	_station("kiln_shed", "craft", "kiln", 2, 8, 2.5, 1, 2, coal, 500, 0.84, "Kiln Shed", Vector2i(2, 2), Color(0.52, 0.28, 0.22), "Also cement and concrete. Eight at a time.")
-	_station("workbench", "craft", "bench", 1, 1, 5.0, 1, 1, coal, 100, 0.84, "Workbench", Vector2i(1, 1), Color(0.52, 0.36, 0.20), "Nail, scrap tools, and metal part. One coal.")
-	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 0.84, "Iron Workbench", Vector2i(1, 1), Color(0.58, 0.58, 0.62), "Iron tools, wiring, and metal beam.")
-	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 0.84, "Steel Workbench", Vector2i(1, 1), Color(0.40, 0.44, 0.50), "Steel tools, steel plate, pipe, and screw bolt.")
-	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 0.84, "Composite Workbench", Vector2i(1, 1), Color(0.42, 0.40, 0.48), "Composite tools, industrial motor, and composite panel.")
+	_station("workbench", "craft", "bench", 1, 1, 5.0, 1, 1, coal, 100, 1.428, "Workbench", Vector2i(2, 1), Color(0.52, 0.36, 0.20), "Scrap tools, early deployables, pistol, and building plan. One coal.")
+
+	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 1.428, "Iron Workbench", Vector2i(2, 1), Color(0.58, 0.58, 0.62), "Iron tools, mid deployables, wiring, and metal beam.")
+	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 1.428, "Steel Workbench", Vector2i(2, 1), Color(0.40, 0.44, 0.50), "Steel tools, advanced stations, steel plate, pipe, and screw bolt.")
+	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 1.428, "Composite Workbench", Vector2i(2, 1), Color(0.42, 0.40, 0.48), "Composite tools, late stations, industrial motor, and composite panel.")
 	_station("machine_shop", "craft", "bench", 4, 12, 1.2, 1, 4, coal, 1200, 0.84, "Machine Shop", Vector2i(3, 3), Color(0.36, 0.38, 0.42), "The same bench jobs, twelve at a time.")
 	_station("chem_bench", "craft", "chem", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Chem Bench", Vector2i(1, 1), Color(0.42, 0.62, 0.36), "Gunpowder, plastic, rubber, and fuel.")
 	_station("refinery", "craft", "chem", 2, 8, 2.0, 1, 2, coal, 800, 0.84, "Refinery", Vector2i(3, 2), Color(0.32, 0.36, 0.34), "The chem bench, plus a drum of oil into fuel.")
@@ -259,10 +346,29 @@ static func _warm() -> void:
 		_out("kiln", 2, "cement", "sand", "concrete_mix", 1, 1, 1),
 		_out("bench", 1, "iron_ingot", "", "nail", 1, 0, 8),
 		_out("bench", 1, "steel_scrap", "", "metal_part", 1, 0, 2),
+		_out("bench", 1, "stone", "stick", "pickaxe_stone", 3, 2, 1),
+		_out("bench", 1, "cloth", "", "medical_supplies", 2, 0, 1),
 		_out("bench", 1, "scrap_metal", "stick", "hatchet_scrap", 1, 1, 1),
 		_out("bench", 1, "scrap_metal", "stone", "pickaxe_scrap", 1, 1, 1),
 		_out("bench", 1, "scrap_metal", "log", "shovel_scrap", 1, 1, 1),
 		_out("bench", 1, "scrap_metal", "steel_scrap", "crowbar_scrap", 1, 1, 1),
+		_out("bench", 1, "stick", "scrap_metal", "pistol", 1, 2, 1),
+		_out("bench", 1, "log", "stick", "building_plan", 1, 2, 1),
+		_out("bench", 1, "stone", "scrap_metal", "repair_trowel", 1, 1, 1),
+		_out("bench", 1, "log", "stone", "upgrade_hammer", 1, 1, 1),
+		_out("bench", 1, "stick", "log", "campfire", 4, 2, 1),
+		_out("bench", 1, "cloth", "log", "chest", 2, 4, 1),
+		_out("bench", 1, "log", "cloth", "workbench", 4, 2, 1),
+		_out("bench", 1, "clay", "log", "sawbench", 4, 4, 1),
+		_out("bench", 1, "stone", "clay", "kiln", 6, 4, 1),
+		_out("bench", 1, "scrap_metal", "clay", "furnace_scrap", 6, 4, 1),
+		_out("bench", 1, "scrap_metal", "cloth", "door_scrap", 4, 2, 1),
+		_out("bench", 1, "stick", "cloth", "window_scrap", 2, 1, 1),
+		_out("bench", 1, "stick", "stone", "door_wood", 4, 2, 1),
+		_out("bench", 1, "stick", "clay", "window_wood", 2, 2, 1),
+		_out("bench", 1, "cloth", "stone", "cooking_pot", 2, 4, 1),
+		_out("bench", 1, "cloth", "scrap_metal", "fire_pit", 2, 4, 1),
+		_out("bench", 1, "stone", "cloth", "water_well", 8, 4, 1),
 		_out("bench", 2, "copper_ingot", "", "wiring", 1, 0, 4),
 		_out("bench", 2, "iron_ingot", "copper_ingot", "metal_beam", 1, 1, 1),
 		_out("bench", 2, "mechanical_part", "", "mechanical_component", 1, 0, 1),
@@ -270,6 +376,17 @@ static func _warm() -> void:
 		_out("bench", 2, "iron_ingot", "stone", "pickaxe_iron", 1, 1, 1),
 		_out("bench", 2, "iron_ingot", "log", "shovel_iron", 1, 1, 1),
 		_out("bench", 2, "iron_ingot", "steel_scrap", "crowbar_iron", 1, 1, 1),
+		_out("bench", 2, "iron_ingot", "cloth", "workbench_iron", 4, 2, 1),
+		_out("bench", 2, "iron_ingot", "clay", "smelter_iron", 8, 6, 1),
+		_out("bench", 2, "brick", "iron_ingot", "door_brick", 4, 2, 1),
+		_out("bench", 2, "brick", "nail", "window_brick", 2, 4, 1),
+		_out("bench", 2, "iron_ingot", "brick", "stove", 4, 6, 1),
+		_out("bench", 2, "copper_ingot", "plastic", "chem_bench", 4, 4, 1),
+		_out("bench", 2, "cut_stone", "iron_ingot", "door_stone", 4, 2, 1),
+		_out("bench", 2, "cut_stone", "nail", "window_stone", 2, 4, 1),
+		_out("bench", 2, "mechanical_part", "scrap_metal", "pump_jack_gas", 2, 8, 1),
+		_out("bench", 2, "mechanical_part", "steel_scrap", "pump_jack_oil", 2, 8, 1),
+		_out("bench", 2, "iron_ingot", "gunpowder", "ammo_bench", 4, 4, 1),
 		_out("bench", 3, "steel_ingot", "", "steel_plate", 1, 0, 1),
 		_out("bench", 3, "steel_ingot", "iron_ingot", "screw_bolt", 1, 1, 8),
 		_out("bench", 3, "steel_ingot", "copper_ingot", "pipe", 1, 1, 2),
@@ -279,12 +396,26 @@ static func _warm() -> void:
 		_out("bench", 3, "steel_ingot", "stone", "pickaxe_steel", 1, 1, 1),
 		_out("bench", 3, "steel_ingot", "log", "shovel_steel", 1, 1, 1),
 		_out("bench", 3, "steel_ingot", "steel_scrap", "crowbar_steel", 1, 1, 1),
+		_out("bench", 3, "steel_ingot", "plank", "workbench_steel", 6, 4, 1),
+		_out("bench", 3, "steel_ingot", "clay", "sawmill", 6, 8, 1),
+		_out("bench", 3, "steel_ingot", "brick", "kiln_shed", 6, 8, 1),
+		_out("bench", 3, "steel_ingot", "scrap_metal", "smelter_steel", 10, 8, 1),
+		_out("bench", 3, "steel_plate", "mechanical_part", "refinery", 4, 2, 1),
+		_out("bench", 3, "steel_plate", "gunpowder", "armory", 4, 6, 1),
+		_out("bench", 3, "steel_plate", "iron_ingot", "kitchen", 4, 4, 1),
+		_out("bench", 3, "concrete_mix", "steel_ingot", "door_concrete", 4, 2, 1),
+		_out("bench", 3, "concrete_mix", "screw_bolt", "window_concrete", 2, 4, 1),
 		_out("bench", 4, "steel_ingot", "electronics", "industrial_motor", 1, 1, 1),
 		_out("bench", 4, "aluminum_ingot", "refined_plastic", "composite_panel", 1, 1, 1),
 		_out("bench", 4, "aluminum_ingot", "stick", "hatchet_composite", 1, 1, 1),
 		_out("bench", 4, "aluminum_ingot", "stone", "pickaxe_composite", 1, 1, 1),
 		_out("bench", 4, "aluminum_ingot", "log", "shovel_composite", 1, 1, 1),
 		_out("bench", 4, "aluminum_ingot", "steel_ingot", "crowbar_composite", 1, 1, 1),
+		_out("bench", 4, "aluminum_ingot", "plank", "workbench_composite", 6, 4, 1),
+		_out("bench", 4, "industrial_motor", "steel_plate", "machine_shop", 1, 8, 1),
+		_out("bench", 4, "industrial_motor", "brick", "foundry", 1, 12, 1),
+		_out("bench", 4, "composite_panel", "aluminum_ingot", "door_composite", 2, 4, 1),
+		_out("bench", 4, "composite_panel", "screw_bolt", "window_composite", 2, 4, 1),
 		_out("chem", 1, "sulfur", "", "gunpowder", 1, 0, 1),
 		_out("chem", 1, "plastic", "", "refined_plastic", 1, 0, 1),
 		_out("chem", 1, "rubber", "", "synthetic_rubber", 1, 0, 1),

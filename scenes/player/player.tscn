@@ -1,34 +1,20 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=40 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/camera/orbit_camera.gd" id="2_camera"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/hitscan_pistol.tscn" id="3_weapon"]
+[ext_resource type="PackedScene" path="res://assets/characters/Shared/Quaternius/AnimationLibrary_Godot_Pro.glb" id="4_mannequin"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
-radius = 0.35
-height = 1.8
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
-radius = 0.35
-height = 1.8
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
-albedo_color = Color(0.2, 0.42, 0.78, 1)
-roughness = 0.7
+radius = 0.378
+height = 1.944
 
 [sub_resource type="BoxMesh" id="BoxMesh_weapon"]
-size = Vector3(0.08, 0.08, 0.6)
+size = Vector3(0.05, 0.12, 0.26)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_weapon"]
 albedo_color = Color(0.12, 0.12, 0.14, 1)
 roughness = 0.45
-
-[sub_resource type="BoxMesh" id="BoxMesh_visor"]
-size = Vector3(0.24, 0.08, 0.08)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_visor"]
-albedo_color = Color(0.05, 0.07, 0.1, 1)
-roughness = 0.3
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_aim"]
 top_radius = 0.18
@@ -41,23 +27,191 @@ shading_mode = 0
 albedo_color = Color(0.35, 0.95, 0.45, 0.9)
 roughness = 1.0
 
+[sub_resource type="AnimationNodeAnimation" id="anim_idle"]
+animation = &"Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_walk_fwd"]
+animation = &"Walk"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_walk_bwd"]
+animation = &"Walk_Bwd"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_walk_l"]
+animation = &"Walk_L"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_walk_r"]
+animation = &"Walk_R"
+
+[sub_resource type="AnimationNodeBlendSpace2D" id="blend_stand"]
+blend_point_0/node = SubResource("anim_idle")
+blend_point_0/pos = Vector2(0, 0)
+blend_point_1/node = SubResource("anim_walk_fwd")
+blend_point_1/pos = Vector2(0, 1)
+blend_point_2/node = SubResource("anim_walk_bwd")
+blend_point_2/pos = Vector2(0, -1)
+blend_point_3/node = SubResource("anim_walk_l")
+blend_point_3/pos = Vector2(-1, 0)
+blend_point_4/node = SubResource("anim_walk_r")
+blend_point_4/pos = Vector2(1, 0)
+min_space = Vector2(-1, -1)
+max_space = Vector2(1, 1)
+snap = Vector2(0.01, 0.01)
+blend_mode = 0
+
+[sub_resource type="AnimationNodeAnimation" id="anim_walk_lean_l"]
+animation = &"Walk_LeanL"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_walk_lean_r"]
+animation = &"Walk_LeanR"
+
+[sub_resource type="AnimationNodeBlendSpace1D" id="blend_stand_lean"]
+blend_point_0/node = SubResource("anim_walk_lean_l")
+blend_point_0/pos = -1.0
+blend_point_1/node = SubResource("anim_walk_fwd")
+blend_point_1/pos = 0.0
+blend_point_2/node = SubResource("anim_walk_lean_r")
+blend_point_2/pos = 1.0
+min_space = -1.0
+max_space = 1.0
+
+[sub_resource type="AnimationNodeBlend2" id="blend_stand_body"]
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_idle"]
+animation = &"Crouch_Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_fwd"]
+animation = &"Crouch_Fwd"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_bwd"]
+animation = &"Crouch_Bwd"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_l"]
+animation = &"Crouch_Left"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_r"]
+animation = &"Crouch_Right"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_fwd_l"]
+animation = &"Crouch_Fwd_L"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_fwd_r"]
+animation = &"Crouch_Fwd_R"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_bwd_l"]
+animation = &"Crouch_Bwd_L"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_crouch_bwd_r"]
+animation = &"Crouch_Bwd_R"
+
+[sub_resource type="AnimationNodeBlendSpace2D" id="blend_crouch"]
+blend_point_0/node = SubResource("anim_crouch_idle")
+blend_point_0/pos = Vector2(0, 0)
+blend_point_1/node = SubResource("anim_crouch_fwd")
+blend_point_1/pos = Vector2(0, 1)
+blend_point_2/node = SubResource("anim_crouch_bwd")
+blend_point_2/pos = Vector2(0, -1)
+blend_point_3/node = SubResource("anim_crouch_l")
+blend_point_3/pos = Vector2(-1, 0)
+blend_point_4/node = SubResource("anim_crouch_r")
+blend_point_4/pos = Vector2(1, 0)
+blend_point_5/node = SubResource("anim_crouch_fwd_l")
+blend_point_5/pos = Vector2(-0.707, 0.707)
+blend_point_6/node = SubResource("anim_crouch_fwd_r")
+blend_point_6/pos = Vector2(0.707, 0.707)
+blend_point_7/node = SubResource("anim_crouch_bwd_l")
+blend_point_7/pos = Vector2(-0.707, -0.707)
+blend_point_8/node = SubResource("anim_crouch_bwd_r")
+blend_point_8/pos = Vector2(0.707, -0.707)
+min_space = Vector2(-1, -1)
+max_space = Vector2(1, 1)
+snap = Vector2(0.01, 0.01)
+blend_mode = 0
+
+[sub_resource type="AnimationNodeBlend2" id="blend_stance"]
+
+[sub_resource type="AnimationNodeAnimation" id="anim_aim_down"]
+animation = &"Pistol_Aim_Down"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_aim_neutral"]
+animation = &"Pistol_Aim_Neutral"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_aim_up"]
+animation = &"Pistol_Aim_Up"
+
+[sub_resource type="AnimationNodeBlendSpace1D" id="blend_aim"]
+blend_point_0/node = SubResource("anim_aim_down")
+blend_point_0/pos = -1.0
+blend_point_1/node = SubResource("anim_aim_neutral")
+blend_point_1/pos = 0.0
+blend_point_2/node = SubResource("anim_aim_up")
+blend_point_2/pos = 1.0
+min_space = -1.0
+max_space = 1.0
+
+[sub_resource type="AnimationNodeBlend2" id="blend_upper"]
+filter_enabled = true
+
+[sub_resource type="AnimationNodeAnimation" id="anim_shoot"]
+animation = &"Pistol_Shoot"
+
+[sub_resource type="AnimationNodeOneShot" id="oneshot_shoot"]
+filter_enabled = true
+fadein_time = 0.05
+fadeout_time = 0.12
+autorestart = false
+
+[sub_resource type="AnimationNodeAnimation" id="anim_harvest"]
+animation = &"Mining"
+
+[sub_resource type="AnimationNodeOneShot" id="oneshot_harvest"]
+filter_enabled = true
+fadein_time = 0.04
+fadeout_time = 0.15
+autorestart = false
+
+[sub_resource type="AnimationNodeBlendTree" id="tree_root"]
+graph_offset = Vector2(-160, -80)
+nodes/output/position = Vector2(920, 100)
+nodes/stand_loco/node = SubResource("blend_stand")
+nodes/stand_loco/position = Vector2(20, 20)
+nodes/stand_lean/node = SubResource("blend_stand_lean")
+nodes/stand_lean/position = Vector2(20, -100)
+nodes/stand_body/node = SubResource("blend_stand_body")
+nodes/stand_body/position = Vector2(220, 20)
+nodes/crouch_loco/node = SubResource("blend_crouch")
+nodes/crouch_loco/position = Vector2(20, 180)
+nodes/stance/node = SubResource("blend_stance")
+nodes/stance/position = Vector2(240, 80)
+nodes/aim/node = SubResource("blend_aim")
+nodes/aim/position = Vector2(240, 260)
+nodes/upper/node = SubResource("blend_upper")
+nodes/upper/position = Vector2(440, 100)
+nodes/shoot_clip/node = SubResource("anim_shoot")
+nodes/shoot_clip/position = Vector2(440, 280)
+nodes/shoot/node = SubResource("oneshot_shoot")
+nodes/shoot/position = Vector2(640, 100)
+nodes/harvest_clip/node = SubResource("anim_harvest")
+nodes/harvest_clip/position = Vector2(640, 280)
+nodes/harvest/node = SubResource("oneshot_harvest")
+nodes/harvest/position = Vector2(800, 100)
+node_connections = [&"stand_body", 0, &"stand_loco", &"stand_body", 1, &"stand_lean", &"stance", 0, &"stand_body", &"stance", 1, &"crouch_loco", &"upper", 0, &"stance", &"upper", 1, &"aim", &"shoot", 0, &"upper", &"shoot", 1, &"shoot_clip", &"harvest", 0, &"shoot", &"harvest", 1, &"harvest_clip", &"output", 0, &"harvest"]
+
 [node name="Player" type="CharacterBody3D" groups=["player"]]
 collision_layer = 2
 collision_mask = 1
 script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.972, 0)
 shape = SubResource("CapsuleShape3D_body")
 
 [node name="VisualRoot" type="Node3D" parent="."]
 
 [node name="LeanPivot" type="Node3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.972, 0)
 
-[node name="Body" type="MeshInstance3D" parent="VisualRoot/LeanPivot"]
-mesh = SubResource("CapsuleMesh_body")
-surface_material_override/0 = SubResource("StandardMaterial3D_body")
+[node name="CharacterModel" parent="VisualRoot/LeanPivot" instance=ExtResource("4_mannequin")]
+transform = Transform3D(1.08, 0, 0, 0, 1.08, 0, 0, 0, 1.08, 0, -0.972, 0)
 
 [node name="WeaponMesh" type="MeshInstance3D" parent="VisualRoot/LeanPivot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.3, -0.45)
@@ -66,11 +220,6 @@ surface_material_override/0 = SubResource("StandardMaterial3D_weapon")
 
 [node name="Muzzle" type="Marker3D" parent="VisualRoot/LeanPivot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.3, -0.75)
-
-[node name="Visor" type="MeshInstance3D" parent="VisualRoot/LeanPivot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.34)
-mesh = SubResource("BoxMesh_visor")
-surface_material_override/0 = SubResource("StandardMaterial3D_visor")
 
 [node name="AimMarker" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0)
@@ -88,3 +237,21 @@ near = 0.08
 far = 250.0
 
 [node name="HitscanWeapon" parent="." instance=ExtResource("3_weapon")]
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = SubResource("tree_root")
+anim_player = NodePath("../VisualRoot/LeanPivot/CharacterModel/AnimationPlayer")
+active = true
+parameters/stand_loco/blend_position = Vector2(0, 0)
+parameters/stand_lean/blend_position = 0.0
+parameters/stand_body/blend_amount = 0.0
+parameters/crouch_loco/blend_position = Vector2(0, 0)
+parameters/stance/blend_amount = 0.0
+parameters/aim/blend_position = 0.0
+parameters/upper/blend_amount = 0.0
+parameters/shoot/active = false
+parameters/shoot/internal_active = false
+parameters/shoot/request = 0
+parameters/harvest/active = false
+parameters/harvest/internal_active = false
+parameters/harvest/request = 0

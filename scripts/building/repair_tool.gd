@@ -4,6 +4,7 @@ class_name RepairTool
 ## Hotbar item. Left click on a damaged piece restores it to full health.
 ## The piece has to still be standing. A destroyed wall or room is already
 ## gone, so it is built again with the Build Tool instead of repaired.
+## Repair Trowel spends scrap and only reaches 1 m.
 
 var system: BuildingSystem
 var player: PlayerController
@@ -41,16 +42,47 @@ func _repair_aimed() -> void:
 	if component == null:
 		_notify("No piece to repair")
 		return
+	var charge := player != null and player.charges_repair_cost()
+	if charge and not _within_craft_reach(component):
+		_notify("Too far")
+		return
 	if system.relay != null and not system.authoritative:
 		system.relay.request_repair(component_id)
 		_notify("Sending repair...")
 		return
-	var result := system.authority.repair(component_id)
+	if charge:
+		_bind_local_wallet()
+	var result := system.authority.repair(component_id, charge)
+	if charge:
+		_clear_local_wallet()
+		if player != null:
+			player.inventory_changed.emit()
 	var label := BuildTypes.kind_name(component.kind)
 	if bool(result.get("ok", false)):
 		_notify("Repaired %s" % label)
 	else:
 		_notify("%s: %s" % [label, str(result.get("reason", "unchanged"))])
+
+
+func _within_craft_reach(component: BuildComponent) -> bool:
+	if player == null:
+		return false
+	var point := system.grid.component_transform(component).origin
+	return player.global_position.distance_to(point) <= system.config.craft_tool_reach
+
+
+func _bind_local_wallet() -> void:
+	if player == null or player.inventory == null:
+		_clear_local_wallet()
+		return
+	var bag := player.inventory
+	system.authority.wallet_count = func(item_id: String) -> int: return bag.count_item(item_id)
+	system.authority.wallet_spend = func(item_id: String, quantity: int) -> bool: return bag.take_item(item_id, quantity)
+
+
+func _clear_local_wallet() -> void:
+	system.authority.wallet_count = Callable()
+	system.authority.wallet_spend = Callable()
 
 
 func _ray_component() -> int:

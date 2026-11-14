@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "default_set": "locomotion_basic",
+  "notes": "Meshy clips are optional provenance. Default Shared locomotion is Quaternius (config/shared_animation_library.json).",
+  "sets": {
+    "locomotion_basic": {
+      "label": "Basic locomotion (Meshy provenance)",
+      "clips": {
+        "idle": {
+          "shared_name": "idle",
+          "action_ids": [0],
+          "optional": true,
+          "notes": "Optional Meshy idle. Prefer Quaternius Idle_Loop."
+        },
+        "walk": {
+          "shared_name": "walk",
+          "from_rig_basic": "walking_glb",
+          "optional": true,
+          "notes": "Optional Meshy walk. Prefer Quaternius Walk_Loop."
+        },
+        "run": {
+          "shared_name": "run",
+          "from_rig_basic": "running_glb",
+          "optional": true,
+          "notes": "Optional Meshy run. Prefer Quaternius Jog_Fwd_Loop."
+        }
+      }
+    }
+  },
+  "animation_tree": {
+    "type": "blend_space_1d",
+    "blend_param": "parameters/loco/blend_position",
+    "points": {
+      "idle": 0.0,
+      "walk": 1.0,
+      "run": 2.0
+    }
+  }
+}

@@ -18,6 +18,7 @@ func _enter_tree() -> void:
 	_bind_key(&"crouch", KEY_CTRL)
 	_bind_key(&"interact", KEY_F)
 	_bind_key(&"inventory", KEY_TAB)
+	_bind_key(&"tech_tree", KEY_H)
 	_bind_key(&"debug_toggle", KEY_F1)
 	_bind_key(&"drop_item", KEY_G)
 	for hotbar_index in 9:

@@ -200,7 +200,8 @@ static func build(arena: Node3D) -> void:
 	var folder := Node3D.new()
 	folder.name = "Loot"
 	arena.add_child(folder)
-	ShowcasePad.add(folder, ShowcasePad.SUPPLIES, Color(0.42, 0.36, 0.24), "ground_dirt")
+	## City asphalt pad — no dirt scatter.
+	ShowcasePad.add(folder, ShowcasePad.SUPPLIES, Color(0.42, 0.36, 0.24), "ground_asphalt", false, false)
 	ShowcasePad.label(folder, "SUPPLIES", ShowcasePad.SUPPLIES + Vector3(0.0, 2.6, -3.6), 52, Color(0.88, 0.82, 0.55))
 	_pickup(folder, "scrap_pile", "scrap_metal", 8, Vector3(-6.0, 0.15, 16.0))
 	_pickup(folder, "cloth_pile", "cloth", 6, Vector3(-7.2, 0.15, 16.0))

@@ -1,0 +1,47 @@
+{
+  "character": {
+    "label": "Character",
+    "target_polycount": 12000,
+    "lod_ratios": [0.5, 0.25],
+    "add_collision": false,
+    "recalc_normals": true,
+    "preserve_skin": true,
+    "skip_lod_if_skinned": true
+  },
+  "enemy": {
+    "label": "Enemy",
+    "target_polycount": 10000,
+    "lod_ratios": [0.5, 0.25],
+    "add_collision": false,
+    "recalc_normals": true,
+    "preserve_skin": true,
+    "skip_lod_if_skinned": true
+  },
+  "prop": {
+    "label": "Prop / resource",
+    "target_polycount": 8000,
+    "lod_ratios": [0.5, 0.25],
+    "add_collision": true,
+    "recalc_normals": true,
+    "preserve_skin": false,
+    "skip_lod_if_skinned": false
+  },
+  "deployable": {
+    "label": "Deployable",
+    "target_polycount": 6000,
+    "lod_ratios": [0.5, 0.25],
+    "add_collision": true,
+    "recalc_normals": true,
+    "preserve_skin": false,
+    "skip_lod_if_skinned": false
+  },
+  "environment": {
+    "label": "Environment / decoration",
+    "target_polycount": 4000,
+    "lod_ratios": [0.35, 0.15],
+    "add_collision": true,
+    "recalc_normals": true,
+    "preserve_skin": false,
+    "skip_lod_if_skinned": false
+  }
+}

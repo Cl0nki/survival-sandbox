@@ -72,6 +72,43 @@ static func accepts_fuel(kind: String, item_id: String) -> bool:
 	return item_id == "fuel" and bool(_spec(kind)["burns_fuel"])
 
 
+## Recipes this station can run, as craft-shaped dicts for the shared menu.
+static func recipes_for(kind: String) -> Array:
+	var spec := _spec(kind)
+	if spec.is_empty():
+		return []
+	var tier := int(spec["tier"])
+	var matched: Array = []
+	for recipe in _recipes:
+		if int(recipe["tier"]) > tier:
+			continue
+		matched.append(_as_craft(recipe))
+	return matched
+
+
+## Every smelt recipe as craft-shaped dicts, for the tech tree encyclopedia.
+static func all_recipes() -> Array:
+	_warm()
+	var copied: Array = []
+	for recipe in _recipes:
+		copied.append(_as_craft(recipe))
+	return copied
+
+
+static func _as_craft(recipe: Dictionary) -> Dictionary:
+	return {
+		"family": "smelt",
+		"tier": int(recipe["tier"]),
+		"input": str(recipe["input"]),
+		"extra": "",
+		"output": str(recipe["output"]),
+		"in_n": 1,
+		"extra_n": 0,
+		"out_n": 1,
+		"alloy": bool(recipe["alloy"]),
+	}
+
+
 ## How many fuel items a batch of `count` needs. -1 when that fuel cannot be used.
 static func fuel_cost(kind: String, item_id: String, fuel_id: String, count: int) -> int:
 	var spec := _spec(kind)
@@ -101,7 +138,8 @@ static func plan(
 	fuel_id: String,
 	fuel_qty: int,
 	output_id: String,
-	output_qty: int
+	output_qty: int,
+	max_count: int = -1
 ) -> Dictionary:
 	var empty := {
 		"ok": false,
@@ -136,6 +174,8 @@ static func plan(
 		empty["reason"] = "Output full"
 		return empty
 	var cap := mini(mini(input_qty, int(spec["batch"])), room)
+	if max_count > 0:
+		cap = mini(cap, max_count)
 	var count := 0
 	var cost := 0
 	for amount in range(cap, 0, -1):

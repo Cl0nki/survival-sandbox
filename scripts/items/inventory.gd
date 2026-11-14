@@ -16,13 +16,32 @@ func _init(slot_count: int = 0) -> void:
 	resize(slot_count)
 
 
-func grant_loadout() -> void:
-	## Pistol, Build Tool, Blast Gun, Repair Tool, then Upgrade Tool.
+func grant_loadout(map_id: String = "") -> void:
+	## Survival: empty bag — starter tools and the hut workbench are in the world.
+	## Debug map keeps free toolkit weapons.
+	var map := map_id
+	if map.is_empty():
+		map = _session_map()
+	if map == NetConfig.MAP_SURVIVAL:
+		return
 	_grant_hotbar_item("debugweapon")
 	_grant_hotbar_item("build_tool")
 	_grant_hotbar_item("blast_gun")
 	_grant_hotbar_item("repair_tool")
 	_grant_hotbar_item("upgrade_tool")
+
+
+static func _session_map() -> String:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return NetConfig.DEFAULT_MAP
+	var session := tree.root.get_node_or_null("/root/NetSession")
+	if session == null:
+		return NetConfig.DEFAULT_MAP
+	var mapped := NetConfig.normalize_map(str(session.get("map_id")))
+	if mapped.is_empty():
+		return NetConfig.DEFAULT_MAP
+	return mapped
 
 
 func ensure_item(item_id: String) -> void:

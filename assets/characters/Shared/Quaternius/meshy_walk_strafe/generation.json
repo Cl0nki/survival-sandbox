@@ -1,0 +1,124 @@
+{
+  "rig_task_id": "01a1a35d-7ed3-727c-bdc1-7836b812e802",
+  "mode": "prime",
+  "clips": {
+    "Walk_L": {
+      "motion_task_id": "01a1a7f2-94e6-7745-8112-f0f15cc1b5db",
+      "animation_task_id": "01a1a7f3-32f7-7370-8a00-6e17ce3567f4",
+      "prompt": "Loopable in-place humanoid walking strafe to the character's left. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, steady side-step walk cycle, feet sliding sideways, arms swinging naturally, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_L_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_L.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a7f2-94e6-7745-8112-f0f15cc1b5db/output/clip.fbx?Expires=1794078292&Signature=IbO0rvRoxoZiCZIpS1FVtvfRiuvTSqdHNeqf-SdxCx8K6gCa6q8y97IKbbVky3LLfHzxTayDGCIaJ21sX7vI8rj8DkxRnmpV9KdWjYWP66~vvXFBS8eY87kxh3YpkcwQLwoIUUpnTz-lJrsTFYfwubhkQW70a683RAaWZo7r43sWVlEjtCYkEP8UNdsbfsNBBo0MBUx1ggXRuZU2De2nIPucGcXURecb9C5ntCYZui7h4TH57dnWbyEpVetvbpXY5qAbYAkJ1IdUTyp5CCcDUcF10xYDFVOjmgNZeNHebPOPFJBo3T8JLno3G-6MvdW3qG4BmjNjyH75CFrYlLd~Tg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Walk_R": {
+      "motion_task_id": "01a1a7f3-58a9-73a4-ac71-61ff9dbbd859",
+      "animation_task_id": "01a1a7f3-88f3-7204-b938-5ff488dc335e",
+      "prompt": "Loopable in-place humanoid walking strafe to the character's right. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, steady side-step walk cycle, feet sliding sideways, arms swinging naturally, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_R_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_R.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a7f3-58a9-73a4-ac71-61ff9dbbd859/output/clip.fbx?Expires=1794078315&Signature=gJ8IFZVj4bcuj8FahaarBg9SSq3I3J5b0X~ExHuK~u~Ztk9K0bqYHzyE-NS20Fp4CPVua1M4-BiycmjWFjI~djaCrA4~BIKaLCzcAB66Mg10tquzLAvVmRlb1hdZzR-ev6NLU46RXI146RVarHrk9BkDx49hcuhHLnWgGSbfly34Hf-H50aickMElEub68UPK9s9n8P6Q4uu8OhqMAMh3S~-7LqEnQ8Re8yhgYyUNS8H~KkRF7DYMDHzTcMa1Rr85bp5Zh7SoUNQ4qMqCNrzuMQ01aCunS5buESgx5o~HfJevfi1mkwd9JBQ16vY0kRrJlWs5lIfItwNX18AfyZPyw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Walk_Bwd": {
+      "motion_task_id": "01a1a7f3-b1d0-762d-b3c5-43a384bfa9b0",
+      "animation_task_id": "01a1a7f3-fc69-70d1-a55d-8e4ef5857b0e",
+      "prompt": "Loopable in-place humanoid walking backwards. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, careful backpedal walk cycle, arms swinging naturally, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Bwd_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Bwd.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a7f3-b1d0-762d-b3c5-43a384bfa9b0/output/clip.fbx?Expires=1794078344&Signature=bl2AHAobnlUlolDlPbPBlEq0ylVMiTNRIyQ4cM5y~ug1JdjdOjQNsP4tgKo8Sa5JU2twPkOWLopux~2Yf-yo8EOaWiR3OfMPKVpvJTF8Tjzx2uKbVulkV88d5bkv0gdnQWS2B8YixJfVZK4J7R~h4lWk~RL1c2gT5lf33fg6yBp1fvHZPl5J~PyOQxfe0yd4O4~BRfbZX8DuD1MRcNcPNjqvtyEPMcO6Ia8PU4JrDr86pk-6rvlWxjoUygJy9n1cbPymqxELcayfDmFui4sNDcm1PbBFHaf0DFKl72qOpfyld5tAn6g6AMDEggDjJKzDWnHIfkX6YVXYqfWbQX2-zQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Walk_Fwd_L": {
+      "motion_task_id": "01a1a7f8-0ded-718b-b7e8-aeab413f8524",
+      "animation_task_id": "01a1a7f8-4acb-75d3-b2a7-9b0b1278413d",
+      "prompt": "Loopable in-place humanoid walking diagonally forward-left. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, casual walking gait (not jogging or running), feet moving forward and left, arms swinging naturally, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Fwd_L_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Fwd_L.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a7f8-0ded-718b-b7e8-aeab413f8524/output/clip.fbx?Expires=1794078627&Signature=JO5GfWgaMY2NrOTqEpeWLXfd7pJc6SZTXcDq~t2y8O6EeVXjXJtsIWnLBQK2X7Gb1MqtkSggrvMrFoYomXE~WDszZovqPkomLxQ0S1RSUk1YAyFzLvN8bZHGu6QYL5HqnAyLSAx4~NmL8J659eipCS-zU~kxRNd8-TBxCWkgRne9u9OT1D4Kw-cXD~GD3emH1GBCdVUH2KmS8VrKeV0oGt-~iXdoq491Q4~vyM~ndHG7jpKENS-TJ52woUxoZg3MXevbPAPags~y2Dh5bEeCaQMXR9FTXgenYjNUSUmrEEqAXyRA8mRdvo6TgoOS5F0tQ2-mgyap8oxY4WEoszrAGw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Walk_Fwd_R": {
+      "motion_task_id": "01a1a7f8-6f6a-7572-ac18-7c4c8c1bc6b8",
+      "animation_task_id": "01a1a7f8-acb3-767a-a4f8-1c684d7c1c55",
+      "prompt": "Loopable in-place humanoid walking diagonally forward-right. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, casual walking gait (not jogging or running), feet moving forward and right, arms swinging naturally, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Fwd_R_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Fwd_R.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a7f8-6f6a-7572-ac18-7c4c8c1bc6b8/output/clip.fbx?Expires=1794078653&Signature=MF-OgkUX7YzD4WnyBSqFbqmRC3~eoK5SUCgp0uh5WAUiruAJSUc87RPSqhB1UQKDl6TYsO7KVs7pzekTLli~2dGNsFSfSxJGwH2L0gWzj5jcDN7AMZPdlhkmjXTqjnu8f-TwQOkb8YT-dAFoiz7dsdDqvvIALgKdNy3-AJ7vaaxREHsdAzDkk-P-Ci92d7GXZIaUqlcV5-~U-m-11rVNTzqWvg6iN5HfEUbFaaUpxkGlD2K2bcrvccyAsOQNhfkOASt9OLxxsV-9xDtLMdd31pXXNWb7HTVTHFF8O9F~UNM8IC44dzmzGmOKahiiXEq5hK60SB~Gbj~fEL3iiAr6sg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Walk_Bwd_L": {
+      "motion_task_id": "01a1a7f8-d0ef-702b-a24d-f4f52abc92db",
+      "animation_task_id": "01a1a7f9-1f03-7169-aa8a-a7d24e9d0ccb",
+      "prompt": "Loopable in-place humanoid walking diagonally backward-left. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, casual walking gait (not jogging or running), feet moving back and left, arms swinging naturally, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Bwd_L_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Bwd_L.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a7f8-d0ef-702b-a24d-f4f52abc92db/output/clip.fbx?Expires=1794078681&Signature=IDNOLwowhy8cmSNHvkXCRYz2is9AGNkl~6Oyw7a~Wxavcy9j8Z~fCHGxiBl6yN257YrByUP0KWaUgZ-cQJ9Ku40~YLfpBqo~vL0WLdLdElzWwFZmWyCvmVB-2kJJrLRWN3wV6z2ooygSScPC0O6fax9pX1kKnfUujhIom5zjPcenvKHGfqsHOTHJ~HY4GV-PRLxJwWkZT1djvWZob9GuUiIA5vlp85DhBQSAg3BFwVe-h4Ew8FqTv4FWXolSQ3YsZ0xsTNQqoWclaFQ6Syg9VEHsVRkR0jd6kF1BkW7Y38mFEOhlTlPFo2mF-zOhRHV-5HTtiLRoodYlhEcc~kIKPQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Walk_Bwd_R": {
+      "motion_task_id": "01a1a7f9-4340-75c6-9bde-caecbbfca5bb",
+      "animation_task_id": "01a1a7f9-8497-7282-9c3c-ac38fa884420",
+      "prompt": "Loopable in-place humanoid walking diagonally backward-right. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, casual walking gait (not jogging or running), feet moving back and right, arms swinging naturally, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Bwd_R_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_Bwd_R.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a7f9-4340-75c6-9bde-caecbbfca5bb/output/clip.fbx?Expires=1794078708&Signature=RyQlmRCUSpfUGN9eNX~KVYqZMjDnm5GzsNHWMzOLx0-i8XKSYZ77UtmY6bo231OPAG1waOMwaQZeWvuvW4PJLA-kSM0iI5zoOhii8oStQYO1Xm2r9inXvmnIzbZimV-3dJHivueNirxlkW0bpjX6aThZ32iecPGJsBbZZ3ol-ruqCprgVGsJ45vEuaeSpswPuCYTxjEyWKC5KxhSn4aC6m2OzJsLGMm~y7Y-4Ad9kpcmQfvsIL0bRFwzfvoDiphILIfRg5IfMPcF~SUln5uEwb0BISQs7oEUJkfOHfbHq2LefqMk-sXY2dPtp7RgL98~fCymf5id8NxXXflzYcq-xA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Idle": {
+      "motion_task_id": "01a1a859-7f4f-774c-b7e0-03bbebddcd1e",
+      "animation_task_id": "01a1a85a-01ec-7403-8308-6f1955e7be66",
+      "prompt": "Loopable in-place humanoid standing idle. Facing camera-forward, upright relaxed posture, empty hands, no weapons, no props, subtle breathing and weight shift, feet planted, seamless loop.",
+      "duration": 2.5,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Idle_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Idle.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a859-7f4f-774c-b7e0-03bbebddcd1e/output/clip.fbx?Expires=1794085030&Signature=Trw5vtu3wcuXWx4LQGU~rhTnSEI6Bk4jMvLjFuTMFCRbCax~BXob5fVu~jxAhXZPxSEdpqc5309r5KJMbDdsGFJrUIlTr-1uauf4GkoydBDW6LJ7gIUHO0uVciCLZmBq5Q~CGSDRdwTnHTKaIs4YJ0bkaEl4-W7ZSpSiFatNltQ6h-GhCJqfnQvydIJ7pqd79WsxJI41tkqSZ-P0A1tuj1DNsOMkonCJL4Jxerl5ixF1F-lsBjLLU5tQZy-vgMXomcOQFm9bDTDomiKSEY6jbjgDwXA8XR2tP7ckWSMyuhO8VrVI541d3pz6GiNg6K9kHG3eY5x-0pRbQHsnOJlwaA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "Walk": {
+      "motion_task_id": "01a1a85a-2606-7759-bb97-9c604637d386",
+      "animation_task_id": "01a1a85a-7179-7427-94cf-7f85e474ff25",
+      "prompt": "Loopable in-place humanoid walking forward. Facing camera-forward the whole time, upright posture, relaxed empty hands, no weapons, no props, casual walking gait (not jogging or running), natural arm swing, seamless loop.",
+      "duration": 2.0,
+      "raw": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk_raw.glb",
+      "normalized": "assets/characters/Shared/Quaternius/meshy_walk_strafe/Walk.glb",
+      "normalize": {
+        "renamed_bones": 13,
+        "missing_required": []
+      },
+      "motion_url": "https://assets.meshy.ai/3aa2e81e-8336-42a0-92bd-92450d11084c/tasks/01a1a85a-2606-7759-bb97-9c604637d386/output/clip.fbx?Expires=1794085059&Signature=nKSRGMu6usKBpNn7F2Pnr5k0zBL54ICKIG3KuwoFq9pQBoPNwyro8ZA~EiqTr38ayZnkCigUs6zDyjC5Vjk6eljLGfweesYWenThSimRXBOKKbJmB5hfeMFnZ7tZWP7FfUcL1dtd3wKQ6Et6EikS7Xp6uToTD7eXOiruzXqKsUp80NKYqo4yaB-BQH3TTzFgZ~DQ4FMor2qxf8w3cGBAa2kcTGGSqv4UeZV9vlcEgCUdPH8k0kg~z4TNvlRnwk5Pyqvc8tJLdR3oQ5YPVDvhO4jJ68lPtdn9DZO7g1emK5pxzfgeHfw9YHIe3M0W0llJZ1CZuDphRxuqswMZBrrjoA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    }
+  },
+  "created_at": "2026-11-04T20:56:37Z"
+}

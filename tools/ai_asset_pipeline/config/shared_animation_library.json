@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "provider": "quaternius",
+  "license": "CC0",
+  "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+  "source_glb": "assets/characters/Shared/Quaternius/AnimationLibrary_Godot_Standard.glb",
+  "bone_map": "assets/characters/Shared/Quaternius/QuaterniusBoneMap.tres",
+  "character_bone_map": "assets/characters/Shared/GodotHumanoidBoneMap.tres",
+  "library_name": "",
+  "rest_pose": "t-pose",
+  "character_rest_pose": "a-pose",
+  "fix_silhouette_on_characters": true,
+  "clips": {
+    "idle": "Idle",
+    "walk": "Walk",
+    "walk_bwd": "Walk_Bwd",
+    "walk_l": "Walk_L",
+    "walk_r": "Walk_R",
+    "crouch_idle": "Crouch_Idle",
+    "crouch_walk": "Crouch_Fwd",
+    "run": "Walk",
+    "mining": "Mining",
+    "tree_chopping": "TreeChopping"
+  },
+  "optional_clips": {
+    "sprint": "Sprint",
+    "jump_start": "Jump_Start",
+    "jump_loop": "Jump",
+    "jump_land": "Jump_Land",
+    "death": "Death01",
+    "pistol_aim_down": "Pistol_Aim_Down",
+    "pistol_aim_neutral": "Pistol_Aim_Neutral",
+    "pistol_aim_up": "Pistol_Aim_Up",
+    "pistol_shoot": "Pistol_Shoot"
+  },
+  "ual2_directional": {
+    "Mining": "assets/characters/Shared/Quaternius/ual2/quaternius-ual2-mining-loop.glb",
+    "TreeChopping": "assets/characters/Shared/Quaternius/ual2/quaternius-ual2-tree-chopping-loop.glb",
+    "merge_script": "tools/merge_ual2_strafe_clips.gd",
+    "notes": "UAL2 Walk_* are NOT merged onto the Pro mannequin — rest mismatch breaks stand BlendSpace legs."
+  },
+  "animation_tree": {
+    "type": "blend_space_2d",
+    "stand_param": "parameters/stand_loco/blend_position",
+    "crouch_param": "parameters/crouch_loco/blend_position",
+    "stance_param": "parameters/stance/blend_amount",
+    "points": {
+      "idle": [0.0, 0.0],
+      "walk": [0.0, 1.0],
+      "walk_bwd": [0.0, -1.0],
+      "walk_l": [-1.0, 0.0],
+      "walk_r": [1.0, 0.0]
+    },
+    "aim_param": "parameters/aim/blend_position",
+    "upper_blend_param": "parameters/upper/blend_amount",
+    "shoot_request_param": "parameters/shoot/request",
+    "harvest_request_param": "parameters/harvest/request"
+  },
+  "notes": "Stand loco: Pro Idle/Walk plus Walk_LeanL/R (Jog_Fwd_Lean stretched). Walk_L/R/Bwd from UAL2, imported as skeleton with UAL2BoneMap so they share the Pro rest. Diagonals blend. Crouch+pistol Pro. UAL2 mining/chopping. Rebuild: import, merge_ual_pro_crouch, merge_ual2_strafe_clips."
+}

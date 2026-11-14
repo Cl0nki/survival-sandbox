@@ -19,6 +19,8 @@ var body_size := Vector3.ZERO
 var display_name := ""
 ## Empty slot captions. Stations use Input, Fuel, and Out.
 var slot_labels := PackedStringArray()
+## Deployable kind used to look up res://assets/deployables/<id>.glb.
+var art_id := ""
 
 
 func _ready() -> void:
@@ -40,24 +42,29 @@ func clear_contents() -> void:
 
 
 func _build_visual() -> void:
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = body_size if body_size.x > 0.0 else Vector3(1.15, 0.72, 0.8)
-	mesh.mesh = box
-	mesh.position = Vector3(0.0, box.size.y * 0.5, 0.0)
-	var material := StandardMaterial3D.new()
-	material.albedo_color = box_color
-	mesh.set_surface_override_material(0, material)
-	add_child(mesh)
+	var size := body_size if body_size.x > 0.0 else Vector3(1.15, 0.72, 0.8)
+	var used_art := false
+	if not art_id.is_empty():
+		used_art = DeployableArt.attach(self, art_id, size)
+	if not used_art:
+		var mesh := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = size
+		mesh.mesh = box
+		mesh.position = Vector3(0.0, size.y * 0.5, 0.0)
+		var material := StandardMaterial3D.new()
+		material.albedo_color = box_color
+		mesh.set_surface_override_material(0, material)
+		add_child(mesh)
 	var shape := CollisionShape3D.new()
 	var hull := BoxShape3D.new()
-	hull.size = box.size
+	hull.size = size
 	shape.shape = hull
-	shape.position = mesh.position
+	shape.position = Vector3(0.0, size.y * 0.5, 0.0)
 	add_child(shape)
 	_label = Label3D.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_label.position = Vector3(0.0, box.size.y + 0.33, 0.0)
+	_label.position = Vector3(0.0, size.y + 0.33, 0.0)
 	_label.pixel_size = 0.005
 	_label.font_size = 32
 	_label.outline_size = 6

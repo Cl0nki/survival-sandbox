@@ -9,20 +9,45 @@ class_name PlayerController
 
 enum NetRole { LOCAL, SERVER, OWNER, PUPPET }
 
-const CHEST_HEIGHT := 1.2
-const CROUCH_CHEST_HEIGHT := 0.62
-const BODY_RADIUS := 0.35
-const STAND_HEIGHT := 1.8
-const CROUCH_HEIGHT := 1.05
+const MODEL_SCALE := 1.08
+const CHEST_HEIGHT := 1.296
+const CROUCH_CHEST_HEIGHT := 0.6696
+const BODY_RADIUS := 0.378
+const STAND_HEIGHT := 1.944
+const CROUCH_HEIGHT := 1.134
 const CROUCH_SPEED_SCALE := 0.55
+## Bones overwritten by pistol aim / shoot on top of locomotion.
+const UPPER_BODY_FILTER: Array[String] = [
+	"Spine", "Chest", "UpperChest", "Neck", "Head",
+	"LeftShoulder", "LeftUpperArm", "LeftLowerArm", "LeftHand",
+	"RightShoulder", "RightUpperArm", "RightLowerArm", "RightHand",
+	"LeftThumbMetacarpal", "LeftThumbProximal", "LeftThumbDistal",
+	"LeftIndexProximal", "LeftIndexIntermediate", "LeftIndexDistal",
+	"LeftMiddleProximal", "LeftMiddleIntermediate", "LeftMiddleDistal",
+	"LeftRingProximal", "LeftRingIntermediate", "LeftRingDistal",
+	"LeftLittleProximal", "LeftLittleIntermediate", "LeftLittleDistal",
+	"RightThumbMetacarpal", "RightThumbProximal", "RightThumbDistal",
+	"RightIndexProximal", "RightIndexIntermediate", "RightIndexDistal",
+	"RightMiddleProximal", "RightMiddleIntermediate", "RightMiddleDistal",
+	"RightRingProximal", "RightRingIntermediate", "RightRingDistal",
+	"RightLittleProximal", "RightLittleIntermediate", "RightLittleDistal",
+]
 ## Exponential rate for stand/crouch. Higher is snappier. About 0.4 s to settle.
 const STANCE_BLEND_SPEED := 8.0
 const LEAN_DISTANCE := 0.45
 const LEAN_MARGIN := 0.12
 const LEAN_BLEND_SPEED := 8.0
-const WALK_SPEED := 5.0
+## Seconds the gun stays raised after a shot, and blend rates in 1/s.
+const AIM_HOLD_SEC := 1.6
+const DRAW_HOLD_SEC := 0.9
+const AIM_BLEND_SPEED := 6.0
+## Quarter of the original 5.0 pace so Quaternius Walk matches movement.
+const WALK_SPEED := 1.25
 const ACCELERATION := 28.0
 const GRAVITY := 24.0
+## Gun mesh pose in RightHand bone space. Bone +Y runs along the fingers.
+const HAND_WEAPON_TILT := Vector3(-PI / 2.0, 0.0, 0.0)
+const HAND_WEAPON_OFFSET := Vector3(0.0, 0.1, 0.0)
 const WEAPON_ANCHOR := Vector3(0.22, 0.3, -0.35)
 const MUZZLE_REST := Vector3(0.22, 0.3, -0.75)
 const WEAPON_REST := Vector3(0.22, 0.3, -0.45)
@@ -31,11 +56,14 @@ const WEAPON_REST := Vector3(0.22, 0.3, -0.45)
 @onready var _lean_pivot: Node3D = $VisualRoot/LeanPivot
 @onready var _muzzle: Marker3D = $VisualRoot/LeanPivot/Muzzle
 @onready var _collision: CollisionShape3D = $CollisionShape3D
-@onready var _body_mesh: MeshInstance3D = $VisualRoot/LeanPivot/Body
+@onready var _body_mesh: MeshInstance3D = get_node_or_null("VisualRoot/LeanPivot/Body")
+@onready var _character_model: Node3D = get_node_or_null("VisualRoot/LeanPivot/CharacterModel")
 @onready var _weapon_mesh: MeshInstance3D = $VisualRoot/LeanPivot/WeaponMesh
 @onready var _camera: OrbitCamera = $CameraRig
 @onready var _weapon: HitscanWeapon = $HitscanWeapon
 @onready var _aim_marker: MeshInstance3D = $AimMarker
+@onready var _anim_tree: AnimationTree = get_node_or_null("AnimationTree")
+@onready var _anim_player: AnimationPlayer = get_node_or_null("VisualRoot/LeanPivot/CharacterModel/AnimationPlayer")
 
 var net_role: NetRole = NetRole.LOCAL
 var network_id := 0
@@ -47,6 +75,9 @@ var acked_input_seq := 0
 var authoritative_velocity := Vector3.ZERO
 
 var _lean_offset := 0.0
+var _weapon_in_hand := false
+var _aim_ready := 0.0
+var _aim_hold := 0.0
 var _crouch := 0.0
 var _aim_pitch := 0.0
 var _owner_crouch := 0.0
@@ -69,6 +100,7 @@ var cursor_item_id := ""
 var cursor_qty := 0
 var hotbar_index := 0
 var _item_ui: InventoryUI
+var _tech_ui: TechTreeUI
 
 signal inventory_changed
 signal container_changed
@@ -115,9 +147,14 @@ func _ready() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var source_shape := _collision.shape as CapsuleShape3D
 	_body_shape = source_shape.duplicate() as CapsuleShape3D
+	_body_shape.radius = BODY_RADIUS
+	_body_shape.height = STAND_HEIGHT
 	_collision.shape = _body_shape
-	var source_mesh := _body_mesh.mesh as CapsuleMesh
-	_body_mesh.mesh = source_mesh.duplicate()
+	_collision.position.y = STAND_HEIGHT * 0.5
+	if _body_mesh != null and _body_mesh.mesh is CapsuleMesh:
+		_body_mesh.mesh = (_body_mesh.mesh as CapsuleMesh).duplicate()
+	_prepare_character_model()
+	set_lean_visual(0.0)
 	if net_role == NetRole.SERVER:
 		collision_layer = PhysicsLayers.PLAYER | PhysicsLayers.DAMAGEABLE
 	elif net_role == NetRole.OWNER:
@@ -150,7 +187,8 @@ func _physics_process(delta: float) -> void:
 			return
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_update_upper_blend(delta)
 	if net_role != NetRole.OWNER and net_role != NetRole.PUPPET:
 		return
 	var delay := NetConfig.OWNER_INTERP_DELAY_SEC if net_role == NetRole.OWNER else NetConfig.INTERP_DELAY_SEC
@@ -161,19 +199,44 @@ func _process(_delta: float) -> void:
 		set_lean_visual(_lean_offset)
 
 
+func blocks_camera_input() -> bool:
+	return (_item_ui != null and _item_ui.is_open()) or (_tech_ui != null and _tech_ui.is_open())
+
+
+func _inventory_open() -> bool:
+	return blocks_camera_input()
+
+
+func close_inventory() -> void:
+	if _item_ui != null:
+		_item_ui.close()
+
+
+func close_tech_tree() -> void:
+	if _tech_ui != null:
+		_tech_ui.close()
+
+
 func _run_local_frame(delta: float) -> void:
 	rotation = Vector3.ZERO
+	var inventory_open := _inventory_open()
 	var aim_info := _cursor_aim()
 	var aim: Vector3 = aim_info["point"]
-	_face_toward(aim)
+	if not inventory_open:
+		_face_toward(aim)
 	_update_stance(delta)
 	_move(delta)
 	_update_lean(delta)
 	var direction := direction_toward_aim(aim)
-	set_aim_pitch(asin(clampf(direction.y, -1.0, 1.0)))
-	direction = direction_toward_aim(aim)
-	_show_aim_marker(aim, aim_info["normal"])
+	if not inventory_open:
+		set_aim_pitch(asin(clampf(direction.y, -1.0, 1.0)))
+		direction = direction_toward_aim(aim)
+		_show_aim_marker(aim, aim_info["normal"])
+	elif _aim_marker != null:
+		_aim_marker.visible = false
 	_try_interact()
+	if inventory_open:
+		return
 	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
 		if holds_build_tool() or holds_repair_tool() or holds_upgrade_tool() or holds_deployable():
 			pass
@@ -181,10 +244,18 @@ func _run_local_frame(delta: float) -> void:
 			_try_local_blast()
 		elif holds_harvest_tool():
 			_try_local_harvest()
-		elif not holds_debug_weapon():
-			show_item_notice("No weapon in hand.")
-		else:
+		elif holds_pistol():
+			if not _spend_ammo("ammo_9mm", 1):
+				show_item_notice("No 9mm ammunition.")
+			else:
+				_weapon.try_fire(shot_origin(), direction)
+				_request_shoot_anim()
+		elif holds_debug_weapon():
 			_weapon.try_fire(shot_origin(), direction)
+			_request_shoot_anim()
+		else:
+			show_item_notice("No weapon in hand.")
+
 
 
 func _run_owner_frame(_delta: float) -> void:
@@ -193,31 +264,42 @@ func _run_owner_frame(_delta: float) -> void:
 		return
 	if _bot_controlled() or not _reports_input:
 		return
+	var inventory_open := _inventory_open()
 	var aim_info := _cursor_aim()
 	var aim: Vector3 = aim_info["point"]
-	_show_aim_marker(aim, aim_info["normal"])
+	if inventory_open:
+		_aim_marker.visible = false
+	else:
+		_show_aim_marker(aim, aim_info["normal"])
 	var input_2d := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
-	if container_view != null:
+	if container_view != null or inventory_open:
 		input_2d = Vector2.ZERO
-	var lean := Input.get_action_strength(&"lean_right") - Input.get_action_strength(&"lean_left")
-	var crouch := Input.get_action_strength(&"crouch")
-	var aim_yaw := _yaw_from_aim(aim)
+	var lean := 0.0 if inventory_open else Input.get_action_strength(&"lean_right") - Input.get_action_strength(&"lean_left")
+	var crouch := 0.0 if inventory_open else Input.get_action_strength(&"crouch")
+	var aim_yaw := get_facing_yaw() if inventory_open else _yaw_from_aim(aim)
 	var direction := direction_toward_aim(aim)
-	var pitch := asin(clampf(direction.y, -1.0, 1.0))
+	var pitch := _aim_pitch if inventory_open else asin(clampf(direction.y, -1.0, 1.0))
 	_owner_crouch = clampf(crouch, 0.0, 1.0)
 	_owner_pitch = clampf(pitch, -InputGuard.MAX_AIM_PITCH, InputGuard.MAX_AIM_PITCH)
 	_session.call("send_owner_input", input_2d, _camera.get_yaw(), aim_yaw, lean, _owner_crouch, _owner_pitch)
 	_try_interact()
+	if inventory_open:
+		return
 	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
 		if holds_build_tool() or holds_repair_tool() or holds_upgrade_tool() or holds_deployable():
 			pass
 		elif holds_blast_gun():
 			_try_network_blast()
-		elif holds_harvest_tool() or holds_debug_weapon():
+		elif holds_harvest_tool() or holds_debug_weapon() or holds_pistol():
 			_session.call("send_owner_fire", direction, aim_yaw, lean, _owner_crouch)
 			_weapon.note_local_request()
+			if holds_harvest_tool():
+				_request_harvest_anim()
+			elif holds_debug_weapon() or holds_pistol():
+				_request_shoot_anim()
 		else:
 			show_item_notice("No weapon in hand.")
+
 
 
 func get_aim_point() -> Vector3:
@@ -293,6 +375,14 @@ func request_item_drop(to_container: bool, source_slot: int, dest_slot: int, qua
 		_session.call("send_item_drop", container_view_id, to_container, source_slot, dest_slot, quantity)
 
 
+func request_craft(input_id: String, extra_id: String, amount: int = 1) -> void:
+	if net_role == NetRole.LOCAL:
+		_local_craft(input_id, extra_id, amount)
+		return
+	if _session != null:
+		_session.call("send_craft", input_id, extra_id, amount)
+
+
 func request_slot_click(area: int, index: int, right: bool, shift: bool, collect: bool) -> void:
 	if net_role == NetRole.LOCAL:
 		_local_slot_click(area, index, right, shift, collect)
@@ -332,6 +422,35 @@ func _cursor_dict() -> Dictionary:
 func _apply_local_cursor(cursor: Dictionary) -> void:
 	apply_confirmed_cursor(str(cursor.get("id", "")), int(cursor.get("qty", 0)))
 	inventory_changed.emit()
+
+
+func _local_craft(input_id: String, extra_id: String, amount: int = 1) -> void:
+	if container_view == null or container_view_id.is_empty():
+		show_item_notice("No station open.")
+		return
+	var station: LootContainer = null
+	for node in get_tree().get_nodes_in_group(&"loot_container"):
+		var crate := node as LootContainer
+		if crate != null and crate.container_id == container_view_id:
+			station = crate
+			break
+	if station == null:
+		show_item_notice("No station open.")
+		return
+	var reason := ""
+	if station is Crafter:
+		reason = (station as Crafter).craft_from_bag(inventory, input_id, extra_id, amount)
+	elif station is Smelter:
+		reason = (station as Smelter).smelt_from_bag(inventory, input_id, amount)
+	else:
+		show_item_notice("Not a crafting station.")
+		return
+	if reason != "":
+		show_item_notice(reason)
+		return
+	inventory_changed.emit()
+	container_changed.emit()
+	show_item_notice("Queued.")
 
 
 func _local_slot_click(area: int, index: int, right: bool, shift: bool, collect: bool) -> void:
@@ -397,15 +516,21 @@ func request_item_rearrange(in_container: bool, source_slot: int, dest_slot: int
 func _setup_inventory_ui() -> void:
 	if inventory == null:
 		inventory = Inventory.new(NetConfig.INVENTORY_SLOTS)
-		inventory.grant_loadout()
+		inventory.grant_loadout(_local_map_id())
 	refresh_weapon_visual()
 	_item_ui = InventoryUI.new()
 	add_child(_item_ui)
 	_item_ui.bind_player(self)
+	_tech_ui = TechTreeUI.new()
+	add_child(_tech_ui)
+	_tech_ui.bind_player(self)
 	if net_role == NetRole.LOCAL:
-		_attach_build_tool.call_deferred()
-		_attach_repair_tool.call_deferred()
-		_attach_upgrade_tool.call_deferred()
+		## Survival starts with the hut workbench already placed. DeployTool stays
+		## so crafted stations can still be planted later.
+		if _local_map_id() != NetConfig.MAP_SURVIVAL:
+			_attach_build_tool.call_deferred()
+			_attach_repair_tool.call_deferred()
+			_attach_upgrade_tool.call_deferred()
 		_attach_deploy_tool.call_deferred()
 
 
@@ -656,15 +781,36 @@ func holds_blast_gun() -> bool:
 
 
 func holds_repair_tool() -> bool:
-	return _hotbar_is("repair_tool")
+	return _hotbar_is("repair_tool") or _hotbar_is("repair_trowel")
 
 
 func holds_upgrade_tool() -> bool:
-	return _hotbar_is("upgrade_tool")
+	return _hotbar_is("upgrade_tool") or _hotbar_is("upgrade_hammer")
 
 
 func holds_debug_weapon() -> bool:
 	return _hotbar_is("debugweapon")
+
+
+func holds_pistol() -> bool:
+	return _hotbar_is("pistol")
+
+
+func charges_build_cost() -> bool:
+	return _hotbar_is("building_plan")
+
+
+func charges_repair_cost() -> bool:
+	return _hotbar_is("repair_trowel")
+
+
+func charges_upgrade_cost() -> bool:
+	return _hotbar_is("upgrade_hammer")
+
+
+func uses_craft_tool_reach() -> bool:
+	return charges_repair_cost() or charges_upgrade_cost()
+
 
 
 func held_item_id() -> String:
@@ -688,6 +834,7 @@ func _try_local_harvest() -> void:
 	var direction := direction_toward_aim(get_aim_point())
 	var result := HarvestSwing.try_strike(self, origin, direction, held_item_id(), inventory)
 	_weapon.note_local_request()
+	_request_harvest_anim()
 	_weapon.last_feedback = str(result.get("notice", "harvest"))
 	var end_point: Vector3 = result.get("point", origin)
 	ShotVisual.spawn(_visual_parent(), origin, end_point, bool(result.get("changed", false)))
@@ -733,11 +880,21 @@ func _hotbar_is(item_id: String) -> bool:
 
 
 func holds_build_tool() -> bool:
-	return _hotbar_is("build_tool")
+	return _hotbar_is("build_tool") or _hotbar_is("building_plan")
 
 
 func holds_deployable() -> bool:
 	return DeployableCatalog.known(held_item_id())
+
+
+func _spend_ammo(item_id: String, quantity: int) -> bool:
+	if inventory == null or quantity <= 0:
+		return false
+	if not inventory.take_item(item_id, quantity):
+		return false
+	inventory_changed.emit()
+	return true
+
 
 
 func select_hotbar(index: int) -> void:
@@ -756,7 +913,10 @@ func set_weapon_drawn(drawn: bool) -> void:
 func refresh_weapon_visual() -> void:
 	if net_role == NetRole.PUPPET:
 		return
-	set_weapon_drawn(holds_debug_weapon() or holds_blast_gun())
+	set_weapon_drawn(holds_debug_weapon() or holds_pistol() or holds_blast_gun())
+	if holds_debug_weapon() or holds_pistol():
+		_aim_hold = maxf(_aim_hold, DRAW_HOLD_SEC)
+	_update_aim_anim()
 	if _weapon_mesh == null:
 		return
 	var material := _weapon_mesh.get_surface_override_material(0) as StandardMaterial3D
@@ -776,7 +936,7 @@ func body_height() -> float:
 
 
 func eye_height() -> float:
-	return lerpf(1.45, 0.78, _crouch)
+	return lerpf(1.566, 0.8424, _crouch)
 
 
 func current_speed() -> float:
@@ -990,6 +1150,9 @@ func set_lean_visual(offset: float) -> void:
 		_lean_pivot.position = Vector3(offset, height * 0.5 + absf(ratio) * 0.04, 0.0)
 		_lean_pivot.rotation = Vector3(0.0, 0.0, deg_to_rad(-6.0) * ratio)
 		_lean_pivot.force_update_transform()
+	if _character_model != null:
+		# Keep feet on the ground while LeanPivot sits at capsule center.
+		_character_model.position.y = -height * 0.5
 	if _camera != null:
 		var lean_shift := Vector3.ZERO
 		if _visual_root != null:
@@ -998,11 +1161,13 @@ func set_lean_visual(offset: float) -> void:
 	if _nameplate != null:
 		_nameplate.position.y = height + 0.35
 	_apply_weapon_pitch()
+	_update_locomotion_anim()
 
 
 func set_aim_pitch(pitch: float) -> void:
 	_aim_pitch = clampf(pitch, -InputGuard.MAX_AIM_PITCH, InputGuard.MAX_AIM_PITCH)
 	_apply_weapon_pitch()
+	_update_aim_anim()
 
 
 func apply_stance(target: float, delta: float) -> void:
@@ -1050,7 +1215,8 @@ func _face_toward(aim: Vector3) -> void:
 
 func _move(delta: float) -> void:
 	var input_2d := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
-	if container_view != null:
+	var blocked := container_view != null or _inventory_open()
+	if blocked:
 		input_2d = Vector2.ZERO
 	var direction := wish_direction(input_2d, _camera.get_yaw())
 	var speed := current_speed()
@@ -1175,6 +1341,20 @@ func _bot_controlled() -> bool:
 	return session != null and bool(session.get("bot"))
 
 
+func _local_map_id() -> String:
+	var arena := get_parent()
+	if arena != null and str(arena.get("force_map")) != "":
+		var forced := NetConfig.normalize_map(str(arena.get("force_map")))
+		if not forced.is_empty():
+			return forced
+	var session := get_node_or_null("/root/NetSession")
+	if session != null:
+		var mapped := NetConfig.normalize_map(str(session.get("map_id")))
+		if not mapped.is_empty():
+			return mapped
+	return NetConfig.DEFAULT_MAP
+
+
 func _chest_height() -> float:
 	return lerpf(CHEST_HEIGHT, CROUCH_CHEST_HEIGHT, _crouch)
 
@@ -1196,11 +1376,162 @@ func _apply_weapon_pitch() -> void:
 		return
 	var muzzle_offset := MUZZLE_REST - WEAPON_ANCHOR
 	_muzzle.position = WEAPON_ANCHOR + muzzle_offset.rotated(Vector3.RIGHT, _aim_pitch)
-	if _weapon_mesh != null:
+	if _weapon_mesh != null and not _weapon_in_hand:
 		var weapon_offset := WEAPON_REST - WEAPON_ANCHOR
 		_weapon_mesh.position = WEAPON_ANCHOR + weapon_offset.rotated(Vector3.RIGHT, _aim_pitch)
 		_weapon_mesh.rotation = Vector3(_aim_pitch, 0.0, 0.0)
 	_muzzle.force_update_transform()
+
+
+func _prepare_character_model() -> void:
+	if _character_model == null:
+		return
+	# Quaternius tracks use %GeneralSkeleton — that unique name only resolves
+	# inside the instanced model, so locomotion must run on its AnimationPlayer.
+	# Mesh/Quaternius face +Z; VisualRoot forward is -Z — yaw 180° to match aim.
+	_character_model.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE)
+	_character_model.rotation.y = PI
+	var embedded := _character_model.get_node_or_null("AnimationPlayer") as AnimationPlayer
+	var lib: AnimationLibrary = load("res://assets/characters/Shared/Quaternius/ual_locomotion.res") as AnimationLibrary
+	if embedded == null or lib == null:
+		return
+	for lib_name in embedded.get_animation_library_list():
+		embedded.remove_animation_library(lib_name)
+	embedded.add_animation_library(&"", lib)
+	embedded.root_node = NodePath("..")
+	embedded.active = true
+	_anim_player = embedded
+	_attach_weapon_to_hand()
+	if _anim_tree != null:
+		_anim_tree.anim_player = _anim_tree.get_path_to(embedded)
+		_anim_tree.active = true
+		_configure_upper_body_filters()
+		_anim_tree.set("parameters/stand_loco/blend_position", Vector2.ZERO)
+		_anim_tree.set("parameters/crouch_loco/blend_position", Vector2.ZERO)
+		_anim_tree.set("parameters/stance/blend_amount", 0.0)
+		_anim_tree.set("parameters/aim/blend_position", 0.0)
+		_anim_tree.set("parameters/upper/blend_amount", 0.0)
+	_update_locomotion_anim()
+	_update_aim_anim()
+
+
+## The gun mesh rides on the right hand so it hangs at the side while the arms
+## are down and points where the aimed pose points. The muzzle marker stays on
+## LeanPivot: shots still start from the server-checked aim origin.
+func _attach_weapon_to_hand() -> void:
+	if _weapon_mesh == null or _character_model == null or _weapon_in_hand:
+		return
+	var skeleton := _character_model.find_child("GeneralSkeleton", true, false) as Skeleton3D
+	if skeleton == null or skeleton.find_bone("RightHand") < 0:
+		return
+	var attach := BoneAttachment3D.new()
+	attach.name = "RightHandAttachment"
+	skeleton.add_child(attach)
+	attach.bone_name = "RightHand"
+	_weapon_mesh.get_parent().remove_child(_weapon_mesh)
+	attach.add_child(_weapon_mesh)
+	_weapon_mesh.transform = Transform3D(Basis.from_euler(HAND_WEAPON_TILT), HAND_WEAPON_OFFSET)
+	_weapon_in_hand = true
+
+
+func _configure_upper_body_filters() -> void:
+	if _anim_tree == null or _anim_tree.tree_root == null:
+		return
+	var tree := _anim_tree.tree_root as AnimationNodeBlendTree
+	if tree == null:
+		return
+	for node_name in [&"upper", &"shoot", &"harvest"]:
+		var node: AnimationNode = tree.get_node(node_name)
+		if node == null:
+			continue
+		node.filter_enabled = true
+		for bone in UPPER_BODY_FILTER:
+			node.set_filter_path(NodePath("%%GeneralSkeleton:%s" % bone), true)
+
+
+func _update_locomotion_anim() -> void:
+	if _anim_tree == null:
+		return
+	if not _anim_tree.active:
+		_anim_tree.active = true
+	# Local/server simulate CharacterBody3D.velocity. Owner/puppet clients
+	# teleport via present_at and only receive speed in authoritative_velocity.
+	var source := velocity
+	if net_role == NetRole.OWNER or net_role == NetRole.PUPPET:
+		source = authoritative_velocity
+	# Facing stays on aim. Blend X/Y is velocity in that facing frame so
+	# strafe and back keep their own clips. Lean clips only cover forward
+	# walk; strafe stays on the direction blend. LeanPivot still shifts
+	# the camera and the mesh.
+	var local := Basis(Vector3.UP, get_facing_yaw()).inverse() * source
+	var planar := Vector2(local.x, -local.z)
+	var speed := planar.length()
+	var blend := Vector2.ZERO
+	var max_speed := maxf(current_speed(), 0.01)
+	if speed >= 0.08:
+		blend = planar / speed * clampf(speed / max_speed, 0.0, 1.0)
+	var lean_ratio := 0.0 if is_zero_approx(LEAN_DISTANCE) else clampf(_lean_offset / LEAN_DISTANCE, -1.0, 1.0)
+	var forward := clampf(blend.y, 0.0, 1.0)
+	_anim_tree.set("parameters/stand_loco/blend_position", blend)
+	_anim_tree.set("parameters/stand_lean/blend_position", lean_ratio)
+	_anim_tree.set("parameters/stand_body/blend_amount", absf(lean_ratio) * forward * (1.0 - _crouch))
+	_anim_tree.set("parameters/crouch_loco/blend_position", blend)
+	_anim_tree.set("parameters/stance/blend_amount", _crouch)
+
+
+func _update_aim_anim() -> void:
+	if _anim_tree == null:
+		return
+	if not (holds_pistol() or holds_debug_weapon()):
+		return
+	var max_pitch := maxf(InputGuard.MAX_AIM_PITCH, 0.001)
+	var aim_blend := clampf(_aim_pitch / max_pitch, -1.0, 1.0)
+	_anim_tree.set("parameters/aim/blend_position", aim_blend)
+
+
+## Upper body: the arms follow normal locomotion unless the gun is raised.
+## Drawing a gun or firing raises it to the aimed pose for a moment, then the
+## arms lower again with the gun still in the hand.
+func _update_upper_blend(delta: float) -> void:
+	if _anim_tree == null or not _anim_tree.active:
+		return
+	var armed := holds_pistol() or holds_debug_weapon()
+	_aim_hold = maxf(_aim_hold - delta, 0.0)
+	_aim_ready = move_toward(_aim_ready, 1.0 if armed and _aim_hold > 0.0 else 0.0, AIM_BLEND_SPEED * delta)
+	_anim_tree.set("parameters/upper/blend_amount", _aim_ready)
+
+
+func _request_shoot_anim() -> void:
+	if _anim_tree == null:
+		return
+	if not (holds_pistol() or holds_debug_weapon()):
+		return
+	_aim_hold = AIM_HOLD_SEC
+	_anim_tree.set("parameters/shoot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+
+
+func _harvest_clip_name() -> StringName:
+	var definition := ItemCatalog.get_item(held_item_id())
+	var kind := "" if definition == null else definition.harvest_kind
+	match kind:
+		"hatchet":
+			return &"TreeChopping"
+		"pickaxe", "shovel", "crowbar":
+			return &"Mining"
+		_:
+			return &"Mining"
+
+
+func _request_harvest_anim() -> void:
+	if _anim_tree == null or _anim_tree.tree_root == null:
+		return
+	var tree := _anim_tree.tree_root as AnimationNodeBlendTree
+	if tree == null:
+		return
+	var clip := tree.get_node(&"harvest_clip") as AnimationNodeAnimation
+	if clip != null:
+		clip.animation = _harvest_clip_name()
+	_anim_tree.set("parameters/harvest/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 
 
 func _show_aim_marker(point: Vector3, normal: Vector3) -> void:

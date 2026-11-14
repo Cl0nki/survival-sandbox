@@ -175,7 +175,7 @@ def validate_mesh(path: Path, kind: str, expect_collision: bool) -> dict:
             warnings.append(f"Longest axis is {longest:.3f} m. The mesh may be in centimeters or generic units.")
     if expect_collision and not report["has_collision_node"]:
         errors.append("No collision node named with the Godot -col or -colonly suffix.")
-    if kind == "character":
+    if kind in {"character", "enemy"}:
         if report["skins"] < 1 or not report["joint_names"]:
             errors.append("Character GLB has no skin. Image-to-3D did not produce an animation-ready rig.")
         else:

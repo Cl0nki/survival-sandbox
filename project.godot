@@ -16,6 +16,10 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 InputBindings="*res://scripts/core/input_bindings.gd"
 NetSession="*res://scripts/networking/net_session.gd"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/pipeline_retarget/plugin.cfg")
+
 [display]
 
 window/size/viewport_width=1280

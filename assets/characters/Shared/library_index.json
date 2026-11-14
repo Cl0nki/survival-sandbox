@@ -1,0 +1,83 @@
+{
+  "skeleton_profile": "godot_humanoid",
+  "clips": {
+    "idle": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Idle",
+      "source": "quaternius_pro",
+      "provider": "quaternius"
+    },
+    "walk": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Walk",
+      "source": "quaternius_pro",
+      "provider": "quaternius"
+    },
+    "walk_bwd": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Walk_Bwd",
+      "source": "quaternius_ual2",
+      "provider": "quaternius"
+    },
+    "walk_l": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Walk_L",
+      "source": "quaternius_ual2",
+      "provider": "quaternius"
+    },
+    "walk_r": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Walk_R",
+      "source": "quaternius_ual2",
+      "provider": "quaternius"
+    },
+    "crouch_idle": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Crouch_Idle",
+      "source": "quaternius",
+      "provider": "quaternius"
+    },
+    "crouch_walk": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Crouch_Fwd",
+      "source": "quaternius",
+      "provider": "quaternius"
+    },
+    "run": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Walk",
+      "source": "quaternius",
+      "provider": "quaternius"
+    },
+    "mining": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "Mining",
+      "source": "quaternius_ual2",
+      "provider": "quaternius"
+    },
+    "tree_chopping": {
+      "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+      "animation": "TreeChopping",
+      "source": "quaternius_ual2",
+      "provider": "quaternius"
+    }
+  },
+  "shared_library": {
+    "provider": "quaternius",
+    "path": "assets/characters/Shared/Quaternius/ual_locomotion.res",
+    "bone_map": "assets/characters/Shared/Quaternius/QuaterniusBoneMap.tres",
+    "character_bone_map": "assets/characters/Shared/GodotHumanoidBoneMap.tres",
+    "clips": {
+      "idle": "Idle",
+      "walk": "Walk",
+      "walk_bwd": "Walk_Bwd",
+      "walk_l": "Walk_L",
+      "walk_r": "Walk_R",
+      "crouch_idle": "Crouch_Idle",
+      "crouch_walk": "Crouch_Fwd",
+      "run": "Walk",
+      "mining": "Mining",
+      "tree_chopping": "TreeChopping"
+    }
+  }
+}

@@ -224,23 +224,17 @@ func _mark_depleted() -> void:
 
 
 func _build_visual() -> void:
-	var box := BoxMesh.new()
-	box.size = Vector3(float(footprint.x), PATCH_THICKNESS, float(footprint.y))
-	_mesh = MeshInstance3D.new()
-	_mesh.mesh = box
-	_mesh.position.y = ShowcasePad.pad_top() + PATCH_THICKNESS * 0.5
-	_material = StandardMaterial3D.new()
-	var texture_id := str({
-		"sand": "ground_sand",
-		"clay": "ground_clay",
-		"gravel": "ground_gravel",
-		"ground_water": "ground_water",
-		"natural_gas": "ground_gas",
-		"crude_oil": "ground_oil",
-	}.get(definition_id, ""))
-	ShowcasePad.paint(_material, texture_id, Vector2(footprint), _alive_color)
-	_mesh.set_surface_override_material(0, _material)
-	add_child(_mesh)
+	## Soft ground look comes from GroundSplat soil/stain layers.
+	if not GroundSplat.uses_stain_splat(definition_id):
+		var box := BoxMesh.new()
+		box.size = Vector3(float(footprint.x), PATCH_THICKNESS, float(footprint.y))
+		_mesh = MeshInstance3D.new()
+		_mesh.mesh = box
+		_mesh.position.y = ShowcasePad.pad_top() + PATCH_THICKNESS * 0.5
+		_material = StandardMaterial3D.new()
+		ShowcasePad.paint(_material, "", Vector2(footprint), _alive_color)
+		_mesh.set_surface_override_material(0, _material)
+		add_child(_mesh)
 	_label = Label3D.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_label.position = Vector3(0.0, 1.35, 0.0)

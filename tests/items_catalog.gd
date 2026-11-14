@@ -25,9 +25,11 @@ const REQUIRED := [
 	"door_scrap", "door_wood", "door_brick", "door_stone", "door_concrete", "door_composite",
 	"window_scrap", "window_wood", "window_brick", "window_stone", "window_concrete", "window_composite",
 	"hatchet_scrap", "hatchet_iron", "hatchet_steel", "hatchet_composite",
-	"pickaxe_scrap", "pickaxe_iron", "pickaxe_steel", "pickaxe_composite",
+	"pickaxe_stone", "pickaxe_scrap", "pickaxe_iron", "pickaxe_steel", "pickaxe_composite",
 	"shovel_scrap", "shovel_iron", "shovel_steel", "shovel_composite",
 	"crowbar_scrap", "crowbar_iron", "crowbar_steel", "crowbar_composite",
+	"pistol", "building_plan", "repair_trowel", "upgrade_hammer",
+
 	"cloth", "medical_supplies", "canned_food",
 	"raw_meat", "cooked_meat", "raw_fish", "cooked_fish",
 	"potato", "baked_potato", "mushroom", "cooked_mushroom",

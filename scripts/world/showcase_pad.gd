@@ -36,8 +36,15 @@ static func pad_top() -> float:
 	return PAD_CENTER_Y + PAD_THICKNESS * 0.5
 
 
-static func add(root: Node3D, center: Vector3, color: Color, texture_id := "", with_scatter := true) -> void:
-	add_rect(root, center, SIZE, color, texture_id, with_scatter)
+static func add(
+	root: Node3D,
+	center: Vector3,
+	color: Color,
+	texture_id := "",
+	with_scatter := true,
+	with_mesh := true
+) -> void:
+	add_rect(root, center, SIZE, color, texture_id, with_scatter, 0.0, with_mesh)
 
 
 static func add_rect(
@@ -47,17 +54,19 @@ static func add_rect(
 	color: Color,
 	texture_id := "",
 	with_scatter := true,
-	y_lift := 0.0
+	y_lift := 0.0,
+	with_mesh := true
 ) -> void:
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(size, PAD_THICKNESS, size)
-	mesh.mesh = box
-	mesh.position = Vector3(center.x, PAD_CENTER_Y + y_lift, center.z)
-	var material := StandardMaterial3D.new()
-	paint(material, texture_id, Vector2(size, size), color)
-	mesh.set_surface_override_material(0, material)
-	root.add_child(mesh)
+	if with_mesh:
+		var mesh := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(size, PAD_THICKNESS, size)
+		mesh.mesh = box
+		mesh.position = Vector3(center.x, PAD_CENTER_Y + y_lift, center.z)
+		var material := StandardMaterial3D.new()
+		paint(material, texture_id, Vector2(size, size), color)
+		mesh.set_surface_override_material(0, material)
+		root.add_child(mesh)
 	if with_scatter:
 		_GroundScatter.add(root, center, size, texture_id, y_lift)
 

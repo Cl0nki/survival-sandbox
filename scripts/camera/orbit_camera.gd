@@ -8,7 +8,7 @@ class_name OrbitCamera
 ## and behind the focus (+Y, +Z at yaw 0).
 
 const MIN_DISTANCE := 6.0
-const MAX_DISTANCE := 22.0
+const MAX_DISTANCE := 11.0
 const ZOOM_STEP := 1.35
 const KEY_YAW_SPEED := 1.6
 const MOUSE_YAW_SPEED := 0.005
@@ -19,7 +19,9 @@ const CLIP_MARGIN := 0.45
 @onready var _camera: Camera3D = $Camera3D
 
 var _yaw := 0.0
-var _distance := 13.0
+var _distance := 8.5
+## Matches F1 debug_toggle: labels start hidden, so zoom starts capped.
+var _debug_zoom_unlocked := false
 
 
 func _ready() -> void:
@@ -45,6 +47,10 @@ func _presentation_enabled() -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"debug_toggle"):
+		_debug_zoom_unlocked = not _debug_zoom_unlocked
+	if _camera_input_blocked():
+		return
 	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
 		_yaw -= (event as InputEventMouseMotion).relative.x * MOUSE_YAW_SPEED
 	elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
@@ -52,13 +58,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		if button.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_distance = maxf(_distance - ZOOM_STEP, MIN_DISTANCE)
 		elif button.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_distance = minf(_distance + ZOOM_STEP, MAX_DISTANCE)
+			_distance += ZOOM_STEP
+			if not _debug_zoom_unlocked:
+				_distance = minf(_distance, MAX_DISTANCE)
 
 
 func _process(delta: float) -> void:
-	var key_yaw := Input.get_action_strength(&"camera_yaw_right") - Input.get_action_strength(&"camera_yaw_left")
-	_yaw += key_yaw * KEY_YAW_SPEED * delta
+	if not _camera_input_blocked():
+		var key_yaw := Input.get_action_strength(&"camera_yaw_right") - Input.get_action_strength(&"camera_yaw_left")
+		_yaw += key_yaw * KEY_YAW_SPEED * delta
+	if not _debug_zoom_unlocked and _distance > MAX_DISTANCE:
+		_distance = MAX_DISTANCE
+	if _camera != null:
+		_camera.far = maxf(250.0, _distance + 100.0) if _debug_zoom_unlocked else 250.0
 	_apply_pose()
+
+
+func _camera_input_blocked() -> bool:
+	var parent := get_parent()
+	return parent != null and parent.has_method(&"blocks_camera_input") and bool(parent.call(&"blocks_camera_input"))
 
 
 func get_yaw() -> float:

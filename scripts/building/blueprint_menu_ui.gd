@@ -124,7 +124,11 @@ func refresh() -> void:
 			cost_label = "for 1 segment:"
 		elif blueprint.resizable:
 			cost_label = "for 1x1:"
-		lines.append("Cost %s %d %s%s" % [cost_label, full, tool.system.config.cost_item_id, "" if tool.system.config.require_resources else " (not charged)"])
+		var charged := tool.system.config.require_resources
+		if tool.player != null and tool.player.charges_build_cost():
+			charged = true
+		lines.append("Cost %s %d %s%s" % [cost_label, full, tool.system.config.cost_item_id, "" if charged else " (not charged)"])
+
 	lines.append("%s   Level %d   Rotation %d deg" % [BuildingTier.label(tool.build_tier), tool.level, tool.rotation_steps * 90])
 	_details.text = "\n".join(lines)
 

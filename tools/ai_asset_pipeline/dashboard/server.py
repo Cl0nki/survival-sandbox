@@ -6,11 +6,20 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+from core.costs import summarize_costs
 from core.errors import PipelineError
 from core.redact import redact
 from core.settings import Settings
 from core.store import AssetStore
-from generators.orchestrator import approve_asset, discard_asset, normalize_request, preview_prompt, reject_asset, reprocess_mesh
+from generators.orchestrator import (
+    approve_asset,
+    discard_asset,
+    normalize_request,
+    preview_prompt,
+    reject_asset,
+    reprocess_mesh,
+    stage_item_icon,
+)
 from generators.style_image import (
     accept_style_candidate,
     add_style_screenshots,
@@ -22,8 +31,9 @@ from generators.style_image import (
 )
 from godot.descriptions import load_descriptions, save_item_copy, save_surface_copy
 from godot.item_index import load_items
-from godot.surface_index import load_grounds, load_surfaces
+from godot.surface_index import load_grounds, load_surfaces, load_vegetation
 from jobqueue.worker import Worker
+from core.workshop import production_stats, status_label
 from providers.registry import openai_from, provider_status
 
 STATIC = Path(__file__).resolve().parent / "static"
@@ -54,6 +64,8 @@ class App:
                 "reference_path": "assets/style_reference/style_reference.png",
             },
             "catalog": self.settings.catalog(),
+            "workshop": self.settings.workshop(),
+            "production": production_stats(self.store, self.settings.project_root, self.settings.workshop()),
             "defaults": {
                 "resolution": self.settings.defaults["resolution"],
                 "allowed_resolutions": self.settings.defaults["allowed_resolutions"],
@@ -65,6 +77,24 @@ class App:
             "blender": {"configured": bool(self.settings.blender_bin), "path": self.settings.blender_bin},
             "godot": {"configured": bool(self.settings.godot_bin), "path": self.settings.godot_bin},
             "grid": self.settings.grid(),
+            "costs": self.cost_summary(),
+        }
+
+    def cost_summary(self) -> dict:
+        workshop = self.settings.workshop()
+        return summarize_costs(self.store.list_cost_records(), workshop.get("budgets") or {})
+
+    def asset_detail(self, asset_id: str) -> dict:
+        asset = self.store.get_asset(asset_id)
+        workshop = self.settings.workshop()
+        tasks = self.store.list_generation_tasks(asset_id=asset_id)
+        costs = self.store.list_cost_records(asset_id=asset_id)
+        return {
+            "asset": asset,
+            "tasks": tasks,
+            "costs": costs,
+            "status_label": status_label(workshop, asset.get("processing_status") or ""),
+            "approval_label": status_label(workshop, asset.get("approval_status") or ""),
         }
 
 
@@ -111,13 +141,19 @@ def make_handler(app: App):
                     self._send(200, {"jobs": app.store.list_jobs()})
                 elif path == "/api/assets":
                     self._send(200, {"assets": app.store.list_assets()})
+                elif path == "/api/workshop/stats":
+                    self._send(200, production_stats(app.store, app.settings.project_root, app.settings.workshop()))
+                elif path == "/api/costs/summary":
+                    self._send(200, app.cost_summary())
                 elif path == "/api/items":
                     copy = load_descriptions(app.settings)
                     self._send(200, {"items": load_items(app.settings.project_root, copy)})
                 elif path == "/api/surfaces":
                     copy = load_descriptions(app.settings)
                     root = app.settings.project_root
-                    surfaces = load_surfaces(root, copy) + load_grounds(root, copy)
+                    ## Grounds/forests first so biome floors are easy to find.
+                    surfaces = load_grounds(root, copy) + load_surfaces(root, copy) + load_vegetation(root, copy)
+
                     self._send(200, {"surfaces": surfaces})
                 elif path == "/style-reference.png":
                     self._style_image()
@@ -132,7 +168,11 @@ def make_handler(app: App):
                 elif path.startswith("/api/jobs/"):
                     self._send(200, app.store.get_job(path.split("/")[-1]))
                 elif path.startswith("/api/assets/"):
-                    self._send(200, app.store.get_asset(path.split("/")[-1]))
+                    parts = path.strip("/").split("/")
+                    if len(parts) == 4 and parts[3] == "detail":
+                        self._send(200, app.asset_detail(parts[2]))
+                    else:
+                        self._send(200, app.store.get_asset(parts[-1]))
                 elif path.startswith("/media/"):
                     self._media(path)
                 else:
@@ -182,6 +222,10 @@ def make_handler(app: App):
                     return
                 if path == "/api/upload":
                     self._send(201, self._upload())
+                    return
+                if path == "/api/items/stage-icon":
+                    body = self._read_json()
+                    self._send(201, stage_item_icon(app.settings, str(body.get("id") or "")))
                     return
                 parts = path.strip("/").split("/")
                 if len(parts) == 4 and parts[0] == "api" and parts[1] == "jobs" and parts[3] == "retry":

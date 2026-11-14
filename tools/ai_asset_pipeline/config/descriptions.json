@@ -39,29 +39,89 @@
       "ingame": "Short grass ground.",
       "image": "dense soft short-grass carpet, low-contrast mottled greens, tiny yellow wildflower dots only, no large isolated tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
     },
+    "ground_forest_oak": {
+      "ingame": "Oak forest floor.",
+      "image": "dense soft oak leaf litter carpet, overlapping dry brown leaves with soft soil peeking through, tiny acorn-scale debris dots, low-contrast mottling, no grass carpet, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "ground_forest_birch": {
+      "ingame": "Birch forest floor.",
+      "image": "dense soft birch leaf litter carpet, pale cream and light brown leaves on cool soil, thin bark flake dots, soft low-contrast mottling, no grass carpet, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "ground_forest_spruce": {
+      "ingame": "Spruce forest floor.",
+      "image": "dense soft spruce needle carpet, short dark evergreen needles on cool soil, low-contrast mottling, no bright grass, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
     "ground_dirt": {
       "ingame": "Packed dirt ground.",
-      "image": "packed warm dry dirt, fine sand grain and tiny pebbles only, soft low-contrast mottling, no plants, no big boulders, no large hero rocks, no path, no horizon"
+      "image": "dense soft packed dirt carpet, warm dry tan, fine sand grain and tiny pebble dots only, soft low-contrast mottling, no plants, no big boulders, no large hero rocks, no path, no horizon, medium-frequency paint that tiles quietly"
     },
     "ground_rock": {
       "ingame": "Rocky stone ground.",
-      "image": "muted gray cobble and broad flat stone slabs, thick readable mortar cracks, fine pebble noise between slabs, no grass, no plants, no cliffs, no oversized hero rocks, no path, no horizon"
+      "image": "dense soft rocky ground carpet, muted gray flat stone patches with soft soil between, thick readable soft cracks, fine pebble dots, low-contrast mottling, no grass, no plants, no cliffs, no oversized hero rocks, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "ground_asphalt": {
+      "ingame": "Worn asphalt scrap-yard ground.",
+      "image": "dense soft worn asphalt carpet, dark charcoal with fine aggregate mottling, faint soft crack lines only, low-contrast, no painted markings, no path stripes, no horizon, medium-frequency paint that tiles quietly"
     },
     "ground_meadow": {
       "ingame": "Lush meadow ground.",
       "image": "dense soft meadow carpet, warm mixed greens, tiny wildflower dots, low-contrast mottling, no large isolated grass tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
     },
+    "canopy_oak": {
+      "ingame": "Oak tree canopy foliage.",
+      "image": "dense soft oak canopy foliage carpet, overlapping warm mixed medium-dark green leaves only, soft darker leaf-shadow mottling, hand-painted leaf clumps, low-contrast, no flowers, no wildflower dots, no yellow white or purple blooms, no trunk, no branches, no sky, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "canopy_birch": {
+      "ingame": "Birch tree canopy foliage.",
+      "image": "dense soft birch canopy foliage carpet, light yellowish-green and pale lime leaves only, airy low-contrast mottling, hand-painted leaf clumps, brighter and lighter than oak, no flowers, no wildflower dots, no trunk, no white bark, no sky, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "canopy_spruce": {
+      "ingame": "Spruce tree canopy foliage.",
+      "image": "dense soft spruce canopy needle carpet, short dark cool evergreen needles only, low-contrast mottling, soft painted clumps darker than oak, no flowers, no bright grass, no trunk, no cones, no sky, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "ground_sand": {
+      "ingame": "Fine sand ground.",
+      "image": "dense soft fine sand carpet, warm pale tan, tiny grain mottling only, no deep dune ridges, no footprints, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "ground_clay": {
+      "ingame": "Damp clay ground.",
+      "image": "dense soft damp clay carpet, muted rust and warm sand, broad soft lumps and fine cracks as color only, low-contrast mottling, no objects, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
     "ground_water": {
       "ingame": "Damp dirt with shallow water stains.",
-      "image": "same packed warm dry dirt ground as the dirt tile, but with irregular damp darker wet spots and soft teal-blue puddle stains soaked into the soil, fine pebbles still visible, no open water plane, no horizon, no object, no plants"
+      "image": "same dense soft packed dirt carpet as the dirt tile, but with irregular damp darker wet spots and soft teal-blue puddle stains soaked into the soil, fine pebble dots still visible, low-contrast mottling, no open water plane, no path, no horizon, no object, no plants, medium-frequency paint that tiles quietly"
     },
     "ground_gas": {
       "ingame": "Dirt with gas vents.",
-      "image": "same packed warm dry dirt ground as the dirt tile, but with scattered small dark vents and crater-like holes punched in the soil, faint pale yellow-green seep stains around the holes, fine pebbles still visible, no flames, no pipe, no text, no horizon, no object, no plants"
+      "image": "same dense soft packed dirt carpet as the dirt tile, but with a few scattered small dark vents and soft crater stains in the soil, faint pale yellow-green seep around the holes, fine pebble dots still visible, low-contrast mottling, no flames, no pipe, no text, no path, no horizon, no object, no plants, medium-frequency paint that tiles quietly"
     },
     "ground_oil": {
       "ingame": "Dirt with crude oil stains.",
-      "image": "same packed warm dry dirt ground as the dirt tile, but with irregular dull brown-black oil stains and sticky dark blotches soaked into the soil, fine pebbles still visible through thinner stains, no open puddle silhouette, no equipment, no horizon, no object, no plants"
+      "image": "same dense soft packed dirt carpet as the dirt tile, but with irregular dull brown-black oil stains and sticky dark blotches soaked into the soil, fine pebble dots still visible through thinner stains, low-contrast mottling, no open puddle silhouette, no equipment, no path, no horizon, no object, no plants, medium-frequency paint that tiles quietly"
+    },
+    "tree_oak": {
+      "ingame": "Harvestable oak tree.",
+      "image": "broad stylized oak tree, thick trunk, round dense leafy crown, low-poly survival look, single tree, no pot, no people"
+    },
+    "tree_birch": {
+      "ingame": "Harvestable birch tree.",
+      "image": "tall stylized birch tree, pale bark stripes, light open crown, low-poly survival look, single tree, no pot, no people"
+    },
+    "tree_spruce": {
+      "ingame": "Harvestable spruce tree.",
+      "image": "conical stylized spruce tree, layered evergreen needles, low-poly survival look, single tree, no pot, no people"
+    },
+    "stone_boulder": {
+      "ingame": "Stone boulder for the rock field.",
+      "image": "stylized gray stone boulder, chunky readable silhouette, low-poly, one rock, no moss carpet, no grass, no people"
+    },
+    "grass_tuft": {
+      "ingame": "Small grass clump for ground scatter.",
+      "image": "tiny stylized grass tuft, a few blades, low-poly, no dirt mound, no pot, no flowers"
+    },
+    "fern": {
+      "ingame": "Small fern for meadow and woods scatter.",
+      "image": "small stylized fern with a few fronds, low-poly survival foliage, grounded, no pot, no dirt mound"
     },
     "wall_scrap": {
       "ingame": "Scrap wall surface.",
@@ -86,6 +146,10 @@
     "post_composite": {
       "ingame": "Composite post surface.",
       "image": "large flat cool-gray aluminum composite panels, smooth matte metal, exactly four equal columns and four equal rows filling the frame. Solid near-black joints about one fifth as wide as each panel, running edge to edge so the tile repeats. Wall, floor, and ceiling use this same grid, the same panel count, the same joint width, and the same colors. If an example image is attached, copy only the flat gray panel color and draw the joints several times thicker than the example. No thin lines, no caulk, no rivets, no chips, no rust, no teal, no sky, no logo, no perspective, no building corner"
+    },
+    "ground_gravel": {
+      "ingame": "Gravel patch. A shovel gathers it.",
+      "image": "dense soft gravel carpet, small muted gray pebbles nestled in dusty soil, low-contrast mottling, no large hero stones, no plants, no path, no horizon, medium-frequency paint that tiles quietly"
     }
   }
 }

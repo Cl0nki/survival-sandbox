@@ -8,7 +8,8 @@ class_name GameNet
 
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
 const _Sight = preload("res://scripts/networking/line_of_sight.gd")
-const DUMMY_NAMES: Array[String] = ["OpenDummy", "CoveredDummy"]
+const _SurvivalField = preload("res://scripts/world/survival_field.gd")
+const DUMMY_NAMES: Array[String] = ["OpenDummy"]
 const SNAPSHOT_STRIDE := 11
 
 var rejected_inputs := 0
@@ -172,6 +173,12 @@ func send_item_rearrange(in_container: bool, source_slot: int, dest_slot: int, q
 	request_rearrange.rpc_id(1, in_container, source_slot, dest_slot, quantity)
 
 
+func send_craft(input_id: String, extra_id: String, amount: int = 1) -> void:
+	if not _client_connected():
+		return
+	request_craft.rpc_id(1, input_id, extra_id, amount)
+
+
 func send_slot_click(area: int, index: int, right: bool, shift: bool, collect: bool) -> void:
 	if not _client_connected():
 		return
@@ -203,7 +210,7 @@ func send_hotbar_swap(area: int, index: int, hotbar_index: int) -> void:
 
 
 @rpc("any_peer", "reliable")
-func client_ready(token: String = "") -> void:
+func client_ready(token: String = "", map_id: String = "") -> void:
 	if not multiplayer.is_server():
 		return
 	var sender := multiplayer.get_remote_sender_id()
@@ -212,11 +219,17 @@ func client_ready(token: String = "") -> void:
 		return
 	if not _connected_peers.has(sender):
 		_note_peer(sender)
+	var wanted := NetConfig.normalize_map(map_id)
+	if wanted.is_empty():
+		wanted = NetConfig.DEFAULT_MAP
+	if wanted != _session_map():
+		_server_log("client ready rejected sender=%d reason=map_mismatch got=%s want=%s" % [sender, wanted, _session_map()])
+		return
 	var reason := _admit(sender, token)
 	if reason != "":
 		_server_log("client ready rejected sender=%d reason=%s" % [sender, reason])
 		return
-	_server_log("client ready id=%d" % sender)
+	_server_log("client ready id=%d map=%s" % [sender, wanted])
 
 
 @rpc("any_peer", "unreliable_ordered")
@@ -299,6 +312,13 @@ func request_rearrange(in_container: bool, source_slot: int, dest_slot: int, qua
 	if not multiplayer.is_server():
 		return
 	_handle_rearrange(multiplayer.get_remote_sender_id(), in_container, source_slot, dest_slot, quantity)
+
+
+@rpc("any_peer", "reliable")
+func request_craft(input_id: String, extra_id: String, amount: int = 1) -> void:
+	if not multiplayer.is_server():
+		return
+	_handle_craft(multiplayer.get_remote_sender_id(), input_id, extra_id, amount)
 
 
 @rpc("any_peer", "reliable")
@@ -669,7 +689,7 @@ func _try_client_ready() -> void:
 		return
 	if not _client_connected():
 		return
-	client_ready.rpc_id(1, _client_token())
+	client_ready.rpc_id(1, _client_token(), _session_map())
 
 
 func _server_physics(delta: float) -> void:
@@ -744,7 +764,9 @@ func _handle_input(
 
 
 func _weapon_drawn(peer_id: int) -> bool:
-	return _held_item_id(peer_id) == "debugweapon"
+	var held := _held_item_id(peer_id)
+	return held == "debugweapon" or held == "pistol"
+
 
 
 func _held_item_id(peer_id: int) -> String:
@@ -816,6 +838,13 @@ func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: flo
 	if harvest_tool:
 		_handle_harvest(sender, player, origin, direction, tool_id)
 		return
+	if tool_id == "pistol":
+		var bag := _inventories.get(sender) as Inventory
+		if bag == null or not bag.take_item("ammo_9mm", 1):
+			_reject_shot(sender, "no_ammo")
+			_notice(sender, "No 9mm ammunition.")
+			return
+		_push_inventory(sender)
 	var result := HitscanWeapon.resolve_shot(
 		world.direct_space_state,
 		origin,
@@ -1062,9 +1091,10 @@ func _spawn_authority(peer_id: int) -> void:
 	if profile.has("health"):
 		player.apply_authoritative_health(int(profile["health"]))
 	var bag := Inventory.new(NetConfig.INVENTORY_SLOTS)
+	var map_id := _session_map()
 	if profile.is_empty() or not WorldStore.apply_inventory(bag, profile):
-		bag.grant_loadout()
-	else:
+		bag.grant_loadout(map_id)
+	elif map_id != NetConfig.MAP_SURVIVAL:
 		bag.ensure_item("upgrade_tool")
 	_inventories[peer_id] = bag
 	_server_log("spawned player id=%d at=%s" % [peer_id, pos])
@@ -1519,6 +1549,31 @@ func _handle_rearrange(sender: int, in_container: bool, source_slot: int, dest_s
 	return ""
 
 
+func _handle_craft(sender: int, input_id: String, extra_id: String, amount: int = 1) -> String:
+	var ready := _bags_for(sender, true)
+	if str(ready["reason"]) != "":
+		return str(ready["reason"])
+	var crate := ready["crate"] as LootContainer
+	if input_id.is_empty() or input_id.length() > 64 or extra_id.length() > 64:
+		_item_lock = false
+		return _fail_item(sender, "bad_item")
+	amount = clampi(amount, 1, 20)
+	var reason := ""
+	if crate is Crafter:
+		reason = (crate as Crafter).craft_from_bag(ready["bag"] as Inventory, input_id, extra_id, amount)
+	elif crate is Smelter:
+		reason = (crate as Smelter).smelt_from_bag(ready["bag"] as Inventory, input_id, amount)
+	else:
+		_item_lock = false
+		return _fail_item(sender, "not_station")
+	_item_lock = false
+	if reason != "":
+		return _fail_item(sender, reason)
+	_publish_items(sender, crate)
+	_notice(sender, "Queued.")
+	return ""
+
+
 func _handle_slot_click(sender: int, area: int, index: int, right: bool, shift: bool, collect: bool) -> String:
 	var ready := _bags_for(sender, area == SlotOps.AREA_CONTAINER)
 	if str(ready["reason"]) != "":
@@ -1801,6 +1856,15 @@ func notify_container(crate: LootContainer) -> void:
 	_push_container(crate)
 
 
+func push_inventory_for_bag(bag: Inventory) -> void:
+	if bag == null:
+		return
+	for peer_id in _inventories.keys():
+		if _inventories[peer_id] == bag:
+			_push_inventory(int(peer_id))
+			return
+
+
 func watch_container(crate: LootContainer) -> void:
 	if crate == null or crate.container_id.is_empty():
 		return
@@ -1909,6 +1973,8 @@ func _boot_world() -> void:
 	if world_path.is_empty():
 		return
 	load_world()
+	if _session_map() == NetConfig.MAP_SURVIVAL:
+		_SurvivalField.seed_starter_house(get_parent() as Node3D)
 	_autosave = Timer.new()
 	_autosave.wait_time = 30.0
 	_autosave.timeout.connect(save_world)
@@ -2199,6 +2265,16 @@ func _session_mode() -> int:
 	if session == null:
 		return NetConfig.MODE_LOCAL
 	return int(session.get("mode"))
+
+
+func _session_map() -> String:
+	var session := _session()
+	if session == null:
+		return NetConfig.DEFAULT_MAP
+	var mapped := NetConfig.normalize_map(str(session.get("map_id")))
+	if mapped.is_empty():
+		return NetConfig.DEFAULT_MAP
+	return mapped
 
 
 func _session_port() -> int:

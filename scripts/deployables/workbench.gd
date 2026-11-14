@@ -5,7 +5,8 @@ class_name Workbench
 ## before the node enters the tree. X is the long axis.
 
 var display_name := "Workbench"
-var body_size := Vector3(1.5, 0.84, 0.78)
+var body_size := Vector3(1.81, 1.428, 0.81)
+var art_id := "workbench"
 
 var _label: Label3D
 
@@ -21,26 +22,27 @@ func _build_visual() -> void:
 	var length := body_size.x
 	var height := body_size.y
 	var depth := body_size.z
-	var cabinet := MeshInstance3D.new()
-	var body := BoxMesh.new()
-	body.size = Vector3(length * 0.9, height - 0.08, depth * 0.8)
-	cabinet.mesh = body
-	cabinet.position = Vector3(0.0, body.size.y * 0.5, 0.0)
-	var cabinet_mat := StandardMaterial3D.new()
-	cabinet_mat.albedo_color = Color(0.38, 0.26, 0.16)
-	cabinet_mat.roughness = 0.9
-	cabinet.set_surface_override_material(0, cabinet_mat)
-	add_child(cabinet)
-	var top := MeshInstance3D.new()
-	var slab := BoxMesh.new()
-	slab.size = Vector3(length, 0.08, depth)
-	top.mesh = slab
-	top.position = Vector3(0.0, height - 0.04, 0.0)
-	var top_mat := StandardMaterial3D.new()
-	top_mat.albedo_color = Color(0.52, 0.36, 0.2)
-	top_mat.roughness = 0.82
-	top.set_surface_override_material(0, top_mat)
-	add_child(top)
+	if not DeployableArt.attach(self, art_id, body_size):
+		var cabinet := MeshInstance3D.new()
+		var body := BoxMesh.new()
+		body.size = Vector3(length * 0.9, height - 0.08, depth * 0.8)
+		cabinet.mesh = body
+		cabinet.position = Vector3(0.0, body.size.y * 0.5, 0.0)
+		var cabinet_mat := StandardMaterial3D.new()
+		cabinet_mat.albedo_color = Color(0.38, 0.26, 0.16)
+		cabinet_mat.roughness = 0.9
+		cabinet.set_surface_override_material(0, cabinet_mat)
+		add_child(cabinet)
+		var top := MeshInstance3D.new()
+		var slab := BoxMesh.new()
+		slab.size = Vector3(length, 0.08, depth)
+		top.mesh = slab
+		top.position = Vector3(0.0, height - 0.04, 0.0)
+		var top_mat := StandardMaterial3D.new()
+		top_mat.albedo_color = Color(0.52, 0.36, 0.2)
+		top_mat.roughness = 0.82
+		top.set_surface_override_material(0, top_mat)
+		add_child(top)
 	var shape := CollisionShape3D.new()
 	var hull := BoxShape3D.new()
 	hull.size = body_size

@@ -30,7 +30,7 @@ Pillow is the only third-party package (`requirements.txt`). HTTP calls use the 
 
 ## Configure keys
 
-Copy `tools/ai_asset_pipeline/.env.example` to `tools/ai_asset_pipeline/.env`. The file is gitignored. The dashboard receives only `configured: true/false`. Keys are sent to the matching host and stripped from logs.
+Copy [`tools/ai_asset_pipeline/.env.example`](.env.example) to `tools/ai_asset_pipeline/.env`. The file is gitignored. The dashboard receives only `configured: true/false`. Keys are sent to the matching host and stripped from logs.
 
 | Variable | Used for |
 | --- | --- |
@@ -50,7 +50,7 @@ Docs used for the adapters:
 - [Tripo generation](https://platform.tripo3d.ai/docs/generation)
 - [Tripo upload](https://platform.tripo3d.ai/docs/upload)
 
-Tripo's separate rigging API is not called. Character jobs use Meshy rigging when `MESHY_API_KEY` is set. Otherwise the asset stays unrigged and the metadata lists the Blender steps. Image-to-3D is not treated as an animation-ready character.
+Character jobs use Meshy humanoid rigging when `MESHY_API_KEY` is set. Otherwise the asset stays unrigged and the metadata lists the Blender steps. Image-to-3D is not treated as an animation-ready character. Meshy walk/run clips and `/openapi/v1/animations` are **opt-in** (`auto_animate`, default off); locomotion uses the Quaternius Shared library. Tripo `animate_rig` remains available on the provider adapter for non-humanoid enemies.
 
 Missing keys fail the job. The pipeline does not invent files and label them as provider output.
 
@@ -96,7 +96,12 @@ Manual character rig, when auto-rig is unavailable:
 
 ## Godot output
 
+### Upload a texture to replace graphics
+
+On **Surfaces** or **Icons**, use **Upload** / **Upload replace**, or open the item in Preview and pick a file under Extra → **Upload albedo to replace**. The dashboard stages the file, runs a `provider: "manual"` job (albedo kept, other maps derived), and opens the review. Press **Keep**; if game art already exists, leave **Replace an approved file** checked.
+
 Approval copies files into the project and refuses to replace an approved file unless the request sets `confirm_overwrite_approved`.
+
 
 | Kind | Destination |
 | --- | --- |
@@ -129,18 +134,45 @@ A failed check does not copy the asset into `assets/`. The review library still 
 
 ```text
 tools/ai_asset_pipeline/
-  config/        style, defaults, building grid
+  config/        style, defaults, building grid, provider_pricing
   presets/       category prompts
   prompts/       prompt assembly
-  core/          settings, metadata store, redaction
-  providers/     OpenAI, Meshy, Tripo
+  core/          settings, metadata store, costs, redaction
+  providers/     OpenAI, Meshy, Tripo (+ base ThreeDProvider)
   generators/    textures, modular kit, job orchestration
   processors/    glTF writer, PBR maps, validation
   blender/       background processing
   godot/         tres and tscn publishing
   jobqueue/      background worker
   dashboard/     local review UI
+  docs/          workshop architecture map
   tests/
 ```
 
 New image or mesh services should follow the provider modules: build a documented request, poll the documented task endpoint, and return files plus parameters. Do not add a provider that returns stand-in geometry.
+
+## Workshop phases
+
+See [docs/WORKSHOP_ARCHITECTURE.md](docs/WORKSHOP_ARCHITECTURE.md) for the full map from the AI 3D Asset Workshop blueprint onto this package.
+
+**Phase 1–8 (done in package):** Architecture map; providers/tasks/costs; Production UI; static categories; humanoid skeleton normalize + character template; **animation library + AnimationTree** ([`config/meshy_actions.json`](config/meshy_actions.json), [`godot/animation_library.py`](godot/animation_library.py)); **modular clothing slots** ([`config/clothing_slots.json`](config/clothing_slots.json), [`blender/separate_clothing.py`](blender/separate_clothing.py)); **Costs tab + budgets** ([`core/costs.py`](core/costs.py) summary/gate); **optimization profiles** ([`config/optimization_profiles.json`](config/optimization_profiles.json)) with Blender collision/LOD/skin policy and mesh-provider retries.
+
+### First Meshy character
+
+`workshop_survivor_01` was generated with Meshy (image-to-3D + rig), skeleton-normalized to Godot humanoid bones, and approved to:
+
+- `assets/characters/workshop_survivor_01.glb`
+- `assets/characters/workshop_survivor_01.tscn`
+- `assets/characters/Shared/Animations/` (walk / run)
+- `assets/characters/Shared/skeleton_profile.json`
+
+Meshy `texture_resolution` must be `2k` / `4k` / `8k` (defaults to `2k`).
+
+### Shared locomotion (Quaternius)
+
+Default basic animations come from [Quaternius Universal Animation Library](https://store.godotengine.org/asset/quaternius/universal-animation-library/) (CC0) at `assets/characters/Shared/Quaternius/`.
+
+- Config: [`config/shared_animation_library.json`](config/shared_animation_library.json) (`idle→Idle`, `walk→Walk`; walk-only, no jog)
+- Runtime library: `assets/characters/Shared/Quaternius/ual_locomotion.res` (extracted after BoneMap retarget)
+- Bone maps: `QuaterniusBoneMap.tres` + `GodotHumanoidBoneMap.tres` (applied by `addons/pipeline_retarget`)
+- Character scenes load `ual_locomotion.res` into AnimationPlayer + idle/walk/run AnimationTree

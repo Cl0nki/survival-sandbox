@@ -75,6 +75,7 @@ class Settings:
         self.descriptions_path = PIPELINE_ROOT / "config" / "descriptions.json"
         self.grid_path = PIPELINE_ROOT / "config" / "building_grid.json"
         self.catalog_path = PIPELINE_ROOT / "presets" / "catalog.json"
+        self.workshop_path = PIPELINE_ROOT / "config" / "workshop.json"
         library = os.environ.get("PIPELINE_LIBRARY_DIR", "").strip()
         if library_dir is not None:
             self.library_dir = library_dir
@@ -103,6 +104,9 @@ class Settings:
 
     def catalog(self) -> dict:
         return _read_json(self.catalog_path)
+
+    def workshop(self) -> dict:
+        return _read_json(self.workshop_path)
 
     def style_reference(self) -> Path:
         return self.project_root / "assets" / "style_reference" / "style_reference.png"

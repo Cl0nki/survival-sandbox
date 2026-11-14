@@ -11,8 +11,11 @@ const _ScavengeField := preload("res://scripts/world/scavenge_field.gd")
 const _CraftingField := preload("res://scripts/world/crafting_field.gd")
 const _TextureCompare := preload("res://scripts/world/texture_compare.gd")
 const _ShowcasePad := preload("res://scripts/world/showcase_pad.gd")
+const _GroundSplat := preload("res://scripts/world/ground_splat.gd")
+const _SurvivalField := preload("res://scripts/world/survival_field.gd")
 
 var force_mode := -1
+var force_map := ""
 
 @onready var _sun: DirectionalLight3D = $Sun
 
@@ -26,6 +29,19 @@ func _resolved_mode() -> int:
 	return NetConfig.MODE_LOCAL
 
 
+func _resolved_map() -> String:
+	if not force_map.is_empty():
+		var forced := NetConfig.normalize_map(force_map)
+		if not forced.is_empty():
+			return forced
+	var session := get_node_or_null("/root/NetSession")
+	if session != null:
+		var mapped := NetConfig.normalize_map(str(session.get("map_id")))
+		if not mapped.is_empty():
+			return mapped
+	return NetConfig.DEFAULT_MAP
+
+
 func _enter_tree() -> void:
 	var mode := _resolved_mode()
 	if mode == NetConfig.MODE_LOCAL:
@@ -36,6 +52,35 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	var map_id := _resolved_map()
+	if map_id == NetConfig.MAP_SURVIVAL:
+		_boot_survival()
+	else:
+		_boot_debug()
+	_sun.rotation_degrees = Vector3(-50.0, 35.0, 0.0)
+	_sun.shadow_enabled = true
+	_sun.light_energy = 1.15
+	_sun.directional_shadow_max_distance = 120.0 if map_id == NetConfig.MAP_SURVIVAL else 90.0
+	# Split shadow maps change texel size with distance, so the walls shimmer while walking north or south.
+	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+	var mode := _resolved_mode()
+	_add_building()
+	_add_deployables()
+	if map_id == NetConfig.MAP_SURVIVAL:
+		## Defer so BuildingSystem / DeployableSystem finish _ready binding.
+		_SurvivalField.seed_starter_house.call_deferred(self)
+	else:
+		_seed_stations()
+	if mode == NetConfig.MODE_LOCAL:
+		return
+	_discard("Player")
+	var net := GameNet.new()
+	net.name = "GameNet"
+	add_child(net)
+
+
+func _boot_debug() -> void:
+	_GroundSplat.build(self)
 	LootLayout.build(self)
 	_ShootingRange.build(self)
 	_ResourceField.build(self)
@@ -43,31 +88,19 @@ func _ready() -> void:
 	_GroundDepositField.build(self)
 	_ScavengeField.build(self)
 	_CraftingField.build(self)
-	_ShowcasePad.add_rect(self, _ShowcasePad.BUILDING, _ShowcasePad.BUILDING_SIZE, Color(0.30, 0.42, 0.22), "ground_meadow")
-	_ShowcasePad.add(self, _ShowcasePad.DEPLOYABLES, Color(0.42, 0.36, 0.24), "ground_dirt")
-	_ShowcasePad.add(self, _ShowcasePad.SMELTING, Color(0.48, 0.46, 0.44), "ground_rock")
-	_ShowcasePad.add(self, _ShowcasePad.FOOD, Color(0.42, 0.36, 0.24), "ground_dirt")
+	_ShowcasePad.add_rect(
+		self, _ShowcasePad.BUILDING, _ShowcasePad.BUILDING_SIZE, Color(0.30, 0.42, 0.22), "ground_meadow", true, 0.0, false
+	)
+	_ShowcasePad.add(self, _ShowcasePad.SMELTING, Color(0.48, 0.46, 0.44), "ground_rock", true, false)
 	_ShowcasePad.label(self, "BUILDING", _ShowcasePad.BUILDING + Vector3(0.0, 2.6, 8.6), 52, Color(0.78, 0.82, 0.74))
 	_ShowcasePad.label(self, "DEPLOYABLES", _ShowcasePad.DEPLOYABLES + Vector3(0.0, 2.4, -3.6), 36, Color(0.70, 0.76, 0.68))
 	_ShowcasePad.label(self, "SMELTING", _ShowcasePad.SMELTING + Vector3(0.0, 2.6, -4.2), 52, Color(0.90, 0.62, 0.40))
 	_ShowcasePad.label(self, "FOOD", _ShowcasePad.FOOD + Vector3(0.0, 2.6, -4.2), 52, Color(0.92, 0.62, 0.36))
 	_TextureCompare.build(self)
-	_sun.rotation_degrees = Vector3(-50.0, 35.0, 0.0)
-	_sun.shadow_enabled = true
-	_sun.light_energy = 1.15
-	_sun.directional_shadow_max_distance = 90.0
-	# Split shadow maps change texel size with distance, so the walls shimmer while walking north or south.
-	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	var mode := _resolved_mode()
-	_add_building()
-	_add_deployables()
-	_seed_stations()
-	if mode == NetConfig.MODE_LOCAL:
-		return
-	_discard("Player")
-	var net := GameNet.new()
-	net.name = "GameNet"
-	add_child(net)
+
+
+func _boot_survival() -> void:
+	_SurvivalField.build(self)
 
 
 ## Local play and the server both own a BuildingSystem. Clients keep a replica.

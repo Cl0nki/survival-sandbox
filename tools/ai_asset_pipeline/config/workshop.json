@@ -1,0 +1,101 @@
+{
+  "production_targets": {
+    "characters": 10,
+    "enemies": 30,
+    "deployables": 90,
+    "resources": 50,
+    "decorations": 100
+  },
+  "categories": {
+    "characters": {
+      "label": "Characters",
+      "kind": "character",
+      "catalog_section": "characters",
+      "godot_folder": "characters",
+      "mesh_provider": "meshy",
+      "auto_rig": true,
+      "auto_animate": false,
+      "humanoid": true,
+      "expect_collision": false,
+      "optimization_profile": "character",
+      "counts_toward_production": true
+    },
+    "enemies": {
+      "label": "Enemies",
+      "kind": "enemy",
+      "catalog_section": "enemies",
+      "godot_folder": "characters",
+      "mesh_provider": "meshy",
+      "auto_rig": true,
+      "auto_animate": false,
+      "humanoid": true,
+      "expect_collision": false,
+      "optimization_profile": "enemy",
+      "counts_toward_production": true
+    },
+    "deployables": {
+      "label": "Deployables",
+      "kind": "deployable",
+      "catalog_section": "deployables",
+      "godot_folder": "deployables",
+      "mesh_provider": "meshy",
+      "auto_rig": false,
+      "humanoid": false,
+      "expect_collision": true,
+      "optimization_profile": "deployable",
+      "counts_toward_production": true
+    },
+    "resources": {
+      "label": "Resources",
+      "kind": "resource",
+      "catalog_section": "resources",
+      "godot_folder": "resources",
+      "mesh_provider": "meshy",
+      "auto_rig": false,
+      "humanoid": false,
+      "expect_collision": true,
+      "optimization_profile": "prop",
+      "counts_toward_production": true
+    },
+    "decorations": {
+      "label": "Decorations",
+      "kind": "decoration",
+      "catalog_section": "decorations",
+      "godot_folder": "environment",
+      "mesh_provider": "meshy",
+      "auto_rig": false,
+      "humanoid": false,
+      "expect_collision": true,
+      "optimization_profile": "environment",
+      "counts_toward_production": true
+    }
+  },
+  "budgets": {
+    "currency": "USD",
+    "monthly_usd": 50,
+    "per_job_usd": 8,
+    "per_category": {
+      "characters": 20,
+      "enemies": 15,
+      "deployables": 20,
+      "resources": 10,
+      "decorations": 10
+    },
+    "hard_limit": false
+  },
+  "status_labels": {
+    "waiting": "Pending",
+    "pending": "Pending",
+    "generating": "Generating",
+    "texturing": "Texturing",
+    "rigging": "Rigging",
+    "animating": "Animating",
+    "downloading": "Generating",
+    "processing": "Processing",
+    "validating": "Validating",
+    "ready_for_review": "Ready for Review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "failed": "Failed"
+  }
+}

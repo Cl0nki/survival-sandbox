@@ -193,13 +193,23 @@ func update_aim(point: Variant) -> void:
 func confirm() -> Dictionary:
 	if not equipped or current_plan == null or current_request.is_empty():
 		return {}
+	var request := current_request.duplicate()
+	var charge := player != null and player.charges_build_cost()
+	if charge:
+		request["charge"] = true
 	if system.relay != null and not system.authoritative:
-		system.relay.request_place(current_request)
+		system.relay.request_place(request)
 		var pending_name := selected_blueprint().display_name if selected_blueprint() != null else "piece"
 		_notify("Sending %s..." % pending_name)
 		return {"ok": true, "pending": true, "changed": false, "reason": ""}
 	var requester := player.network_id if player != null else 0
-	var result := system.authority.request_place(current_request, requester)
+	if charge:
+		_bind_local_wallet()
+	var result := system.authority.request_place(request, requester)
+	if charge:
+		_clear_local_wallet()
+		if player != null:
+			player.inventory_changed.emit()
 	last_result = result
 	var blueprint := selected_blueprint()
 	var label := blueprint.display_name if blueprint != null else "piece"
@@ -212,6 +222,22 @@ func confirm() -> Dictionary:
 	else:
 		_notify("Cannot build %s: %s" % [label, str(result["reason"])])
 	return result
+
+
+
+func _bind_local_wallet() -> void:
+	if player == null or player.inventory == null:
+		_clear_local_wallet()
+		return
+	var bag := player.inventory
+	system.authority.wallet_count = func(item_id: String) -> int: return bag.count_item(item_id)
+	system.authority.wallet_spend = func(item_id: String, quantity: int) -> bool: return bag.take_item(item_id, quantity)
+
+
+func _clear_local_wallet() -> void:
+	system.authority.wallet_count = Callable()
+	system.authority.wallet_spend = Callable()
+
 
 
 func is_dragging() -> bool:

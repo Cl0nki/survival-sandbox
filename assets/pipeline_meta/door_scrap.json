@@ -1,0 +1,147 @@
+{
+  "asset_id": "65ae3df953c3",
+  "asset_name": "door_scrap",
+  "category": "from_icon",
+  "kind": "deployable",
+  "workshop_category": "deployables",
+  "tags": [],
+  "created_at": "2026-11-04T17:08:38+00:00",
+  "provider": "meshy",
+  "model": "latest",
+  "prompt": "Scrap Door. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "Scrap Door. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "prompt_truncated": false,
+    "godot_folder": "deployables",
+    "polycount": 6000,
+    "customization": {},
+    "variation": 1,
+    "image_provider": "manual",
+    "workshop_category": "deployables",
+    "humanoid": false,
+    "auto_rig": false,
+    "auto_animate": false,
+    "optimization_profile": "deployable",
+    "expect_collision": true,
+    "provider_parameters": {
+      "ai_model": "latest",
+      "enable_pbr": true,
+      "should_remesh": true,
+      "should_texture": true,
+      "save_pre_remeshed_model": true,
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "texture_resolution": "2k"
+    },
+    "provider_task_id": "01a1a788-c608-75f9-8e13-96ca0ac54d25",
+    "generation_task_id": "7e0faba4bbb6",
+    "optimization": {
+      "profile": "deployable",
+      "target_polycount": 6000,
+      "lod_ratios": [
+        0.5,
+        0.25
+      ],
+      "add_collision": true,
+      "target_size": [
+        0.85,
+        2.2,
+        0.075
+      ]
+    }
+  },
+  "original_files": [
+    "original/concept.png",
+    "original/model.glb",
+    "original/pre_remeshed.glb",
+    "preview/thumbnail.png"
+  ],
+  "processed_files": [
+    "processed/door_scrap.glb",
+    "processed/lod1.glb",
+    "processed/lod2.glb"
+  ],
+  "polygon_count": 4928,
+  "dimensions": {
+    "min": [
+      -0.020544881001114845,
+      -0.03750000149011612,
+      -0.012406595051288605
+    ],
+    "max": [
+      0.020544881001114845,
+      0.03750000149011612,
+      0.006203297525644302
+    ],
+    "size": [
+      0.04108976200222969,
+      0.07500000298023224,
+      0.018609892576932907
+    ]
+  },
+  "texture_resolution": null,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-04T17:08:38+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "",
+      "prompt": "Scrap Door. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-04T17:09:59+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "Scrap Door. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/door_scrap.glb",
+        "processed/lod1.glb",
+        "processed/lod2.glb"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "f60db7fa9892",
+  "production_files": [
+    "assets/deployables/door_scrap.glb",
+    "assets/deployables/door_scrap.tscn",
+    "assets/deployables/door_scrap_lod1.glb",
+    "assets/deployables/door_scrap_lod2.glb"
+  ],
+  "manual_steps": [],
+  "maps_origin": {},
+  "modular": null
+}

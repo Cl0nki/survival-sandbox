@@ -18,3 +18,9 @@ Thumbs.db
 tools/ai_asset_pipeline/.env
 tools/ai_asset_pipeline/library/
 **/__pycache__/
+
+# Drawcall market install scratch (clips live under assets/characters/Shared/Quaternius/ual2)
+public/
+package-lock.json
+node_modules/
+

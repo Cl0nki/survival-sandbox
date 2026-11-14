@@ -21,6 +21,11 @@ const TREE_ORDER: PackedStringArray = [
 	"spruce",
 ]
 
+const FLORA_ORDER: PackedStringArray = [
+	"cactus",
+	"dead_bush",
+]
+
 const SCAVENGE_ORDER: PackedStringArray = [
 	"broken_car",
 	"scrap_pile",
@@ -51,6 +56,11 @@ static func tree_ids() -> PackedStringArray:
 	return TREE_ORDER.duplicate()
 
 
+static func flora_ids() -> PackedStringArray:
+	_ensure()
+	return FLORA_ORDER.duplicate()
+
+
 static func scavenge_ids() -> PackedStringArray:
 	_ensure()
 	return SCAVENGE_ORDER.duplicate()
@@ -60,6 +70,7 @@ static func all_ids() -> PackedStringArray:
 	_ensure()
 	var ids := MINERAL_ORDER.duplicate()
 	ids.append_array(TREE_ORDER)
+	ids.append_array(FLORA_ORDER)
 	ids.append_array(SCAVENGE_ORDER)
 	return ids
 
@@ -103,6 +114,26 @@ static func _ensure() -> void:
 		Color(0.32, 0.24, 0.18),
 		Color(0.16, 0.36, 0.24),
 		[["log", 5], ["stick", 6], ["plant_resin", 3]]
+	)
+	_add_flora(
+		"cactus",
+		"Cactus",
+		28,
+		0.7,
+		Color(0.28, 0.48, 0.30),
+		Color(0.34, 0.56, 0.34),
+		"cactus",
+		[["plant_resin", 3], ["stick", 2]]
+	)
+	_add_flora(
+		"dead_bush",
+		"Dead Bush",
+		16,
+		0.4,
+		Color(0.42, 0.30, 0.18),
+		Color(0.50, 0.38, 0.22),
+		"bush",
+		[["stick", 5], ["plant_resin", 1]]
 	)
 	_add_scavenge(
 		"broken_car",
@@ -189,6 +220,32 @@ static func _add_tree(
 		if str(entry[0]) == "log":
 			deposit.yield_amount = int(entry[1])
 			break
+	_by_id[deposit_id] = deposit
+
+
+static func _add_flora(
+	deposit_id: String,
+	display_name: String,
+	health: int,
+	resistance: float,
+	trunk: Color,
+	foliage: Color,
+	visual: String,
+	yields: Array
+) -> void:
+	var deposit := ResourceDeposit.new()
+	deposit.id = deposit_id
+	deposit.display_name = display_name
+	deposit.item_id = str(yields[0][0]) if not yields.is_empty() else ""
+	deposit.health = health
+	deposit.yield_amount = int(yields[0][1]) if not yields.is_empty() else 0
+	deposit.tool_kind = "hatchet"
+	deposit.resistance = resistance
+	deposit.tool_multiplier = 1.0
+	deposit.color = trunk
+	deposit.foliage_color = foliage
+	deposit.visual = visual
+	deposit.yields = yields
 	_by_id[deposit_id] = deposit
 
 

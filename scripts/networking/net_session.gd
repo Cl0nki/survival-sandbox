@@ -17,6 +17,7 @@ var expect_peers := 2
 var status_file := ""
 var world_file := ""
 var player_token := ""
+var map_id := NetConfig.DEFAULT_MAP
 var status_text := "local"
 var last_error := ""
 
@@ -50,6 +51,7 @@ func _ready() -> void:
 	status_file = str(parsed.status_file)
 	world_file = str(parsed.world_file)
 	player_token = str(parsed.player_token)
+	map_id = str(parsed.map)
 	if mode == MODE_LOCAL:
 		status_text = "local"
 		return
@@ -73,7 +75,8 @@ func _start_server() -> void:
 		return
 	multiplayer.multiplayer_peer = peer
 	status_text = "listening %d" % port
-	print("[server] listening port=%d max_clients=%d" % [port, NetConfig.MAX_CLIENTS])
+	print("[server] listening port=%d max_clients=%d map=%s" % [port, NetConfig.MAX_CLIENTS, map_id])
+	NetConfig.append_line(status_file, "SERVER_MAP %s" % map_id)
 
 
 func _start_client() -> void:

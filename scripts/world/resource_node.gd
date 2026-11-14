@@ -10,12 +10,21 @@ var max_health := 1
 var health := 0
 var depleted := false
 
+const _CANOPY_MATERIALS := {
+	"oak": "canopy_oak",
+	"birch": "canopy_birch",
+	"spruce": "canopy_spruce",
+}
+## Leaf-clump density on the crown sphere/cone. Matches soft ground carpets.
+const _CANOPY_UV_SCALE := 2.2
+
 var _mesh: MeshInstance3D
 var _crown: MeshInstance3D
 var _label: Label3D
 var _material: StandardMaterial3D
 var _crown_material: StandardMaterial3D
 var _alive_color := Color(0.52, 0.52, 0.50)
+var _crown_tint := Color.WHITE
 var _visual := "rock"
 
 
@@ -154,10 +163,16 @@ func _mark_depleted() -> void:
 	health = 0
 	if _material != null:
 		_material.albedo_color = Color(0.16, 0.15, 0.14)
-	if _visual == "tree":
+	if _visual == "tree" or _visual == "cactus":
 		if _mesh != null:
 			_mesh.scale = Vector3(1.15, 0.22, 1.15)
 			_mesh.position.y = 0.32
+		if _crown != null:
+			_crown.visible = false
+	elif _visual == "bush":
+		if _mesh != null:
+			_mesh.scale = Vector3(1.1, 0.28, 1.1)
+			_mesh.position.y = 0.18
 		if _crown != null:
 			_crown.visible = false
 	elif _mesh != null:
@@ -173,25 +188,41 @@ func _flash() -> void:
 	var tween := create_tween()
 	tween.tween_property(_material, "albedo_color", _alive_color, 0.12)
 	if _crown_material != null:
-		var foliage := _crown_material.albedo_color
 		_crown_material.albedo_color = Color(1.0, 0.95, 0.85)
-		tween.parallel().tween_property(_crown_material, "albedo_color", foliage, 0.12)
+		tween.parallel().tween_property(_crown_material, "albedo_color", _crown_tint, 0.12)
 
 
 func _build_visual() -> void:
-	if _visual == "tree":
-		_build_tree()
-	else:
-		_build_rock()
+	match _visual:
+		"tree":
+			_build_tree()
+		"cactus":
+			_build_cactus()
+		"bush":
+			_build_bush()
+		_:
+			_build_rock()
 	_label = Label3D.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_label.position = Vector3(0.0, 5.8 if _visual == "tree" else 1.35, 0.0)
+	_label.position = Vector3(0.0, _label_height(), 0.0)
 	_label.pixel_size = 0.008
 	_label.font_size = 28
 	_label.outline_size = 6
 	_label.visible = false
 	_label.add_to_group(&"resource_info")
 	add_child(_label)
+
+
+func _label_height() -> float:
+	match _visual:
+		"tree":
+			return 5.8
+		"cactus":
+			return 2.4
+		"bush":
+			return 1.6
+		_:
+			return 1.35
 
 
 func _build_rock() -> void:
@@ -210,6 +241,84 @@ func _build_rock() -> void:
 	var shape := CollisionShape3D.new()
 	shape.shape = hull
 	shape.position.y = 0.42
+	add_child(shape)
+
+
+func _build_cactus() -> void:
+	var deposit := ResourceCatalog.get_deposit(deposit_id)
+	var pads := Color(0.34, 0.56, 0.34)
+	if deposit != null:
+		pads = deposit.foliage_color
+	var trunk := CylinderMesh.new()
+	trunk.top_radius = 0.16
+	trunk.bottom_radius = 0.20
+	trunk.height = 1.55
+	trunk.radial_segments = 8
+	_mesh = MeshInstance3D.new()
+	_mesh.mesh = trunk
+	_mesh.position.y = trunk.height * 0.5
+	_material = StandardMaterial3D.new()
+	_material.roughness = 0.9
+	_material.albedo_color = _alive_color
+	_mesh.set_surface_override_material(0, _material)
+	add_child(_mesh)
+	_crown = MeshInstance3D.new()
+	var arm := CylinderMesh.new()
+	arm.top_radius = 0.10
+	arm.bottom_radius = 0.12
+	arm.height = 0.7
+	arm.radial_segments = 6
+	_crown.mesh = arm
+	_crown.position = Vector3(0.28, 1.05, 0.0)
+	_crown.rotation_degrees = Vector3(0.0, 0.0, 55.0)
+	_crown_material = StandardMaterial3D.new()
+	_crown_material.roughness = 0.9
+	_crown_material.albedo_color = pads
+	_crown.set_surface_override_material(0, _crown_material)
+	add_child(_crown)
+	var hull := CylinderShape3D.new()
+	hull.radius = 0.28
+	hull.height = trunk.height
+	var shape := CollisionShape3D.new()
+	shape.shape = hull
+	shape.position.y = trunk.height * 0.5
+	add_child(shape)
+
+
+func _build_bush() -> void:
+	var deposit := ResourceCatalog.get_deposit(deposit_id)
+	var twig := Color(0.50, 0.38, 0.22)
+	if deposit != null:
+		twig = deposit.foliage_color
+	var stem := CylinderMesh.new()
+	stem.top_radius = 0.04
+	stem.bottom_radius = 0.07
+	stem.height = 0.55
+	stem.radial_segments = 6
+	_mesh = MeshInstance3D.new()
+	_mesh.mesh = stem
+	_mesh.position.y = stem.height * 0.5
+	_material = StandardMaterial3D.new()
+	_material.roughness = 0.95
+	_material.albedo_color = _alive_color
+	_mesh.set_surface_override_material(0, _material)
+	add_child(_mesh)
+	_crown = MeshInstance3D.new()
+	var ball := SphereMesh.new()
+	ball.radius = 0.42
+	ball.height = 0.55
+	_crown.mesh = ball
+	_crown.position.y = 0.72
+	_crown_material = StandardMaterial3D.new()
+	_crown_material.roughness = 0.96
+	_crown_material.albedo_color = twig
+	_crown.set_surface_override_material(0, _crown_material)
+	add_child(_crown)
+	var hull := SphereShape3D.new()
+	hull.radius = 0.45
+	var shape := CollisionShape3D.new()
+	shape.shape = hull
+	shape.position.y = 0.55
 	add_child(shape)
 
 
@@ -248,10 +357,7 @@ func _build_tree() -> void:
 		ball.height = ball.radius * 2.0
 		_crown.mesh = ball
 		_crown.position.y = CROWN_BOTTOM + ball.radius
-	_crown_material = StandardMaterial3D.new()
-	_crown_material.roughness = 0.88
-	_crown_material.albedo_color = foliage
-	_crown.set_surface_override_material(0, _crown_material)
+	_apply_canopy_material(foliage)
 	add_child(_crown)
 	var hull := CylinderShape3D.new()
 	hull.radius = 0.42
@@ -260,6 +366,24 @@ func _build_tree() -> void:
 	shape.shape = hull
 	shape.position.y = trunk.height * 0.5
 	add_child(shape)
+
+
+func _apply_canopy_material(foliage: Color) -> void:
+	_crown_tint = foliage
+	_crown_material = StandardMaterial3D.new()
+	_crown_material.roughness = 0.88
+	_crown_material.albedo_color = foliage
+	var mat_id := str(_CANOPY_MATERIALS.get(deposit_id, ""))
+	if mat_id != "":
+		var path := "res://assets/materials/%s.tres" % mat_id
+		if ResourceLoader.exists(path):
+			var published := load(path) as StandardMaterial3D
+			if published != null:
+				_crown_material = published.duplicate() as StandardMaterial3D
+				_crown_material.uv1_scale = Vector3(_CANOPY_UV_SCALE, _CANOPY_UV_SCALE, _CANOPY_UV_SCALE)
+				_crown_material.albedo_color = Color.WHITE
+				_crown_tint = Color.WHITE
+	_crown.set_surface_override_material(0, _crown_material)
 
 
 func _refresh_label() -> void:

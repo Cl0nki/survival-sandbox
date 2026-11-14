@@ -109,8 +109,22 @@ function Wait-ServerReady {
     return "timeout"
 }
 
+function Get-SelectedMap {
+    if ($script:MapBox -and $script:MapBox.SelectedItem) {
+        $text = [string]$script:MapBox.SelectedItem
+        if ($text -match "survival") { return "survival" }
+    }
+    return "debug"
+}
+
+function Get-WorldFileForMap {
+    param([string]$Map)
+    if ($Map -eq "survival") { return "user://world_survival.json" }
+    return "user://world.json"
+}
+
 function Start-SandboxServer {
-    param([int]$Port, [switch]$AllowExisting, [string]$WorldFile = "")
+    param([int]$Port, [switch]$AllowExisting, [string]$WorldFile = "", [string]$Map = "")
     if (-not (Test-Path $script:Console)) {
         Write-Log "Godot console build was not found."
         return $false
@@ -122,19 +136,21 @@ function Start-SandboxServer {
             return $false
         }
     }
+    if (-not $Map) { $Map = Get-SelectedMap }
+    $script:ActiveMap = $Map
     $script:StatusPath = Join-Path $env:TEMP ("survival-sandbox-launcher-{0}-server.txt" -f $Port)
     if (Test-Path $script:StatusPath) { Remove-Item $script:StatusPath -Force -ErrorAction SilentlyContinue }
-    Write-Log "Starting server on port $Port."
-    $world = if ($WorldFile) { $WorldFile } else { "user://world.json" }
+    Write-Log "Starting $Map server on port $Port."
+    $world = if ($WorldFile) { $WorldFile } else { Get-WorldFileForMap -Map $Map }
     $args = @(
         "--headless", "--path", $script:Project, "--",
         "--server", "--port", "$Port", "--status-file", $script:StatusPath,
-        "--world-file", $world
+        "--world-file", $world, "--map", $Map
     )
     Start-Process -FilePath $script:Console -ArgumentList $args -WorkingDirectory $script:Project -WindowStyle Hidden | Out-Null
     $result = Wait-ServerReady -Path $script:StatusPath
     if ($result -eq "ready") {
-        Write-Log "Server is ready on port $Port."
+        Write-Log "Server is ready on port $Port ($Map map)."
         return $true
     }
     $detail = ""
@@ -147,22 +163,26 @@ function Start-SandboxServer {
 }
 
 function Get-UserWorldPath {
-    return Join-Path $env:APPDATA "Godot\app_userdata\Survival Sandbox\world.json"
+    param([string]$Map = "")
+    if (-not $Map) { $Map = Get-SelectedMap }
+    $name = if ($Map -eq "survival") { "world_survival.json" } else { "world.json" }
+    return Join-Path $env:APPDATA "Godot\app_userdata\Survival Sandbox\$name"
 }
 
 function Reset-SandboxServer {
     param([int]$Port)
-    Write-Log "Resetting the server to an empty world."
+    $map = Get-SelectedMap
+    Write-Log "Resetting the $map server to an empty world."
     $removed = Stop-ProjectProcesses -Role "server"
     if ($removed -gt 0) { Write-Log "Stopped $removed server process(es)." }
-    $world = Get-UserWorldPath
+    $world = Get-UserWorldPath -Map $map
     foreach ($path in @($world, "$world.tmp")) {
         if (Test-Path $path) {
             Remove-Item $path -Force
             Write-Log "Deleted $path"
         }
     }
-    return Start-SandboxServer -Port $Port
+    return Start-SandboxServer -Port $Port -Map $map
 }
 
 function Get-PythonExe {
@@ -301,10 +321,13 @@ function Stop-AssetDashboard {
 }
 
 function Start-SandboxClient {
-    param([string]$Address, [int]$Port)
+    param([string]$Address, [int]$Port, [string]$Map = "")
     if (-not (Test-Path $script:Gui)) {
         Write-Log "Godot player build was not found."
         return $false
+    }
+    if (-not $Map) {
+        $Map = if ($script:ActiveMap) { $script:ActiveMap } else { Get-SelectedMap }
     }
     $slot = $script:Slots[$script:ClientSlot % $script:Slots.Count]
     $script:ClientSlot++
@@ -313,10 +336,10 @@ function Start-SandboxClient {
         "--path", $script:Project, "--",
         "--client", "--address", $Address, "--port", "$Port",
         "--window-x", "$($slot[0])", "--window-y", "$($slot[1])",
-        "--status-file", $status
+        "--status-file", $status, "--map", $Map
     )
     Start-Process -FilePath $script:Gui -ArgumentList $args -WorkingDirectory $script:Project | Out-Null
-    Write-Log "Opened a client for ${Address}:${Port}."
+    Write-Log "Opened a $Map client for ${Address}:${Port}."
     return $true
 }
 
@@ -330,15 +353,16 @@ function Update-StatusLabel {
     } else {
         "Dashboard stopped."
     }
+    $mapText = if ($script:ActiveMap) { $script:ActiveMap } else { Get-SelectedMap }
     if (-not $state.Running) {
-        $script:StatusLabel.Text = "Server stopped. Clients open: $clients`r`n$dashboardText"
+        $script:StatusLabel.Text = "Server stopped. Map: $mapText. Clients open: $clients`r`n$dashboardText"
         $script:StatusLabel.ForeColor = [System.Drawing.Color]::FromArgb(120, 40, 40)
         return
     }
     $readyText = if ($state.Ready) { "ready" } else { "starting" }
     $ports = @($state.Ports)
     $extra = if ($ports.Count -gt 1) { " Warning: servers on ports $($ports -join ', ')." } else { "" }
-    $script:StatusLabel.Text = "Server $readyText on port $($state.Port). Clients open: $clients$extra`r`n$dashboardText"
+    $script:StatusLabel.Text = "Server $readyText on port $($state.Port) ($mapText). Clients open: $clients$extra`r`n$dashboardText"
     $script:StatusLabel.ForeColor = if ($state.Ready) {
         [System.Drawing.Color]::FromArgb(20, 90, 40)
     } else {
@@ -399,12 +423,14 @@ if ($Smoke) {
     exit 0
 }
 
+$script:ActiveMap = "debug"
+
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Survival Sandbox"
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
-$form.ClientSize = New-Object System.Drawing.Size(520, 516)
+$form.ClientSize = New-Object System.Drawing.Size(520, 556)
 $form.Font = New-Object System.Drawing.Font("Segoe UI", 10)
 $form.BackColor = [System.Drawing.Color]::FromArgb(244, 242, 236)
 
@@ -416,41 +442,56 @@ $title.Location = New-Object System.Drawing.Point(20, 16)
 $form.Controls.Add($title)
 
 $hint = New-Object System.Windows.Forms.Label
-$hint.Text = "Start the server, then open a client. Reset server wipes the saved world.`r`nBuild Tool (hotbar 2): LMB place  RMB cancel  R rotate  PgUp/PgDn level  [ ] (Ue +) blueprint  F3 debug"
+$hint.Text = "Pick a map, start the server, then open a client. Reset wipes that map's save.`r`nDebug = showcase + free tools. Survival = resources only (no chests, no debug loadout)."
 $hint.AutoSize = $false
-$hint.Size = New-Object System.Drawing.Size(476, 60)
+$hint.Size = New-Object System.Drawing.Size(476, 48)
 $hint.ForeColor = [System.Drawing.Color]::FromArgb(70, 70, 70)
 $hint.Location = New-Object System.Drawing.Point(22, 48)
 $form.Controls.Add($hint)
 
+$mapLabel = New-Object System.Windows.Forms.Label
+$mapLabel.Text = "Map"
+$mapLabel.AutoSize = $true
+$mapLabel.Location = New-Object System.Drawing.Point(22, 108)
+$form.Controls.Add($mapLabel)
+
+$script:MapBox = New-Object System.Windows.Forms.ComboBox
+$script:MapBox.DropDownStyle = "DropDownList"
+$script:MapBox.Items.Add("debug (showcase)") | Out-Null
+$script:MapBox.Items.Add("survival (resources)") | Out-Null
+$script:MapBox.SelectedIndex = 0
+$script:MapBox.Location = New-Object System.Drawing.Point(90, 104)
+$script:MapBox.Size = New-Object System.Drawing.Size(200, 28)
+$form.Controls.Add($script:MapBox)
+
 $addressLabel = New-Object System.Windows.Forms.Label
 $addressLabel.Text = "Address"
 $addressLabel.AutoSize = $true
-$addressLabel.Location = New-Object System.Drawing.Point(22, 120)
+$addressLabel.Location = New-Object System.Drawing.Point(22, 148)
 $form.Controls.Add($addressLabel)
 
 $script:AddressBox = New-Object System.Windows.Forms.TextBox
 $script:AddressBox.Text = "127.0.0.1"
-$script:AddressBox.Location = New-Object System.Drawing.Point(90, 116)
+$script:AddressBox.Location = New-Object System.Drawing.Point(90, 144)
 $script:AddressBox.Size = New-Object System.Drawing.Size(180, 28)
 $form.Controls.Add($script:AddressBox)
 
 $portLabel = New-Object System.Windows.Forms.Label
 $portLabel.Text = "Port"
 $portLabel.AutoSize = $true
-$portLabel.Location = New-Object System.Drawing.Point(290, 120)
+$portLabel.Location = New-Object System.Drawing.Point(290, 148)
 $form.Controls.Add($portLabel)
 
 $script:PortBox = New-Object System.Windows.Forms.TextBox
 $script:PortBox.Text = "7777"
-$script:PortBox.Location = New-Object System.Drawing.Point(330, 116)
+$script:PortBox.Location = New-Object System.Drawing.Point(330, 144)
 $script:PortBox.Size = New-Object System.Drawing.Size(80, 28)
 $form.Controls.Add($script:PortBox)
 
 $script:StatusLabel = New-Object System.Windows.Forms.Label
 $script:StatusLabel.AutoSize = $false
 $script:StatusLabel.Size = New-Object System.Drawing.Size(476, 42)
-$script:StatusLabel.Location = New-Object System.Drawing.Point(22, 154)
+$script:StatusLabel.Location = New-Object System.Drawing.Point(22, 184)
 $form.Controls.Add($script:StatusLabel)
 
 function New-ActionButton {
@@ -465,32 +506,32 @@ function New-ActionButton {
     return $button
 }
 
-$form.Controls.Add((New-ActionButton "Start server" 22 206 150 {
+$form.Controls.Add((New-ActionButton "Start server" 22 236 150 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Start-SandboxServer -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Reset server" 182 206 156 {
+$form.Controls.Add((New-ActionButton "Reset server" 182 236 156 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Reset-SandboxServer -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Stop server" 348 206 150 {
+$form.Controls.Add((New-ActionButton "Stop server" 348 236 150 {
     Invoke-LauncherAction {
         $removed = Stop-ProjectProcesses -Role "server"
         if ($removed -eq 0) { Write-Log "No server was running." }
         else { Write-Log "Stopped the server." }
     }
 }))
-$form.Controls.Add((New-ActionButton "Start client" 22 252 150 {
+$form.Controls.Add((New-ActionButton "Start client" 22 282 150 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Start-SandboxClient -Address $fields.Address -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Start two clients" 182 252 156 {
+$form.Controls.Add((New-ActionButton "Start two clients" 182 282 156 {
     Invoke-LauncherAction {
         $fields = Read-LaunchFields
         Start-SandboxClient -Address $fields.Address -Port $fields.Port | Out-Null
@@ -498,19 +539,19 @@ $form.Controls.Add((New-ActionButton "Start two clients" 182 252 156 {
         Start-SandboxClient -Address $fields.Address -Port $fields.Port | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Close clients" 348 252 150 {
+$form.Controls.Add((New-ActionButton "Close clients" 348 282 150 {
     Invoke-LauncherAction {
         $removed = Stop-ProjectProcesses -Role "client"
         if ($removed -eq 0) { Write-Log "No clients were open." }
         else { Write-Log "Closed $removed client process(es)." }
     }
 }))
-$form.Controls.Add((New-ActionButton "Open dashboard" 22 298 316 {
+$form.Controls.Add((New-ActionButton "Open dashboard" 22 328 316 {
     Invoke-LauncherAction {
         Start-AssetDashboard | Out-Null
     }
 }))
-$form.Controls.Add((New-ActionButton "Stop dashboard" 348 298 150 {
+$form.Controls.Add((New-ActionButton "Stop dashboard" 348 328 150 {
     Invoke-LauncherAction {
         $removed = Stop-AssetDashboard
         if ($removed -eq 0) { Write-Log "The asset dashboard was not running." }
@@ -522,7 +563,7 @@ $script:LogBox.Multiline = $true
 $script:LogBox.ReadOnly = $true
 $script:LogBox.ScrollBars = "Vertical"
 $script:LogBox.Font = New-Object System.Drawing.Font("Consolas", 9)
-$script:LogBox.Location = New-Object System.Drawing.Point(22, 346)
+$script:LogBox.Location = New-Object System.Drawing.Point(22, 386)
 $script:LogBox.Size = New-Object System.Drawing.Size(476, 150)
 $script:LogBox.BackColor = [System.Drawing.Color]::White
 $form.Controls.Add($script:LogBox)

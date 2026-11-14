@@ -115,8 +115,3 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.15, 13.4)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.75, 2)
 display_name = "Open Dummy"
 tint = Color(0.82, 0.18, 0.16, 1)
-
-[node name="CoveredDummy" parent="." instance=ExtResource("3_dummy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.75, -2)
-display_name = "Covered Dummy"
-tint = Color(0.9, 0.48, 0.12, 1)

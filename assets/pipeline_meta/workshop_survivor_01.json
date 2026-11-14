@@ -1,0 +1,225 @@
+{
+  "asset_id": "c5340053887c",
+  "asset_name": "workshop_survivor_01",
+  "category": "survivor",
+  "kind": "character",
+  "workshop_category": "characters",
+  "tags": [],
+  "created_at": "2026-11-03T21:40:29+00:00",
+  "provider": "meshy",
+  "model": "latest",
+  "prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "prompt_truncated": false,
+    "godot_folder": "characters",
+    "polycount": 12000,
+    "customization": {},
+    "variation": 1,
+    "image_provider": "manual",
+    "workshop_category": "characters",
+    "humanoid": true,
+    "optimization_profile": "character",
+    "expect_collision": false,
+    "provider_parameters": {
+      "ai_model": "latest",
+      "enable_pbr": true,
+      "should_remesh": true,
+      "should_texture": true,
+      "save_pre_remeshed_model": true,
+      "target_polycount": 12000,
+      "target_formats": [
+        "glb"
+      ],
+      "texture_resolution": "2k",
+      "pose_mode": "a-pose"
+    },
+    "provider_task_id": "01a1a35b-470c-742b-bf58-74b35df8ec94",
+    "generation_task_id": "d60940cad16c",
+    "rigging": {
+      "provider": "meshy",
+      "provider_task_id": "01a1a35d-7ed3-727c-bdc1-7836b812e802",
+      "generation_task_id": "003e0677c9c5",
+      "animations": [
+        "processed/walking_glb.glb",
+        "processed/running_glb.glb"
+      ]
+    },
+    "skeleton": {
+      "profile": "godot_humanoid",
+      "renamed_bones": 13,
+      "renames": {
+        "Hips": "Hips",
+        "Spine02": "UpperChest",
+        "Spine01": "Chest",
+        "Spine": "Spine",
+        "neck": "Neck",
+        "Head": "Head",
+        "LeftShoulder": "LeftShoulder",
+        "LeftArm": "LeftUpperArm",
+        "LeftForeArm": "LeftLowerArm",
+        "LeftHand": "LeftHand",
+        "RightShoulder": "RightShoulder",
+        "RightArm": "RightUpperArm",
+        "RightForeArm": "RightLowerArm",
+        "RightHand": "RightHand",
+        "LeftUpLeg": "LeftUpperLeg",
+        "LeftLeg": "LeftLowerLeg",
+        "LeftFoot": "LeftFoot",
+        "LeftToeBase": "LeftToes",
+        "RightUpLeg": "RightUpperLeg",
+        "RightLeg": "RightLowerLeg",
+        "RightFoot": "RightFoot",
+        "RightToeBase": "RightToes"
+      },
+      "missing_required": [],
+      "clip_renames": {
+        "Armature|clip0|baselayer": "idle"
+      }
+    }
+  },
+  "original_files": [
+    "original/concept.png",
+    "original/model.glb",
+    "original/pre_remeshed.glb",
+    "preview/thumbnail.png"
+  ],
+  "processed_files": [
+    "processed/workshop_survivor_01.glb",
+    "processed/normalized.glb",
+    "processed/walking_glb.glb",
+    "processed/running_glb.glb"
+  ],
+  "polygon_count": 12282,
+  "dimensions": {
+    "min": [
+      -0.5794458389282227,
+      0,
+      -0.341014564037323
+    ],
+    "max": [
+      0.5794458389282227,
+      1.7999999523162842,
+      0.3410145342350006
+    ],
+    "size": [
+      1.1588916778564453,
+      1.7999999523162842,
+      0.6820290982723236
+    ]
+  },
+  "texture_resolution": null,
+  "processing_status": "approved",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-03T21:40:29+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "",
+      "prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-03T21:43:22+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/workshop_survivor_01.glb"
+      ]
+    },
+    {
+      "event": "approved",
+      "at": "2026-11-03T21:45:17+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "approved",
+      "approval_status": "approved",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/workshop_survivor_01.glb",
+        "processed/normalized.glb",
+        "processed/walking_glb.glb",
+        "processed/running_glb.glb"
+      ]
+    },
+    {
+      "event": "approved",
+      "at": "2026-11-03T21:45:38+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One full-body stylized humanoid, A-pose, feet and hands visible, front three-quarter view, neutral flat background, face toward camera, tactical survival clothing. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "approved",
+      "approval_status": "approved",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/workshop_survivor_01.glb",
+        "processed/normalized.glb",
+        "processed/walking_glb.glb",
+        "processed/running_glb.glb"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "Blender was not found. Set BLENDER_BIN in tools/ai_asset_pipeline/.env. The original GLB was kept."
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    "Blender was not found. Set BLENDER_BIN in tools/ai_asset_pipeline/.env. The original GLB was kept."
+  ],
+  "job_id": "b3d0d0a3facf",
+  "production_files": [
+    "assets/characters/Shared/skeleton_profile.json",
+    "assets/characters/Shared/Animations/workshop_survivor_01_walking_glb.glb",
+    "assets/characters/Shared/Animations/workshop_survivor_01_running_glb.glb",
+    "assets/characters/workshop_survivor_01.glb",
+    "assets/characters/workshop_survivor_01.tscn"
+  ],
+  "manual_steps": [],
+  "maps_origin": {},
+  "modular": null
+}

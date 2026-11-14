@@ -3,20 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Survival Sandbox asset pipeline</title>
+  <title>AI 3D Asset Workshop</title>
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
   <header>
     <div>
       <p class="eyebrow">Survival Sandbox</p>
-      <h1>Asset pipeline</h1>
+      <h1>AI 3D Asset Workshop</h1>
     </div>
     <p id="status-line">Loading the local pipeline.</p>
   </header>
   <nav>
+    <button type="button" data-tab="production" class="active">Production</button>
+    <button type="button" data-tab="costs">Costs</button>
     <button type="button" data-tab="style">Style</button>
-    <button type="button" data-tab="surfaces" class="active">Surfaces</button>
+    <button type="button" data-tab="surfaces">Surfaces</button>
     <button type="button" data-tab="icons">Icons</button>
     <button type="button" data-tab="ingame">Ingame</button>
     <button type="button" data-tab="library">Library</button>
@@ -24,19 +26,105 @@
     <button type="button" data-tab="preview">Preview</button>
   </nav>
   <main>
-    <section id="surfaces">
+    <section id="production">
+      <p id="production-summary" class="muted">Approved unique assets toward the 280-asset target.</p>
+      <div class="production-layout">
+        <div>
+          <table id="production-table" class="production-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Approved</th>
+                <th>Target</th>
+                <th>Remaining</th>
+                <th>In progress</th>
+                <th>Review</th>
+                <th>Failed</th>
+              </tr>
+            </thead>
+            <tbody id="production-body"></tbody>
+          </table>
+          <p id="production-totals" class="muted"></p>
+        </div>
+        <form id="workshop-form" class="workshop-form">
+          <h2>Generate 3D asset</h2>
+          <p class="muted">OpenAI builds the concept image with the same style prompts as icons and surfaces, then Meshy/Tripo turn it into a 3D mesh. Characters also get skeleton normalize + a Godot CharacterBody3D template.</p>
+          <label>Workshop category
+            <select id="workshop-category" required></select>
+          </label>
+          <label>Preset
+            <select id="workshop-preset" required></select>
+          </label>
+          <label>Asset name
+            <input id="workshop-name" required placeholder="scrap_pile_01">
+          </label>
+          <label>Mesh provider
+            <select id="workshop-mesh">
+              <option value="meshy">Meshy (primary)</option>
+              <option value="tripo">Tripo (creatures / alt)</option>
+              <option value="meshy_text">Meshy text-to-3D</option>
+            </select>
+          </label>
+          <label>Variations
+            <input id="workshop-variations" type="number" min="1" max="8" value="1">
+          </label>
+          <label>Concept source
+            <select id="workshop-concept-source">
+              <option value="openai">OpenAI concept image (same style prompts as icons/surfaces)</option>
+              <option value="upload">Upload concept image</option>
+              <option value="meshy_text">Meshy text-to-3D (skip concept image)</option>
+            </select>
+          </label>
+          <label>Extra prompt notes
+            <textarea id="workshop-prompt" rows="3" placeholder="Optional additions mixed into the category prompt"></textarea>
+          </label>
+          <label id="workshop-concept-upload-wrap" hidden>Concept image
+            <input id="workshop-concept" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+          </label>
+          <label>Concept prompt sent to OpenAI
+            <textarea id="workshop-prompt-preview" rows="8" placeholder="Choose category/preset, then Preview prompt. Edit before queueing if needed."></textarea>
+          </label>
+          <div class="actions">
+            <button type="button" id="workshop-preview-prompt">Preview prompt</button>
+            <button type="submit">Queue generation</button>
+          </div>
+          <p id="workshop-note" class="muted">OpenAI builds the concept with the project style text, requirements, and avoid-list — same assembly as other gallery items.</p>
+        </form>
+      </div>
+    </section>
+    <section id="costs" hidden>
+      <p id="costs-summary" class="muted">Estimated spend from recorded provider operations.</p>
+      <p id="costs-budget" class="muted"></p>
+      <div class="production-layout">
+        <table class="production-table">
+          <thead><tr><th>Provider</th><th>USD</th></tr></thead>
+          <tbody id="costs-by-provider"></tbody>
+        </table>
+        <table class="production-table">
+          <thead><tr><th>Operation</th><th>USD</th></tr></thead>
+          <tbody id="costs-by-operation"></tbody>
+        </table>
+        <table class="production-table">
+          <thead><tr><th>Category</th><th>USD</th></tr></thead>
+          <tbody id="costs-by-category"></tbody>
+        </table>
+      </div>
+      <p id="costs-unknown" class="muted"></p>
+    </section>
+    <section id="surfaces" hidden>
       <div class="toolbar">
-        <input id="surface-search" placeholder="Search name, id, or description">
+        <input id="surface-search" placeholder="Search forest, meadow, rock, wall…">
         <select id="surface-piece">
-          <option value="wall floor ground">Walls, floors, and ground</option>
+          <option value="forest ground wall floor">Forest, ground, walls, and floors</option>
+          <option value="forest">Forest floors</option>
+          <option value="ground">Ground</option>
           <option value="wall floor">Walls and floors</option>
+          <option value="vegetation">Trees, stones, and plants</option>
           <option value="">All pieces</option>
           <option value="wall">Walls</option>
           <option value="floor">Floors</option>
-          <option value="ground">Ground</option>
-          <option value="post">Posts</option>
-          <option value="stairs">Stairs</option>
         </select>
+
         <select id="surface-material"><option value="">All materials</option></select>
         <select id="surface-art">
           <option value="">All surfaces</option>
@@ -44,7 +132,8 @@
           <option value="has">Has a texture</option>
         </select>
       </div>
-      <p id="surface-summary">Walls, floors, and ground come first. Textures are saved at 512 pixels.</p>
+      <p id="surface-summary">Forest floors and ground come first. Textures are saved at 512 pixels.</p>
+
       <div id="surface-grid"></div>
     </section>
     <section id="icons" hidden>
@@ -71,6 +160,7 @@
         </select>
       </div>
       <p id="ingame-summary"></p>
+      <p class="muted">Make model uses the inventory icon as the Meshy concept. Deployable cards show footprint cells and the target size Blender will fit. Edit sizes in <code>config/deployable_dimensions.json</code>.</p>
       <div id="ingame-grid"></div>
     </section>
     <section id="style" hidden>
@@ -115,16 +205,26 @@
     </section>
     <section id="library" hidden>
       <div class="toolbar">
-        <input id="search" placeholder="Search name, category, or prompt">
-        <select id="filter-category"><option value="">All categories</option></select>
+        <input id="search" placeholder="Search name, category, provider, or prompt">
+        <select id="filter-workshop"><option value="">All workshop categories</option></select>
+        <select id="filter-category"><option value="">All presets</option></select>
+        <select id="filter-provider"><option value="">All providers</option></select>
         <select id="filter-status">
           <option value="">All statuses</option>
           <option value="ready_for_review">Ready for review</option>
+          <option value="generating">Generating</option>
+          <option value="processing">Processing</option>
           <option value="approved">Approved</option>
           <option value="failed">Failed</option>
           <option value="rejected">Rejected</option>
         </select>
+        <select id="filter-sort">
+          <option value="newest">Newest</option>
+          <option value="name">Name</option>
+          <option value="status">Status</option>
+        </select>
       </div>
+      <p id="library-summary" class="muted"></p>
       <div id="library-grid"></div>
     </section>
     <section id="queue" hidden>
@@ -158,7 +258,10 @@
           <div class="toolbar" id="preview-tools">
             <label>Light <input id="light" type="range" min="0.4" max="1.6" step="0.05" value="1"></label>
             <label id="tile-control">Tile <input id="tile-repeat" type="range" min="1" max="4" step="1" value="1"></label>
+            <label class="check" id="wireframe-control" hidden><input id="wireframe" type="checkbox"> Wireframe</label>
+            <label class="check" id="ground-control" hidden><input id="ground-plane" type="checkbox" checked> Ground</label>
           </div>
+          <p id="preview-metrics" class="muted"></p>
           <div id="preview-strip" class="review-strip"></div>
         </div>
         <aside class="review-side">
@@ -192,10 +295,23 @@
           </div>
           <p id="preview-hint">Keep copies the picture into the game. Remove deletes this review copy. Generate uses the prompt and any example images. Edit image sends the picture shown here with the change above.</p>
           <ul id="preview-notes"></ul>
+          <div class="actions">
+            <button type="button" id="preview-retry" hidden>Retry failed job</button>
+            <button type="button" id="preview-another" hidden>Generate another version</button>
+          </div>
+          <details open>
+            <summary>Tasks &amp; cost</summary>
+            <ul id="preview-tasks" class="muted"></ul>
+            <ul id="preview-costs" class="muted"></ul>
+          </details>
           <details>
             <summary>Extra</summary>
             <label class="check"><input id="ack" type="checkbox"> Keep despite validation errors</label>
             <label class="check"><input id="confirm-overwrite" type="checkbox"> Replace an approved file</label>
+            <label>Upload albedo to replace
+              <input id="upload-albedo" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+            </label>
+            <p class="muted">Drops your image in as the albedo, derives the other maps, then shows it here for Keep. Check “Replace an approved file” before Keep if game art already exists.</p>
             <label id="reprocess-label">Replace mesh <input id="reprocess-file" type="file" accept=".glb"></label>
           </details>
           <details>

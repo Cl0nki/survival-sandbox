@@ -189,14 +189,22 @@ func build_notice(seq: int, ok: bool, reason: String) -> void:
 
 
 func handle_place(sender: int, seq: int, request: Dictionary) -> Dictionary:
-	var denied := _gate(sender, seq, "build_tool", _anchor_point(request))
+	var held := _held_id(sender)
+	var denied := _gate(sender, seq, ["build_tool", "building_plan"], _anchor_point(request))
 	if not denied.is_empty():
 		return denied
-	_bind_wallet(sender)
+	var charge: bool = held == "building_plan" or bool(system.config.require_resources)
+	if charge:
+		request = request.duplicate()
+		request["charge"] = true
+	_bind_wallet(sender, charge)
 	var result: Dictionary = system.authority.request_place(request, sender)
+
 	_clear_wallet()
 	if bool(result.get("ok", false)):
 		accepted += 1
+		if charge and bool(result.get("changed", false)):
+			_push_inventory(sender)
 		_notify(sender, seq, true, "Built." if bool(result.get("changed", false)) else "Already built.")
 	else:
 		rejected += 1
@@ -211,16 +219,24 @@ func handle_repair(sender: int, seq: int, component_id: int) -> Dictionary:
 	var point := player.global_position if component == null and player != null else Vector3.ZERO
 	if component != null:
 		point = system.grid.component_transform(component).origin
-	var denied := _gate(sender, seq, "repair_tool", point)
+	var held := _held_id(sender)
+	var reach: float = float(system.config.craft_tool_reach) if held == "repair_trowel" else REACH
+	var denied := _gate(sender, seq, ["repair_tool", "repair_trowel"], point, reach)
 	if not denied.is_empty():
 		return denied
 	if component == null:
 		rejected += 1
 		_notify(sender, seq, false, "Nothing to repair")
 		return {"ok": false, "reason": "Nothing to repair"}
-	var result: Dictionary = system.authority.repair(component_id)
+	var charge: bool = held == "repair_trowel"
+
+	_bind_wallet(sender, charge)
+	var result: Dictionary = system.authority.repair(component_id, charge)
+	_clear_wallet()
 	if bool(result.get("ok", false)):
 		accepted += 1
+		if charge:
+			_push_inventory(sender)
 		_notify(sender, seq, true, "Repaired.")
 	else:
 		rejected += 1
@@ -235,22 +251,32 @@ func handle_upgrade(sender: int, seq: int, component_id: int) -> Dictionary:
 	var point := player.global_position if component == null and player != null else Vector3.ZERO
 	if component != null:
 		point = system.grid.component_transform(component).origin
-	var denied := _gate(sender, seq, "upgrade_tool", point)
+	var held := _held_id(sender)
+	var reach: float = float(system.config.craft_tool_reach) if held == "upgrade_hammer" else REACH
+	var denied := _gate(sender, seq, ["upgrade_tool", "upgrade_hammer"], point, reach)
 	if not denied.is_empty():
 		return denied
 	if component == null:
 		rejected += 1
 		_notify(sender, seq, false, "Nothing to upgrade")
 		return {"ok": false, "reason": "Nothing to upgrade"}
-	var result: Dictionary = system.authority.upgrade(component_id)
+	var charge: bool = held == "upgrade_hammer"
+
+	_bind_wallet(sender, charge)
+	var result: Dictionary = system.authority.upgrade(component_id, charge)
+	_clear_wallet()
 	if bool(result.get("ok", false)):
 		accepted += 1
+		if charge:
+			_push_inventory(sender)
 		_notify(sender, seq, true, "Upgraded to %s." % BuildingTier.label(int(result.get("tier", component.tier))))
 	else:
 		rejected += 1
 		_notify(sender, seq, false, str(result.get("reason", "Cannot upgrade.")))
 	flush()
 	return result
+
+
 
 
 func handle_blast(sender: int, seq: int, origin: Vector3) -> Dictionary:
@@ -635,7 +661,7 @@ func _notify(peer_id: int, seq: int, ok: bool, reason: String) -> void:
 		build_notice.rpc_id(peer_id, seq, ok, reason)
 
 
-func _gate(sender: int, seq: int, item_id: String, point: Vector3) -> Dictionary:
+func _gate(sender: int, seq: int, item_ids: Variant, point: Vector3, reach: float = REACH) -> Dictionary:
 	if not authoritative:
 		return _deny(sender, "Not the authority")
 	if sender <= 1 or not _players().has(sender):
@@ -644,14 +670,15 @@ func _gate(sender: int, seq: int, item_id: String, point: Vector3) -> Dictionary
 		return _deny(sender, "Repeated request")
 	if not _rate_ok(sender):
 		return _deny(sender, "Too many requests")
-	if not _holds(sender, item_id):
+	if not _holds(sender, item_ids):
 		return _deny(sender, "Wrong tool")
 	var player := _players()[sender] as Node3D
 	if player == null or not NetConfig.finite_vector(point):
 		return _deny(sender, "Invalid request")
-	if player.global_position.distance_to(point) > REACH:
+	if player.global_position.distance_to(point) > reach:
 		return _deny(sender, "Too far")
 	return {}
+
 
 
 func _deny(sender: int, reason: String) -> Dictionary:
@@ -684,21 +711,34 @@ func _rate_ok(sender: int) -> bool:
 	return true
 
 
-func _holds(sender: int, item_id: String) -> bool:
+func _held_id(sender: int) -> String:
 	var bag := _inventory(sender)
 	var player := _players().get(sender) as PlayerController
 	if bag == null or player == null:
-		return false
+		return ""
 	var index := player.hotbar_index
 	if index < 0 or index >= bag.capacity:
-		return false
+		return ""
 	var slot: Dictionary = bag.slots[index]
-	return str(slot.get("id", "")) == item_id and int(slot.get("qty", 0)) > 0
+	if int(slot.get("qty", 0)) <= 0:
+		return ""
+	return str(slot.get("id", ""))
 
 
-func _bind_wallet(sender: int) -> void:
+func _holds(sender: int, item_ids: Variant) -> bool:
+	var held := _held_id(sender)
+	if held == "":
+		return false
+	if item_ids is String:
+		return held == str(item_ids)
+	if item_ids is Array:
+		return held in item_ids
+	return false
+
+
+func _bind_wallet(sender: int, force: bool = false) -> void:
 	var bag := _inventory(sender)
-	if bag == null or not system.config.require_resources:
+	if bag == null or (not force and not system.config.require_resources):
 		_clear_wallet()
 		return
 	system.authority.wallet_count = func(item_id: String) -> int: return bag.count_item(item_id)
@@ -763,10 +803,21 @@ func _player_ids() -> Array:
 
 
 func _inventory(sender: int) -> Inventory:
-	var arena: Node = system.get_parent()
-	if arena == null:
-		return null
-	var net: Node = arena.get_node_or_null("GameNet")
+	var net := _game_net()
 	if net != null and net.has_method("debug_inventory"):
 		return net.call("debug_inventory", sender) as Inventory
 	return null
+
+
+func _push_inventory(sender: int) -> void:
+	var net := _game_net()
+	if net != null and net.has_method("_push_inventory"):
+		net.call("_push_inventory", sender)
+
+
+func _game_net() -> Node:
+	var arena: Node = system.get_parent()
+	if arena == null:
+		return null
+	return arena.get_node_or_null("GameNet")
+

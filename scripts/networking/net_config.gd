@@ -34,15 +34,32 @@ const ITEM_RATE_PER_SEC := 40
 const MODE_LOCAL := 0
 const MODE_SERVER := 1
 const MODE_CLIENT := 2
+const MAP_DEBUG := "debug"
+const MAP_SURVIVAL := "survival"
+const DEFAULT_MAP := MAP_DEBUG
 
 static func usage() -> String:
 	return "\n".join([
 		"Survival Sandbox multiplayer",
-		"  --server [--port N] [--status-file PATH] [--world-file PATH]",
+		"  --server [--port N] [--status-file PATH] [--world-file PATH] [--map debug|survival]",
 		"  --client [--address HOST] [--port N] [--window-x N] [--window-y N]",
 		"           [--bot] [--expect-peers N] [--status-file PATH] [--player-token TOKEN]",
-		"Local play (no flags) keeps the Milestone 1 prototype.",
+		"           [--map debug|survival]",
+		"Local play (no flags) keeps the Milestone 1 prototype on the debug map.",
 	])
+
+
+static func normalize_map(value: String) -> String:
+	var id := value.strip_edges().to_lower()
+	if id == MAP_SURVIVAL or id == MAP_DEBUG:
+		return id
+	return ""
+
+
+static func default_world_file(map_id: String) -> String:
+	if normalize_map(map_id) == MAP_SURVIVAL:
+		return "user://world_survival.json"
+	return "user://world.json"
 
 
 static func parse(args: PackedStringArray) -> Dictionary:
@@ -57,6 +74,7 @@ static func parse(args: PackedStringArray) -> Dictionary:
 		"status_file": "",
 		"world_file": "",
 		"player_token": "",
+		"map": DEFAULT_MAP,
 		"help": false,
 		"error": "",
 	}
@@ -76,7 +94,7 @@ static func parse(args: PackedStringArray) -> Dictionary:
 				result.mode = MODE_CLIENT
 			"--bot":
 				result.bot = true
-			"--address", "--port", "--window-x", "--window-y", "--expect-peers", "--status-file", "--world-file", "--player-token":
+			"--address", "--port", "--window-x", "--window-y", "--expect-peers", "--status-file", "--world-file", "--player-token", "--map":
 				if index + 1 >= args.size():
 					result.error = "%s needs a value" % arg
 					return result
@@ -143,6 +161,12 @@ static func _apply_option(result: Dictionary, option: String, value: String) -> 
 				result.error = "--player-token must be 8-64 letters, digits, - or _"
 				return false
 			result.player_token = value
+		"--map":
+			var map_id := normalize_map(value)
+			if map_id.is_empty():
+				result.error = "--map must be debug or survival"
+				return false
+			result.map = map_id
 	return true
 
 

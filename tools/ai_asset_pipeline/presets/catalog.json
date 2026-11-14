@@ -25,7 +25,7 @@
       "metallic": 0.0,
       "roughness": 0.92,
       "palette": ["dark_slate", "blue_gray", "concrete_gray"],
-      "prompt": "worn asphalt road surface, fine aggregate, faint cracks, no painted markings"
+      "prompt": "dense soft worn asphalt carpet, dark charcoal with fine aggregate mottling, faint soft crack lines only, low-contrast, no painted markings, no path stripes, no horizon, medium-frequency paint that tiles quietly"
     },
     "dirt": {
       "label": "Dirt",
@@ -34,7 +34,7 @@
       "metallic": 0.0,
       "roughness": 0.95,
       "palette": ["sand", "rust_orange", "olive_green"],
-      "prompt": "packed warm dry dirt, fine sand grain and tiny pebbles only, soft low-contrast mottling, no plants, no big boulders, no large hero rocks, no path, no horizon"
+      "prompt": "dense soft packed dirt carpet, warm dry tan, fine sand grain and tiny pebble dots only, soft low-contrast mottling, no plants, no big boulders, no large hero rocks, no path, no horizon, medium-frequency paint that tiles quietly"
     },
     "grass": {
       "label": "Grass",
@@ -45,6 +45,33 @@
       "palette": ["olive_green", "muted_forest", "sand"],
       "prompt": "dense soft short-grass carpet, low-contrast mottled greens, tiny yellow wildflower dots only, no large isolated tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
     },
+    "forest_oak": {
+      "label": "Oak forest floor",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.92,
+      "palette": ["sand", "rust_orange", "muted_forest"],
+      "prompt": "dense soft oak leaf litter carpet, overlapping dry brown leaves with soft soil peeking through, tiny acorn-scale debris dots, low-contrast mottling, no grass carpet, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "forest_birch": {
+      "label": "Birch forest floor",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.88,
+      "palette": ["sand", "olive_green", "concrete_gray"],
+      "prompt": "dense soft birch leaf litter carpet, pale cream and light brown leaves on cool soil, thin bark flake dots, soft low-contrast mottling, no grass carpet, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "forest_spruce": {
+      "label": "Spruce forest floor",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.94,
+      "palette": ["dark_slate", "muted_forest", "olive_green"],
+      "prompt": "dense soft spruce needle carpet, short dark evergreen needles on cool soil, low-contrast mottling, no bright grass, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
+    },
     "rock": {
       "label": "Rock ground",
       "implementation": "texture",
@@ -52,7 +79,7 @@
       "metallic": 0.0,
       "roughness": 0.92,
       "palette": ["concrete_gray", "blue_gray", "dark_slate"],
-      "prompt": "muted gray cobble and broad flat stone slabs, thick readable mortar cracks, fine pebble noise between slabs, no grass, no plants, no cliffs, no oversized hero rocks, no path, no horizon"
+      "prompt": "dense soft rocky ground carpet, muted gray flat stone patches with soft soil between, thick readable soft cracks, fine pebble dots, low-contrast mottling, no grass, no plants, no cliffs, no oversized hero rocks, no path, no horizon, medium-frequency paint that tiles quietly"
     },
     "meadow": {
       "label": "Meadow",
@@ -63,6 +90,33 @@
       "palette": ["muted_forest", "olive_green", "sand"],
       "prompt": "dense soft meadow carpet, warm mixed greens, tiny wildflower dots, low-contrast mottling, no large isolated grass tufts, no tall plants, no path, no horizon, medium-frequency paint that tiles quietly"
     },
+    "canopy_oak": {
+      "label": "Oak canopy",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.86,
+      "palette": ["muted_forest", "olive_green", "sand"],
+      "prompt": "dense soft oak canopy foliage carpet, overlapping warm mixed medium-dark green leaves only, soft darker leaf-shadow mottling, hand-painted leaf clumps, low-contrast, no flowers, no wildflower dots, no yellow white or purple blooms, no trunk, no branches, no sky, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "canopy_birch": {
+      "label": "Birch canopy",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.84,
+      "palette": ["olive_green", "muted_forest", "sand"],
+      "prompt": "dense soft birch canopy foliage carpet, light yellowish-green and pale lime leaves only, airy low-contrast mottling, hand-painted leaf clumps, brighter and lighter than oak, no flowers, no wildflower dots, no trunk, no white bark, no sky, no horizon, medium-frequency paint that tiles quietly"
+    },
+    "canopy_spruce": {
+      "label": "Spruce canopy",
+      "implementation": "texture",
+      "godot_folder": "textures",
+      "metallic": 0.0,
+      "roughness": 0.9,
+      "palette": ["dark_slate", "muted_forest", "olive_green"],
+      "prompt": "dense soft spruce canopy needle carpet, short dark cool evergreen needles only, low-contrast mottling, soft painted clumps darker than oak, no flowers, no bright grass, no trunk, no cones, no sky, no horizon, medium-frequency paint that tiles quietly"
+    },
     "sand": {
       "label": "Sand",
       "implementation": "texture",
@@ -70,7 +124,7 @@
       "metallic": 0.0,
       "roughness": 0.93,
       "palette": ["sand", "concrete_gray", "rust_orange"],
-      "prompt": "fine wind-brushed sand, soft ripples, hand-painted grain, no footprints"
+      "prompt": "dense soft fine sand carpet, warm pale tan, tiny grain mottling only, no deep dune ridges, no footprints, no path, no horizon, medium-frequency paint that tiles quietly"
     },
     "clay": {
       "label": "Clay",
@@ -79,7 +133,7 @@
       "metallic": 0.0,
       "roughness": 0.9,
       "palette": ["rust_orange", "sand", "dark_slate"],
-      "prompt": "damp clay ground, broad hand-painted lumps, muted rust and sand, no objects"
+      "prompt": "dense soft damp clay carpet, muted rust and warm sand, broad soft lumps and fine cracks as color only, low-contrast mottling, no objects, no path, no horizon, medium-frequency paint that tiles quietly"
     },
     "gravel": {
       "label": "Gravel",
@@ -88,7 +142,7 @@
       "metallic": 0.0,
       "roughness": 0.94,
       "palette": ["concrete_gray", "blue_gray", "sand"],
-      "prompt": "loose gravel ground, painted stones of a few sizes, muted gray, no plants"
+      "prompt": "dense soft gravel carpet, small muted gray pebbles nestled in dusty soil, low-contrast mottling, no large hero stones, no plants, no path, no horizon, medium-frequency paint that tiles quietly"
     },
     "water": {
       "label": "Ground water",
@@ -97,7 +151,7 @@
       "metallic": 0.0,
       "roughness": 0.55,
       "palette": ["sand", "rust_orange", "blue_gray"],
-      "prompt": "same packed warm dry dirt ground as the dirt tile, but with irregular damp darker wet spots and soft teal-blue puddle stains soaked into the soil, fine pebbles still visible, no open water plane, no horizon, no object, no plants"
+      "prompt": "same dense soft packed dirt carpet as the dirt tile, but with irregular damp darker wet spots and soft teal-blue puddle stains soaked into the soil, fine pebble dots still visible, low-contrast mottling, no open water plane, no path, no horizon, no object, no plants, medium-frequency paint that tiles quietly"
     },
     "gas": {
       "label": "Natural gas seep",
@@ -106,7 +160,7 @@
       "metallic": 0.0,
       "roughness": 0.9,
       "palette": ["sand", "rust_orange", "olive_green"],
-      "prompt": "same packed warm dry dirt ground as the dirt tile, but with scattered small dark vents and crater-like holes punched in the soil, faint pale yellow-green seep stains around the holes, fine pebbles still visible, no flames, no pipe, no text, no horizon, no object, no plants"
+      "prompt": "same dense soft packed dirt carpet as the dirt tile, but with a few scattered small dark vents and soft crater stains in the soil, faint pale yellow-green seep around the holes, fine pebble dots still visible, low-contrast mottling, no flames, no pipe, no text, no path, no horizon, no object, no plants, medium-frequency paint that tiles quietly"
     },
     "oil": {
       "label": "Crude oil seep",
@@ -115,7 +169,7 @@
       "metallic": 0.05,
       "roughness": 0.55,
       "palette": ["sand", "dark_slate", "rust_orange"],
-      "prompt": "same packed warm dry dirt ground as the dirt tile, but with irregular dull brown-black oil stains and sticky dark blotches soaked into the soil, fine pebbles still visible through thinner stains, no open puddle silhouette, no equipment, no horizon, no object, no plants"
+      "prompt": "same dense soft packed dirt carpet as the dirt tile, but with irregular dull brown-black oil stains and sticky dark blotches soaked into the soil, fine pebble dots still visible through thinner stains, low-contrast mottling, no open puddle silhouette, no equipment, no path, no horizon, no object, no plants, medium-frequency paint that tiles quietly"
     },
     "wood": {
       "label": "Wood",
@@ -220,6 +274,12 @@
     }
   },
   "props": {
+    "world_pickup": {
+      "label": "World pickup",
+      "implementation": "ai_mesh",
+      "godot_folder": "props",
+      "prompt": "stylized low-poly ground loot prop matching the reference inventory icon, one small object, grounded, clean silhouette, no people, no text"
+    },
     "weapon": {
       "label": "Weapon",
       "implementation": "ai_mesh",
@@ -292,6 +352,30 @@
       "implementation": "ai_mesh",
       "godot_folder": "environment",
       "prompt": "environmental survival prop, rock, stump, or debris pile, one object"
+    },
+    "tree": {
+      "label": "Tree",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "prompt": "stylized low-poly harvest tree, single trunk, readable crown, grounded on an invisible floor, no pot, no people, no background props"
+    },
+    "boulder": {
+      "label": "Stone boulder",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "prompt": "stylized low-poly stone boulder, one rock, readable silhouette, grounded, no moss carpet, no grass, no people"
+    },
+    "grass_tuft": {
+      "label": "Grass tuft",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "prompt": "tiny stylized grass tuft clump, a few blades only, low-poly, no dirt mound, no pot, no flowers, no background"
+    },
+    "fern": {
+      "label": "Fern",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "prompt": "small stylized fern plant, a few fronds, low-poly survival foliage, grounded, no pot, no dirt mound, no background"
     }
   },
   "characters": {
@@ -299,36 +383,42 @@
       "label": "Military",
       "implementation": "ai_character",
       "godot_folder": "characters",
+      "workshop_category": "characters",
       "prompt": "stylized tactical soldier, layered uniform, boots, gloves, vest, helmet optional"
     },
     "mercenary": {
       "label": "Mercenary",
       "implementation": "ai_character",
       "godot_folder": "characters",
+      "workshop_category": "characters",
       "prompt": "stylized mercenary, mismatched tactical kit, practical clothing, no logos"
     },
     "survivor": {
       "label": "Survivor",
       "implementation": "ai_character",
       "godot_folder": "characters",
+      "workshop_category": "characters",
       "prompt": "stylized survival civilian-turned-fighter, worn jacket, backpack, practical boots"
     },
     "civilian": {
       "label": "Civilian",
       "implementation": "ai_character",
       "godot_folder": "characters",
+      "workshop_category": "characters",
       "prompt": "stylized civilian survivor, ordinary clothes in the palette, no armor plates"
     },
     "security": {
       "label": "Security",
       "implementation": "ai_character",
       "godot_folder": "characters",
+      "workshop_category": "characters",
       "prompt": "stylized site security officer, vest, cap or helmet, flashlight, no insignia text"
     },
     "npc": {
       "label": "NPC",
       "implementation": "ai_character",
       "godot_folder": "characters",
+      "workshop_category": "characters",
       "prompt": "stylized background survivor NPC, readable outfit, neutral stance"
     }
   },
@@ -429,6 +519,186 @@
       "implementation": "procedural_kit",
       "godot_folder": "buildings",
       "prompt": "complete modular building kit"
+    }
+  },
+  "deployables": {
+    "from_icon": {
+      "label": "From inventory icon",
+      "implementation": "ai_mesh",
+      "godot_folder": "deployables",
+      "workshop_category": "deployables",
+      "prompt": "stylized low-poly survival deployable matching the reference inventory icon, one grounded object, clean readable silhouette, no people, no text"
+    },
+    "turret": {
+      "label": "Turret",
+      "implementation": "ai_mesh",
+      "godot_folder": "deployables",
+      "workshop_category": "deployables",
+      "prompt": "stylized low-poly automated turret, grounded base, readable silhouette from above, no operator"
+    },
+    "trap": {
+      "label": "Trap",
+      "implementation": "ai_mesh",
+      "godot_folder": "deployables",
+      "workshop_category": "deployables",
+      "prompt": "stylized survival trap or spike plate, one deployable, clean pivot at the ground"
+    },
+    "barricade_deployable": {
+      "label": "Barricade",
+      "implementation": "ai_mesh",
+      "godot_folder": "deployables",
+      "workshop_category": "deployables",
+      "prompt": "stylized deployable barricade or sandbag wall segment, one piece, grounded"
+    },
+    "workstation": {
+      "label": "Workstation",
+      "implementation": "ai_mesh",
+      "godot_folder": "deployables",
+      "workshop_category": "deployables",
+      "prompt": "stylized crafting workstation or workbench deployable, readable top-down silhouette"
+    },
+    "smelter": {
+      "label": "Smelter",
+      "implementation": "ai_mesh",
+      "godot_folder": "deployables",
+      "workshop_category": "deployables",
+      "prompt": "stylized scrap smelter or forge deployable, chimney optional, grounded, no people"
+    },
+    "machinery": {
+      "label": "Machinery",
+      "implementation": "ai_mesh",
+      "godot_folder": "deployables",
+      "workshop_category": "deployables",
+      "prompt": "stylized field machinery or generator deployable, one object, clear silhouette"
+    }
+  },
+  "resources": {
+    "scrap_pile": {
+      "label": "Scrap pile",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized scrap metal pile resource node, readable as scrap from above, grounded"
+    },
+    "wood_node": {
+      "label": "Wood node",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized harvestable wood log pile or stump resource, clear wood silhouette"
+    },
+    "stone_node": {
+      "label": "Stone node",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized stone or ore rock resource node, one boulder cluster, readable type"
+    },
+    "ore_deposit": {
+      "label": "Ore deposit",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized ore deposit rock with metal veins, harvestable node, grounded"
+    },
+    "ground_deposit": {
+      "label": "Ground deposit",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized ground resource deposit mound, low profile, clear material color"
+    },
+    "resource_crate": {
+      "label": "Resource crate",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized supply crate resource container, one box, strong silhouette"
+    }
+  },
+  "decorations": {
+    "furniture": {
+      "label": "Furniture",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "workshop_category": "decorations",
+      "prompt": "stylized worn furniture prop, one piece, top-down readable"
+    },
+    "ruin_debris": {
+      "label": "Ruin debris",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "workshop_category": "decorations",
+      "prompt": "stylized structural debris or ruin clutter pile, one cluster"
+    },
+    "industrial_clutter": {
+      "label": "Industrial clutter",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "workshop_category": "decorations",
+      "prompt": "stylized industrial clutter prop, barrels pipes or crates, one cluster"
+    },
+    "container_prop": {
+      "label": "Container",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "workshop_category": "decorations",
+      "prompt": "stylized storage container or locker prop, grounded, no logos"
+    },
+    "environment_clutter": {
+      "label": "Environment clutter",
+      "implementation": "ai_mesh",
+      "godot_folder": "environment",
+      "workshop_category": "decorations",
+      "prompt": "stylized environmental clutter, rubble or junk pile, efficient geometry"
+    }
+  },
+  "enemies": {
+    "humanoid_raider": {
+      "label": "Humanoid raider",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "workshop_category": "enemies",
+      "humanoid": true,
+      "prompt": "stylized hostile raider humanoid, tactical survival clothing, A-pose, clean silhouette from above"
+    },
+    "humanoid_mutant": {
+      "label": "Humanoid mutant",
+      "implementation": "ai_character",
+      "godot_folder": "characters",
+      "workshop_category": "enemies",
+      "humanoid": true,
+      "prompt": "stylized bipedal mutant enemy, readable limbs, A-pose, not photoreal"
+    },
+    "creature": {
+      "label": "Creature",
+      "implementation": "ai_mesh",
+      "godot_folder": "characters",
+      "workshop_category": "enemies",
+      "humanoid": false,
+      "mesh_provider": "tripo",
+      "auto_rig": false,
+      "prompt": "stylized non-humanoid creature enemy, unusual anatomy, readable silhouette, no humanoid forced proportions"
+    },
+    "quadruped": {
+      "label": "Quadruped",
+      "implementation": "ai_mesh",
+      "godot_folder": "characters",
+      "workshop_category": "enemies",
+      "humanoid": false,
+      "mesh_provider": "tripo",
+      "auto_rig": false,
+      "prompt": "stylized quadruped animal or mutant enemy, grounded stance, clear limbs"
+    },
+    "robot": {
+      "label": "Robot",
+      "implementation": "ai_mesh",
+      "godot_folder": "characters",
+      "workshop_category": "enemies",
+      "humanoid": false,
+      "mesh_provider": "tripo",
+      "auto_rig": false,
+      "prompt": "stylized hostile robot enemy, unusual mechanical anatomy, readable silhouette"
     }
   },
   "customization": {

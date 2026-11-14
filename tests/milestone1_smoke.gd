@@ -67,7 +67,6 @@ func _body() -> int:
 	var west_face := west_wall.global_position.x + 0.25
 	var space := player.get_world_3d().direct_space_state
 	var spawn_chest := Vector3(0, 1.2, 8)
-	var covered := arena.get_node("CoveredDummy") as Damageable
 	var open := arena.get_node("OpenDummy") as Damageable
 	var into_north := HitscanWeapon.resolve_shot(space, spawn_chest, Vector3(0, 0, -1))
 	if _node_name(into_north["collider"]) != "WallNorth":
@@ -77,11 +76,6 @@ func _body() -> int:
 	var open_hit := HitscanWeapon.resolve_shot(space, spawn_chest, to_open)
 	if open_hit["collider"] != open:
 		return _fail("expected Open Dummy, got %s at %s" % [_node_name(open_hit["collider"]), open_hit["point"]])
-
-	var to_covered := Vector3(covered.global_position.x, spawn_chest.y, covered.global_position.z) - spawn_chest
-	var covered_hit := HitscanWeapon.resolve_shot(space, spawn_chest, to_covered)
-	if covered_hit["collider"] != covered:
-		return _fail("expected Covered Dummy in the open yard, got %s" % _node_name(covered_hit["collider"]))
 
 	player.global_position = Vector3(0, 0.2, north_face + 4.0)
 	player.velocity = Vector3.ZERO
@@ -170,10 +164,10 @@ func _body() -> int:
 	if open.health != health_after_one:
 		return _fail("cooldown did not block the second shot")
 	await create_timer(weapon.cooldown_seconds + 0.05).timeout
-	var covered_before := covered.health
+	var wall_before := open.health
 	weapon.try_fire(spawn_chest, Vector3(0, 0, -1))
-	if covered.health != covered_before:
-		return _fail("covered dummy took damage from a shot into the north wall")
+	if open.health != wall_before:
+		return _fail("open dummy took damage from a shot into the north wall")
 	if weapon.last_feedback.find("WallNorth") < 0:
 		return _fail("blocked shot feedback was %s" % weapon.last_feedback)
 

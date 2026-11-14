@@ -137,9 +137,7 @@ func _body() -> int:
 		return _fail("invalid input was not rejected (%s)" % net.rejected_inputs)
 
 	var open_server := arena.get_node("OpenDummy") as Damageable
-	var covered_server := arena.get_node("CoveredDummy") as Damageable
 	var open_mirror := _mirror_dummy(arena, "OpenMirror")
-	var covered_mirror := _mirror_dummy(arena, "CoveredMirror")
 	net.debug_place(2, Vector3(0.0, 0.15, 8.0))
 	for _step in 5:
 		await physics_frame
@@ -181,16 +179,16 @@ func _body() -> int:
 	net.debug_place(2, Vector3(0.0, 0.15, -20.0))
 	for _step in 3:
 		await physics_frame
-	var covered_before := covered_server.health
-	var covered_aim := _aim_from_server(net.debug_player(2), Vector3(0.0, 1.2, -26.0))
+	var wall_before := open_server.health
+	var north_wall_aim := _aim_from_server(net.debug_player(2), Vector3(0.0, 1.2, -26.0))
 	var origin_before := net.debug_player(2).shot_origin()
 	var blocked_accepted := net.accepted_shots
-	_fire(net, 2, covered_aim)
+	_fire(net, 2, north_wall_aim)
 	await physics_frame
 	if net.accepted_shots != blocked_accepted + 1:
 		return _fail("shot into the north wall was rejected")
-	if covered_server.health != covered_before:
-		return _fail("covered dummy took damage through the north wall")
+	if open_server.health != wall_before:
+		return _fail("open dummy took damage through the north wall")
 	var shot_origin := net.debug_player(2).shot_origin()
 	print("blocked_origin=", shot_origin)
 	if shot_origin.distance_to(origin_before) > 2.5:
@@ -201,19 +199,20 @@ func _body() -> int:
 		return _fail("shot origin was not taken from the player %s" % shot_origin)
 
 	net.debug_reset_cooldown(2)
-	net.debug_place(2, Vector3(19.0, 0.15, -9.5))
+	net.debug_place(2, Vector3(19.0, 0.15, -5.5))
 	for _step in 5:
 		await physics_frame
-	var side_aim := _aim_from_server(net.debug_player(2), covered_server.global_position)
+	var side_before := open_server.health
+	var side_aim := _aim_from_server(net.debug_player(2), open_server.global_position)
 	_fire(net, 2, side_aim)
 	var side_hit: bool = await _wait_until(20, func() -> bool:
-		return covered_server.health == covered_before - 34
+		return open_server.health == side_before - 34
 	)
 	if not side_hit:
-		return _fail("covered dummy was not hit from beside the lane, health=%s" % covered_server.health)
-	covered_mirror.apply_authoritative_health(covered_server.health)
-	if covered_mirror.health != covered_server.health:
-		return _fail("covered health mirror diverged")
+		return _fail("open dummy was not hit from beside the lane, health=%s" % open_server.health)
+	open_mirror.apply_authoritative_health(open_server.health)
+	if open_mirror.health != open_server.health:
+		return _fail("open health mirror diverged")
 
 	net.debug_reset_cooldown(2)
 	net.debug_place(2, Vector3(0.0, 0.15, -20.0))
@@ -320,6 +319,13 @@ func _check_guards() -> int:
 	var parsed := NetConfig.parse(PackedStringArray(["--server", "--port", "7777", "--status-file", "server.txt"]))
 	if int(parsed.mode) != NetConfig.MODE_SERVER or int(parsed.port) != 7777:
 		return _fail("server args parsed as %s" % parsed)
+	if str(parsed.map) != NetConfig.MAP_DEBUG:
+		return _fail("default map should be debug, got %s" % parsed.map)
+	var survival_args := NetConfig.parse(PackedStringArray(["--server", "--map", "survival"]))
+	if str(survival_args.map) != NetConfig.MAP_SURVIVAL:
+		return _fail("survival map parsed as %s" % survival_args.map)
+	if str(NetConfig.parse(PackedStringArray(["--server", "--map", "void"])).error) == "":
+		return _fail("bad map was accepted")
 	var client_args := NetConfig.parse(PackedStringArray([
 		"--client", "--address", "127.0.0.1", "--port", "7777", "--window-x", "40", "--window-y", "80", "--bot",
 	]))

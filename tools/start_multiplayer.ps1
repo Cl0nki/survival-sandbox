@@ -7,6 +7,8 @@
 param(
     [int]$Port = 7777,
     [string]$Address = "127.0.0.1",
+    [ValidateSet("debug", "survival")]
+    [string]$Map = "debug",
     [switch]$Automated
 )
 
@@ -45,12 +47,14 @@ $ClientAErr = Join-Path $env:TEMP "survival-sandbox-$RunId-client-a.err"
 $ClientBOut = Join-Path $env:TEMP "survival-sandbox-$RunId-client-b.out"
 $ClientBErr = Join-Path $env:TEMP "survival-sandbox-$RunId-client-b.err"
 
+$WorldFile = if ($Map -eq "survival") { "user://world_survival.json" } else { "user://world.json" }
 $ServerArgs = @(
     "--headless", "--path", $Project, "--",
-    "--server", "--port", "$Port", "--status-file", $ServerStatus
+    "--server", "--port", "$Port", "--status-file", $ServerStatus,
+    "--map", $Map
 )
 if (-not $Automated) {
-    $ServerArgs += @("--world-file", "user://world.json")
+    $ServerArgs += @("--world-file", $WorldFile)
 }
 $ClientExecutable = if ($Automated) { $Console } else { $Gui }
 $ClientPrefix = @("--path", $Project, "--")
@@ -60,12 +64,12 @@ if ($Automated) {
 $ClientAArgs = $ClientPrefix + @(
     "--client", "--address", $Address, "--port", "$Port",
     "--window-x", "40", "--window-y", "40",
-    "--status-file", $ClientAStatus
+    "--status-file", $ClientAStatus, "--map", $Map
 )
 $ClientBArgs = $ClientPrefix + @(
     "--client", "--address", $Address, "--port", "$Port",
     "--window-x", "700", "--window-y", "40",
-    "--status-file", $ClientBStatus
+    "--status-file", $ClientBStatus, "--map", $Map
 )
 if ($Automated) {
     $ClientAArgs += @("--bot", "--expect-peers", "2")

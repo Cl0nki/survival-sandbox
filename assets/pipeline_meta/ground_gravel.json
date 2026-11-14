@@ -1,17 +1,17 @@
 {
-  "asset_id": "13ca1ea0a612",
+  "asset_id": "a67c19756812",
   "asset_name": "ground_gravel",
   "category": "gravel",
   "kind": "texture",
-  "created_at": "2026-11-02T12:07:46+00:00",
+  "created_at": "2026-11-03T20:58:09+00:00",
   "provider": "openai",
   "model": "gpt-image-2.5-flare",
-  "prompt": "loose gravel ground, painted stones of a few sizes, muted gray, no plants. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "prompt": "dense soft gravel carpet, small muted gray pebbles nestled in dusty soil, low-contrast mottling, no large hero stones, no plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
   "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
   "seed": null,
   "seed_supported": false,
   "generation_parameters": {
-    "sent_prompt": "loose gravel ground, painted stones of a few sizes, muted gray, no plants. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "sent_prompt": "dense soft gravel carpet, small muted gray pebbles nestled in dusty soil, low-contrast mottling, no large hero stones, no plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
     "godot_folder": "textures",
     "roughness": 0.94,
     "metallic": 0.0,
@@ -25,7 +25,7 @@
       "output_format": "png"
     },
     "provider_resolution": "1024x1024",
-    "seam_score": 9.478
+    "seam_score": 8.964
   },
   "original_files": [
     "original/albedo.png",
@@ -52,11 +52,11 @@
   "history": [
     {
       "event": "created",
-      "at": "2026-11-02T12:07:46+00:00",
+      "at": "2026-11-03T20:58:09+00:00",
       "version": 1,
       "provider": "openai",
       "model": "",
-      "prompt": "loose gravel ground, painted stones of a few sizes, muted gray, no plants. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "prompt": "dense soft gravel carpet, small muted gray pebbles nestled in dusty soil, low-contrast mottling, no large hero stones, no plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
       "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "generating",
@@ -66,11 +66,11 @@
     },
     {
       "event": "processed",
-      "at": "2026-11-02T12:07:59+00:00",
+      "at": "2026-11-03T20:58:21+00:00",
       "version": 1,
       "provider": "openai",
       "model": "gpt-image-2.5-flare",
-      "prompt": "loose gravel ground, painted stones of a few sizes, muted gray, no plants. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "prompt": "dense soft gravel carpet, small muted gray pebbles nestled in dusty soil, low-contrast mottling, no large hero stones, no plants, no path, no horizon, medium-frequency paint that tiles quietly. Art direction: Hand-painted tileable surface. Orthographic flat material filling the frame. No object, no silhouette, no prop. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; hand-painted appearance; subtle PBR material definition; consistent texel density; optimized for real-time 3D. Seamless tileable game texture, orthographic flat surface filling the entire frame, no object, no horizon, no perspective, consistent texel density. Seams, board gaps, and painted lines are thick bands, about one fifth as wide as the board or panel they separate, still readable from several meters away. If an example image shows thin seams, redraw them as those thick bands. Never copy hairline cracks, caulk lines, or pencil seams. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
       "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "ready_for_review",
@@ -101,7 +101,7 @@
   },
   "errors": [],
   "warnings": [],
-  "job_id": "598ad014d79c",
+  "job_id": "850d95bacc45",
   "production_files": [
     "assets/textures/ground_gravel/albedo.png",
     "assets/textures/ground_gravel/normal.png",

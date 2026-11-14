@@ -11,13 +11,15 @@ from pathlib import Path
 from core.errors import PipelineError
 from core.settings import Settings
 from godot.item_index import _parse_tres, load_items
-from godot.surface_index import load_grounds, load_surfaces
+from godot.surface_index import load_grounds, load_surfaces, load_vegetation
 
 _ITEM_ID = re.compile(r"[a-z0-9_]+")
 _SURFACE_ID = re.compile(
-    r"^(?:(?:wall|floor|post|stairs)_(?:scrap|wood|brick|stone|concrete|composite)"
-    r"|ground_(?:grass|dirt|rock|meadow|sand|clay|gravel|water|gas|oil))$"
+    r"^(?:(?:wall|floor)_(?:scrap|wood|brick|stone|concrete|composite)"
+    r"|ground_(?:grass|forest_oak|forest_birch|forest_spruce|dirt|rock|asphalt|meadow|sand|clay|gravel|water|gas|oil)"
+    r"|tree_(?:oak|birch|spruce)|stone_boulder|grass_tuft|fern)$"
 )
+
 _DESCRIPTION_LIMIT = 400
 _IMAGE_LIMIT = 1500
 
@@ -58,6 +60,7 @@ def save_surface_copy(settings: Settings, surface_id: str, description: str, ima
         raise PipelineError("Unknown surface.")
     known = {item["id"] for item in load_surfaces(settings.project_root)}
     known.update(item["id"] for item in load_grounds(settings.project_root))
+    known.update(item["id"] for item in load_vegetation(settings.project_root))
     if surface_id not in known:
         raise PipelineError("Unknown surface.")
     ingame = _clean(description, _DESCRIPTION_LIMIT, "In-game description")
@@ -80,7 +83,7 @@ def save_surface_copy(settings: Settings, surface_id: str, description: str, ima
 
 
 def _find_surface(project_root: Path, copy: dict, surface_id: str) -> dict:
-    for item in load_surfaces(project_root, copy) + load_grounds(project_root, copy):
+    for item in load_surfaces(project_root, copy) + load_grounds(project_root, copy) + load_vegetation(project_root, copy):
         if item["id"] == surface_id:
             return item
     raise PipelineError("Unknown surface.")

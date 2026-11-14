@@ -3,12 +3,27 @@ import shutil
 from pathlib import Path
 
 from core.errors import PipelineError
+from core.settings import PIPELINE_ROOT
+from godot.animation_library import (
+    load_meshy_actions,
+    resolve_shared_library,
+    shared_clip_name,
+    update_library_index,
+    write_quaternius_library_index,
+)
+from godot.character_template import write_character_scene, write_shared_skeleton_note
+from godot.retarget_import import write_character_glb_import, write_quaternius_animation_import, write_static_glb_import
+from processors.clothing import analyze_clothing_glb, load_clothing_slots
 
 KIND_FOLDERS = {
     "texture": "textures",
     "prop": "props",
     "character": "characters",
     "building": "buildings",
+    "deployable": "deployables",
+    "resource": "resources",
+    "decoration": "environment",
+    "enemy": "characters",
 }
 
 
@@ -158,7 +173,78 @@ def publish_asset(project_root: Path, asset: dict, library_root: Path, acknowled
         _refuse_existing(target_scene, meta_path, force, confirm_approved)
         destination_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(glb_source, target_glb)
-        write_scene(target_scene, name, target_glb, project_root)
+        humanoid = bool((asset.get("generation_parameters") or {}).get("humanoid", asset["kind"] == "character"))
+        if humanoid and asset["kind"] in {"character", "enemy"}:
+            profile_path = PIPELINE_ROOT / "config" / "humanoid_skeleton.json"
+            profile = json.loads(profile_path.read_text(encoding="utf-8")) if profile_path.is_file() else {}
+            actions_path = PIPELINE_ROOT / "config" / "meshy_actions.json"
+            actions = load_meshy_actions(actions_path) if actions_path.is_file() else {}
+            clothing_path = PIPELINE_ROOT / "config" / "clothing_slots.json"
+            equipment_slots = {}
+            if clothing_path.is_file():
+                clothing = analyze_clothing_glb(glb_source, load_clothing_slots(clothing_path))
+                equipment_slots = clothing.get("equipment_slots") or {}
+            shared_dir = project_root / "assets" / "characters" / "Shared"
+            write_shared_skeleton_note(shared_dir / "skeleton_profile.json", profile)
+            produced.append(str((shared_dir / "skeleton_profile.json").relative_to(project_root)).replace("\\", "/"))
+            shared = resolve_shared_library(project_root)
+            anim_dir = shared_dir / "Animations"
+            anim_dir.mkdir(parents=True, exist_ok=True)
+            # Meshy clips stay as optional provenance under Animations/; Quaternius is the default Shared library.
+            clip_map = _publish_shared_animations(
+                asset_dir,
+                asset,
+                anim_dir,
+                actions,
+                project_root,
+                produced,
+            )
+            if shared:
+                for logical, anim_name in (shared.get("clips") or {}).items():
+                    clip_map[logical] = {
+                        "path": shared["relative"],
+                        "animation": anim_name,
+                        "source": "quaternius",
+                        "provider": "quaternius",
+                    }
+                bone_map = project_root / (shared.get("bone_map") or "assets/characters/Shared/Quaternius/QuaterniusBoneMap.tres")
+                source_glb = project_root / (
+                    (shared.get("config") or {}).get("source_glb")
+                    or "assets/characters/Shared/Quaternius/AnimationLibrary_Godot_Standard.glb"
+                )
+                if source_glb.is_file():
+                    write_quaternius_animation_import(source_glb, bone_map, project_root)
+                write_quaternius_library_index(project_root, shared)
+            else:
+                update_library_index(
+                    shared_dir / "library_index.json",
+                    clip_map,
+                    skeleton_profile=profile.get("profile", "godot_humanoid"),
+                )
+            write_character_scene(
+                target_scene,
+                name,
+                target_glb,
+                project_root,
+                profile,
+                actions=actions,
+                clip_names=list(clip_map.keys()) or list((shared or {}).get("logical_names") or []),
+                equipment_slots=equipment_slots,
+                shared_library=shared,
+            )
+            char_bone = project_root / (
+                (shared or {}).get("character_bone_map") or "assets/characters/Shared/GodotHumanoidBoneMap.tres"
+            )
+            write_character_glb_import(
+                target_glb,
+                char_bone,
+                fix_silhouette=bool((shared or {}).get("fix_silhouette", True)),
+                project_root=project_root,
+            )
+            produced.append(str((shared_dir / "library_index.json").relative_to(project_root)).replace("\\", "/"))
+        else:
+            write_scene(target_scene, name, target_glb, project_root)
+            write_static_glb_import(target_glb, project_root)
         produced.append(str(target_glb.relative_to(project_root)).replace("\\", "/"))
         produced.append(str(target_scene.relative_to(project_root)).replace("\\", "/"))
         for extra_name in ("lod1.glb", "lod2.glb"):
@@ -166,6 +252,7 @@ def publish_asset(project_root: Path, asset: dict, library_root: Path, acknowled
             if extra.is_file():
                 extra_target = destination_dir / f"{name}_{extra_name}"
                 shutil.copy2(extra, extra_target)
+                write_static_glb_import(extra_target, project_root)
                 produced.append(str(extra_target.relative_to(project_root)).replace("\\", "/"))
 
     record = dict(asset)
@@ -176,10 +263,88 @@ def publish_asset(project_root: Path, asset: dict, library_root: Path, acknowled
     return {"files": produced, "metadata": str(meta_path)}
 
 
+def _is_animation_glb(name: str) -> bool:
+    lowered = name.lower()
+    return any(token in lowered for token in ("walking", "running", "idle", "walk.glb", "run.glb", "animation", "lod"))
+
+
 def _first_existing(asset_dir: Path, relative_files: list[str], suffix: str) -> Path | None:
+    for relative in relative_files:
+        candidate = asset_dir / relative
+        if candidate.is_file() and candidate.suffix.lower() == suffix and not _is_animation_glb(Path(relative).name):
+            return candidate
     for relative in relative_files:
         candidate = asset_dir / relative
         if candidate.is_file() and candidate.suffix.lower() == suffix:
             return candidate
     matches = sorted((asset_dir / "processed").glob(f"*{suffix}"))
+    preferred = [path for path in matches if not _is_animation_glb(path.name)]
+    if preferred:
+        # Prefer normalized/rigged/named mesh over random extras.
+        for hint in ("normalized.glb", "rigged.glb", "model.glb"):
+            for path in preferred:
+                if path.name.lower() == hint:
+                    return path
+        return preferred[0]
     return matches[0] if matches else None
+
+
+def _clip_key_from_filename(filename: str, actions: dict) -> str | None:
+    lowered = filename.lower()
+    clips = ((actions.get("sets") or {}).get(actions.get("default_set") or "") or {}).get("clips") or {}
+    for key, meta in clips.items():
+        shared = shared_clip_name(key, meta).lower()
+        basic = str(meta.get("from_rig_basic") or "").lower()
+        if shared and shared in lowered:
+            return key
+        if basic and basic.replace("_glb", "") in lowered:
+            return key
+        if key in lowered:
+            return key
+    for token, key in (("walking", "walk"), ("running", "run"), ("idle", "idle"), ("walk", "walk"), ("run", "run")):
+        if token in lowered:
+            return key
+    return None
+
+
+def _publish_shared_animations(
+    asset_dir: Path,
+    asset: dict,
+    anim_dir: Path,
+    actions: dict,
+    project_root: Path,
+    produced: list[str],
+) -> dict:
+    clip_map: dict[str, dict] = {}
+    params = asset.get("generation_parameters") or {}
+    relatives = list(asset.get("processed_files") or [])
+    for relative in list(params.get("animations") or []):
+        if relative not in relatives:
+            relatives.append(relative)
+    for relative in relatives:
+        if not str(relative).endswith(".glb"):
+            continue
+        source = asset_dir / relative
+        if not source.is_file():
+            continue
+        key = _clip_key_from_filename(Path(relative).name, actions)
+        if not key:
+            continue
+        clips = ((actions.get("sets") or {}).get(actions.get("default_set") or "") or {}).get("clips") or {}
+        shared = shared_clip_name(key, clips.get(key) or {})
+        target = anim_dir / f"{shared}.glb"
+        shutil.copy2(source, target)
+        # Also keep a per-asset copy for debugging provenance.
+        provenance = anim_dir / f"{asset['asset_name']}_{Path(relative).name}"
+        shutil.copy2(source, provenance)
+        rel_target = str(target.relative_to(project_root)).replace("\\", "/")
+        rel_prov = str(provenance.relative_to(project_root)).replace("\\", "/")
+        produced.extend([rel_target, rel_prov])
+        clip_map[shared] = {
+            "path": rel_target,
+            "source": "meshy",
+            "asset_id": asset.get("asset_id", ""),
+            "asset_name": asset.get("asset_name", ""),
+            "provenance": rel_prov,
+        }
+    return clip_map

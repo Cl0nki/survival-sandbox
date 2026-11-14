@@ -345,6 +345,7 @@ func _spawn_cell(kind: String, piece_id: int, body: Vector3, steps: int, center:
 		crate.container_id = "placed_chest_%d" % piece_id
 		crate.slot_count = NetConfig.CONTAINER_SLOTS
 		crate.box_color = Color(0.42, 0.28, 0.16)
+		crate.art_id = kind
 		node = crate
 	elif CraftRules.known(kind):
 		var crafter := Crafter.new()
@@ -352,6 +353,7 @@ func _spawn_cell(kind: String, piece_id: int, body: Vector3, steps: int, center:
 		crafter.body_size = body
 		crafter.box_color = CraftRules.color_of(kind)
 		crafter.container_id = "craft_%d" % piece_id
+		crafter.art_id = kind
 		node = crafter
 	elif SmeltRules.known(kind):
 		var smelter := Smelter.new()
@@ -359,6 +361,7 @@ func _spawn_cell(kind: String, piece_id: int, body: Vector3, steps: int, center:
 		smelter.body_size = body
 		smelter.box_color = SmeltRules.color_of(kind)
 		smelter.container_id = "smelter_%d" % piece_id
+		smelter.art_id = kind
 		node = smelter
 	elif FillRules.known(kind):
 		var station := FillStation.new()
@@ -366,10 +369,12 @@ func _spawn_cell(kind: String, piece_id: int, body: Vector3, steps: int, center:
 		station.body_size = body
 		station.box_color = FillRules.color_of(kind)
 		station.container_id = "fill_%d" % piece_id
+		station.art_id = kind
 		node = station
 	else:
 		var bench := Workbench.new()
 		bench.body_size = body
+		bench.art_id = kind
 		node = bench
 	node.name = "%s_%d" % [kind, piece_id]
 	node.basis = GridSystem.rotation_basis(steps)

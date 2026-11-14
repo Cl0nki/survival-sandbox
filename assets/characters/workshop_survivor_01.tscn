@@ -1,0 +1,64 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/characters/workshop_survivor_01.glb" id="1_model"]
+[ext_resource type="AnimationLibrary" path="res://assets/characters/Shared/Quaternius/ual_locomotion.res" id="2_ual"]
+
+[sub_resource type="AnimationNodeAnimation" id="anim_idle"]
+animation = &"Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_walk"]
+animation = &"Walk"
+
+[sub_resource type="AnimationNodeBlendSpace1D" id="blend_loco"]
+blend_point_0/node = SubResource("anim_idle")
+blend_point_0/pos = 0.0
+blend_point_1/node = SubResource("anim_walk")
+blend_point_1/pos = 1.0
+min_space = 0.0
+max_space = 1.0
+
+[sub_resource type="AnimationNodeBlendTree" id="tree_root"]
+graph_offset = Vector2(-80, -40)
+nodes/output/position = Vector2(400, 0)
+nodes/loco/node = SubResource("blend_loco")
+nodes/loco/position = Vector2(140, 0)
+node_connections = [&"output", 0, &"loco"]
+
+[node name="workshop_survivor_01" type="CharacterBody3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Model" parent="VisualRoot" instance=ExtResource("1_model")]
+
+[node name="Equipment" type="Node3D" parent="VisualRoot"]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": ExtResource("2_ual")
+}
+editor_description = "Shared locomotion: idle→Idle, walk→Walk (no jog)"
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = SubResource("tree_root")
+anim_player = NodePath("../AnimationPlayer")
+active = true
+parameters/loco/blend_position = 0.0
+
+[node name="AttachmentPoints" type="Node3D" parent="."]
+
+[node name="PrimaryWeapon" type="Marker3D" parent="AttachmentPoints"]
+editor_description = "Attach to bone RightHand"
+
+[node name="SecondaryWeapon" type="Marker3D" parent="AttachmentPoints"]
+editor_description = "Attach to bone LeftHand"
+
+[node name="Backpack" type="Marker3D" parent="AttachmentPoints"]
+editor_description = "Attach to bone Chest"
+
+[node name="HeadEquipment" type="Marker3D" parent="AttachmentPoints"]
+editor_description = "Attach to bone Head"
+
+[node name="HandEquipment" type="Marker3D" parent="AttachmentPoints"]
+editor_description = "Attach to bone RightHand"

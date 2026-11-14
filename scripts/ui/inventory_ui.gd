@@ -2,6 +2,7 @@ extends CanvasLayer
 class_name InventoryUI
 
 const _Icons = preload("res://scripts/items/item_icons.gd")
+const _CraftingMenu = preload("res://scripts/ui/crafting_menu.gd")
 const SLOT_SIZE := 96
 const NAME_DELAY_MSEC := 1000
 
@@ -15,6 +16,7 @@ var _box_panel: PanelContainer
 var _box_title: Label
 var _box_hint: Label
 var _box_grid: GridContainer
+var _craft_menu: PanelContainer
 var _storage_grid: GridContainer
 var _hotbar_grid: GridContainer
 var _hud_grid: GridContainer
@@ -50,6 +52,15 @@ func bind_player(player: PlayerController) -> void:
 	_refresh()
 
 
+func is_open() -> bool:
+	return _screen != null and _screen.visible
+
+
+func close() -> void:
+	if is_open():
+		_close_screen()
+
+
 func _ready() -> void:
 	layer = 30
 	var center := CenterContainer.new()
@@ -58,7 +69,11 @@ func _ready() -> void:
 	add_child(center)
 	_screen = VBoxContainer.new()
 	_screen.visible = false
+	_screen.add_theme_constant_override(&"separation", 8)
 	center.add_child(_screen)
+	_craft_menu = _CraftingMenu.new()
+	_craft_menu.craft_pressed.connect(_on_station_craft)
+	_screen.add_child(_craft_menu)
 	_box_panel = PanelContainer.new()
 	_box_panel.visible = false
 	_screen.add_child(_box_panel)
@@ -72,6 +87,8 @@ func _ready() -> void:
 	box_column.add_child(_box_hint)
 	_box_grid = GridContainer.new()
 	_box_grid.columns = 9
+	_box_grid.add_theme_constant_override(&"h_separation", 4)
+	_box_grid.add_theme_constant_override(&"v_separation", 4)
 	box_column.add_child(_box_grid)
 	var bag_panel := PanelContainer.new()
 	_screen.add_child(bag_panel)
@@ -85,9 +102,13 @@ func _ready() -> void:
 	column.add_child(_notice)
 	_storage_grid = GridContainer.new()
 	_storage_grid.columns = 9
+	_storage_grid.add_theme_constant_override(&"h_separation", 4)
+	_storage_grid.add_theme_constant_override(&"v_separation", 4)
 	column.add_child(_storage_grid)
 	_hotbar_grid = GridContainer.new()
 	_hotbar_grid.columns = 9
+	_hotbar_grid.add_theme_constant_override(&"h_separation", 4)
+	_hotbar_grid.add_theme_constant_override(&"v_separation", 4)
 	column.add_child(_hotbar_grid)
 	_hud = CenterContainer.new()
 	_hud.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -102,6 +123,8 @@ func _ready() -> void:
 	hud_box.add_child(_hud_notice)
 	_hud_grid = GridContainer.new()
 	_hud_grid.columns = 9
+	_hud_grid.add_theme_constant_override(&"h_separation", 4)
+	_hud_grid.add_theme_constant_override(&"v_separation", 4)
 	hud_box.add_child(_hud_grid)
 	_cursor_icon = TextureRect.new()
 	_cursor_icon.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
@@ -155,8 +178,11 @@ func _input(event: InputEvent) -> void:
 		if _screen.visible:
 			_close_screen()
 		else:
+			if _player != null and _player.has_method("close_tech_tree"):
+				_player.call("close_tech_tree")
 			_screen.visible = true
 			_hud.visible = false
+			_refresh()
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed(&"drop_item"):
@@ -203,6 +229,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_container() -> void:
 	if _player != null and _player.container_view != null:
+		if _player.has_method("close_tech_tree"):
+			_player.call("close_tech_tree")
 		_screen.visible = true
 		_hud.visible = false
 	_refresh()
@@ -219,6 +247,16 @@ func _show_notice(text: String) -> void:
 func _refresh() -> void:
 	if _player == null or _player.inventory == null or _storage_grid == null:
 		return
+	var bag := _player.inventory
+	## Closed inventory: only rebuild the always-on HUD hotbar. Full slot rebuilds
+	## on every hotbar/item change were hitching input.
+	if _screen == null or not _screen.visible:
+		_clear_grid(_hud_grid)
+		for index in mini(NetConfig.HOTBAR_SLOTS, bag.capacity):
+			_add_slot(_hud_grid, SlotOps.AREA_PLAYER, index, true, false)
+		if _craft_menu != null and _craft_menu.visible:
+			_craft_menu.clear()
+		return
 	_buttons.clear()
 	_areas.clear()
 	_indices.clear()
@@ -226,25 +264,64 @@ func _refresh() -> void:
 	_clear_grid(_hotbar_grid)
 	_clear_grid(_hud_grid)
 	_clear_grid(_box_grid)
-	var bag := _player.inventory
 	for index in mini(NetConfig.HOTBAR_SLOTS, bag.capacity):
 		_add_slot(_hotbar_grid, SlotOps.AREA_PLAYER, index, true, true)
 		_add_slot(_hud_grid, SlotOps.AREA_PLAYER, index, true, false)
 	for index in range(NetConfig.HOTBAR_SLOTS, bag.capacity):
 		_add_slot(_storage_grid, SlotOps.AREA_PLAYER, index, false, true)
 	var crate: Inventory = _player.container_view
-	_box_panel.visible = crate != null
+	var station := _open_loot()
+	var station_ui := station is Crafter or station is Smelter
+	_box_panel.visible = crate != null and not station_ui
 	_paint_box_header()
-	if crate != null:
-		for index in crate.capacity:
-			_add_slot(_box_grid, SlotOps.AREA_CONTAINER, index, false, true)
+	if station_ui:
+		_show_station_menu(station as LootContainer, bag)
+	else:
+		_craft_menu.clear()
+		if crate != null:
+			for index in crate.capacity:
+				_add_slot(_box_grid, SlotOps.AREA_CONTAINER, index, false, true)
+
+
+func _show_station_menu(station: LootContainer, bag: Inventory) -> void:
+	var status := ""
+	if station.has_method(&"slot_hint"):
+		status = str(station.call(&"slot_hint"))
+	var queue: Array = []
+	if station.has_method(&"queue_snapshot"):
+		queue = station.call(&"queue_snapshot") as Array
+	var out_index := 0
+	var mode := "craft"
+	var kind := ""
+	var action := "Craft"
+	if station is Crafter:
+		var crafter := station as Crafter
+		kind = crafter.station_kind
+		out_index = crafter.output_index()
+		if status == CraftRules.hint(kind):
+			status = ""
+		mode = "craft"
+		action = "Craft"
+	elif station is Smelter:
+		var smelter := station as Smelter
+		kind = smelter.station_kind
+		out_index = smelter.output_index()
+		if status == SmeltRules.hint(kind):
+			status = ""
+		mode = "smelt"
+		action = "Smelt"
+	_craft_menu.show_station(mode, kind, station.prompt, bag, status, queue, action)
+	var host: Control = _craft_menu.output_host()
+	_clear_host(host)
+	_add_slot(host, SlotOps.AREA_CONTAINER, out_index, false, true)
+	_style_craft_output_slot(host, station.inventory, out_index)
 
 
 func _paint_box_header() -> void:
 	if _box_title == null:
 		return
 	var station := _open_loot()
-	if station == null:
+	if station == null or station is Crafter or station is Smelter:
 		_box_title.text = "Crate"
 		_box_hint.text = ""
 		_box_hint.visible = false
@@ -257,11 +334,50 @@ func _paint_box_header() -> void:
 	_box_hint.visible = hint != ""
 
 
+func _on_station_craft(input_id: String, extra_id: String, amount: int) -> void:
+	if _player == null:
+		return
+	_player.request_craft(input_id, extra_id, amount)
+
+
+func _clear_host(host: Control) -> void:
+	if host == null:
+		return
+	for child in host.get_children():
+		host.remove_child(child)
+		child.free()
+
+
+func _style_craft_output_slot(host: Control, station_bag: Inventory, out_index: int) -> void:
+	if host == null or host.get_child_count() <= 0 or station_bag == null:
+		return
+	if out_index < 0 or out_index >= station_bag.slots.size():
+		return
+	var button := host.get_child(0) as Button
+	if button == null:
+		return
+	button.set_anchors_preset(Control.PRESET_FULL_RECT)
+	button.text = ""
+	var slot: Dictionary = station_bag.slots[out_index]
+	var empty := str(slot["id"]).is_empty() or int(slot["qty"]) <= 0
+	if not empty:
+		return
+	## Let the craft-menu ghost show through while the slot stays clickable.
+	var clear := StyleBoxEmpty.new()
+	button.add_theme_stylebox_override(&"normal", clear)
+	button.add_theme_stylebox_override(&"hover", clear)
+	button.add_theme_stylebox_override(&"pressed", clear)
+	button.add_theme_stylebox_override(&"focus", clear)
+	button.add_theme_stylebox_override(&"disabled", clear)
+
+
 func _slot_caption(area: int, index: int) -> String:
 	if area != SlotOps.AREA_CONTAINER:
 		return ""
 	var station := _open_loot()
-	if station == null or index < 0 or index >= station.slot_labels.size():
+	if station == null or station is Crafter or station is Smelter:
+		return ""
+	if index < 0 or index >= station.slot_labels.size():
 		return ""
 	return station.slot_labels[index]
 
@@ -276,9 +392,9 @@ func _open_loot() -> LootContainer:
 	return null
 
 
-func _add_slot(grid: GridContainer, area: int, index: int, hotbar: bool, interactive: bool) -> void:
+func _add_slot(grid: Control, area: int, index: int, hotbar: bool, interactive: bool, size: int = SLOT_SIZE) -> void:
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
+	button.custom_minimum_size = Vector2(size, size)
 	button.focus_mode = Control.FOCUS_NONE
 	button.clip_contents = true
 	var bag := _player.container_view if area == SlotOps.AREA_CONTAINER else _player.inventory

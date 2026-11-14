@@ -21,7 +21,8 @@ func _ready() -> void:
 	super._ready()
 	if inventory != null:
 		inventory.host = self
-	_dress()
+	if not has_meta(&"deployable_art"):
+		_dress()
 
 
 func accepts_insert(index: int, item_id: String) -> bool:

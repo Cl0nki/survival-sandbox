@@ -27,9 +27,14 @@ from processors.gltf_write import Mesh, read_glb_json, write_glb
 from processors.maps import procedural_maps, seam_score
 from processors.validate import inspect_glb, validate_mesh
 from prompts.builder import build_prompts
-from providers.meshy import image_to_3d_payload, text_preview_payload, text_refine_payload
+from core.costs import estimate_operation, load_pricing
+from core.workshop import infer_workshop_category, production_stats, resolve_category
+from providers.base import CAP_ALT_RIG, CAP_ANIMATE, CAP_GENERATE_MODEL, CAP_HUMANOID_RIG, ThreeDProvider
+from providers.meshy import MeshyProvider, animation_payload, image_to_3d_payload, text_preview_payload, text_refine_payload
 from providers.openai_images import OpenAIImageProvider, generation_payload
-from providers.tripo import image_to_model_payload
+from providers.registry import capability_matrix, recommended_mesh_provider, threed_from
+from providers.tripo import animate_rig_payload, image_to_model_payload
+from providers.tripo import TripoProvider
 
 
 class PipelineTests(unittest.TestCase):
@@ -46,7 +51,11 @@ class PipelineTests(unittest.TestCase):
     def test_style_prompt_uses_the_config_file(self):
         style = self.settings.style()
         prompts = build_prompts(style, {"prompt": "military backpack"}, "scuffed canvas", "prop")
-        self.assertIn("#354451", prompts["prompt"])
+        self.assertIn(style["summary"].split(",")[0], prompts["prompt"])
+        if style.get("use_palette", True):
+            self.assertIn("#354451", prompts["prompt"])
+        else:
+            self.assertNotIn("#354451", prompts["prompt"])
         self.assertIn("photorealism", prompts["negative_prompt"])
         self.assertIn("scuffed canvas", prompts["prompt"])
         self.assertLessEqual(len(prompts["compact_prompt"]), 800)
@@ -97,9 +106,10 @@ class PipelineTests(unittest.TestCase):
         image = image_to_3d_payload(b"\x89PNG\r\n", 8000, "1024", False, "latest")
         self.assertTrue(image["image_url"].startswith("data:image/png;base64,"))
         self.assertEqual(image["target_formats"], ["glb"])
+        self.assertEqual(image["texture_resolution"], "2k")
         self.assertTrue(image["enable_pbr"])
         self.assertNotIn("pose_mode", image)
-        character = image_to_3d_payload(b"\x89PNG\r\n", 12000, "1024", True, "latest")
+        character = image_to_3d_payload(b"\x89PNG\r\n", 12000, "2k", True, "latest")
         self.assertEqual(character["pose_mode"], "a-pose")
         preview = text_preview_payload("a crate", 4000, False, "latest")
         self.assertEqual(preview["mode"], "preview")
@@ -111,6 +121,15 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(tripo["type"], "image_to_model")
         self.assertEqual(tripo["file"]["file_token"], "token")
         self.assertEqual(tripo["model_seed"], 12)
+        rig = animate_rig_payload("prior-task", rig_type="quadruped")
+        self.assertEqual(rig["type"], "animate_rig")
+        self.assertEqual(rig["original_model_task_id"], "prior-task")
+        self.assertEqual(rig["rig_type"], "quadruped")
+        anim = animation_payload("rig-task", action_ids=[10, 25, 92])
+        self.assertEqual(anim["rig_task_id"], "rig-task")
+        self.assertEqual(anim["action_ids"], [10, 25, 92])
+        with self.assertRaises(Exception):
+            animation_payload("rig-task", action_id=1, action_ids=[1])
         openai = generation_payload("a wall", "gpt-image-2.5-flare", 4096, "medium")
         self.assertEqual(openai["size"], "2048x2048")
         self.assertNotIn("response_format", openai)
@@ -166,7 +185,8 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(job["status"], "ready_for_review", job.get("errors"))
         asset = self.store.get_asset(job["asset_ids"][0])
         self.assertEqual(asset["provider"], "procedural")
-        self.assertIn("#354451", asset["prompt"])
+        self.assertIn("modular concrete wall", asset["prompt"])
+        self.assertIn("Art direction:", asset["prompt"])
         self.assertTrue(asset["validation"]["ok"], asset["validation"])
         self.assertIn("original/", asset["original_files"][0])
         approved = approve_asset(self.settings, self.store, asset["asset_id"], False, False, False)
@@ -422,38 +442,81 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(hatchet["display_name"], "Scrap Hatchet")
         self.assertEqual(hatchet["category"], "tool")
         self.assertAlmostEqual(hatchet["swatch"][0], 0.62)
-        self.assertTrue(hatchet["needs_art"])
-        self.assertFalse(hatchet["has_art"])
+        self.assertIn("needs_art", hatchet)
+        self.assertIn("has_art", hatchet)
+        self.assertEqual(hatchet["needs_art"], not hatchet["has_art"])
         self.assertIn("medical", {item["category"] for item in items})
         deployables = [item for item in items if item["category"] == "deployable"]
         self.assertGreaterEqual(len(deployables), 30)
         self.assertTrue(any(item["id"].startswith("door_") for item in deployables))
+        workbench = by_id["workbench"]
+        self.assertEqual(workbench["footprint"], [2, 1])
+        self.assertAlmostEqual(workbench["height"], 1.428)
+        self.assertEqual(workbench["target_size"], [1.81, 1.428, 0.81])
+        self.assertIn("needs_world_art", workbench)
+        self.assertEqual(workbench["needs_world_art"], not workbench["has_world_art"])
+        self.assertEqual(by_id["hatchet_scrap"]["target_size"], [0.38, 0.28, 0.38])
+
+    def test_deployable_from_icon_job_normalizes_with_target_size(self):
+        from generators.orchestrator import normalize_request, stage_item_icon
+
+        folder = self.settings.library_dir / "uploads"
+        folder.mkdir(parents=True, exist_ok=True)
+        concept = folder / "bench.png"
+        concept.write_bytes(b"\x89PNG\r\n\x1a\nfake")
+        request = normalize_request(self.settings, {
+            "workshop_category": "deployables",
+            "category": "from_icon",
+            "name": "workbench",
+            "provider": "manual",
+            "source_file": str(concept),
+            "target_size": [1.81, 1.428, 0.81],
+            "subject_override": "Workbench",
+        })
+        self.assertEqual(request["kind"], "deployable")
+        self.assertEqual(request["category"], "from_icon")
+        self.assertEqual(request["target_size"], [1.81, 1.428, 0.81])
+        self.assertEqual(request["mesh_provider"], "meshy")
+        icons = PROJECT / "assets" / "icons"
+        sample = next(icons.glob("*.png"), None)
+        if sample is not None:
+            staged = stage_item_icon(Settings(library_dir=self.settings.library_dir, project_root=PROJECT), sample.stem)
+            self.assertTrue(Path(staged["path"]).is_file())
+            self.assertEqual(staged["item_id"], sample.stem)
 
     def test_texture_gallery_reads_building_colors(self):
         surfaces = load_surfaces(PROJECT)
         by_id = {item["id"]: item for item in surfaces}
-        self.assertEqual(len(surfaces), 24)
+        self.assertEqual(len(surfaces), 12)
+        self.assertFalse(any(item["category"] in {"post", "stairs"} for item in surfaces))
         wood = by_id["wall_wood"]
         self.assertEqual(wood["display_name"], "Wood Wall")
         self.assertEqual(wood["category"], "wall")
         self.assertAlmostEqual(wood["swatch"][0], 0.78)
         self.assertAlmostEqual(wood["swatch"][1], 0.60)
         self.assertEqual(wood["pipeline_category"], "wood")
-        self.assertAlmostEqual(by_id["post_scrap"]["swatch"][0], 0.36)
+        self.assertNotIn("post_scrap", by_id)
         self.assertAlmostEqual(by_id["floor_concrete"]["swatch"][0], 0.72)
         self.assertEqual(by_id["floor_concrete"]["pipeline_category"], "concrete_floor")
         self.assertTrue(by_id["wall_concrete"]["has_art"])
         self.assertTrue(by_id["floor_concrete"]["has_art"])
-        self.assertTrue(by_id["wall_wood"]["needs_art"])
+        self.assertTrue(by_id["wall_wood"]["has_art"])
         self.assertNotIn("flat color", by_id["wall_wood"]["description"].lower())
-        self.assertEqual(by_id["wall_wood"]["image_description"], "")
+
+
 
     def test_ground_textures_are_listed_with_the_building_surfaces(self):
+        from godot.surface_index import load_vegetation
+
         grounds = {item["id"]: item for item in load_grounds(PROJECT)}
         self.assertEqual(set(grounds), {
             "ground_grass",
+            "ground_forest_oak",
+            "ground_forest_birch",
+            "ground_forest_spruce",
             "ground_dirt",
             "ground_rock",
+            "ground_asphalt",
             "ground_meadow",
             "ground_sand",
             "ground_clay",
@@ -463,12 +526,33 @@ class PipelineTests(unittest.TestCase):
             "ground_oil",
         })
         self.assertEqual(grounds["ground_grass"]["pipeline_category"], "grass")
+        self.assertEqual(grounds["ground_forest_oak"]["pipeline_category"], "forest_oak")
+        self.assertEqual(grounds["ground_forest_birch"]["pipeline_category"], "forest_birch")
+        self.assertEqual(grounds["ground_forest_spruce"]["pipeline_category"], "forest_spruce")
+        self.assertEqual(grounds["ground_forest_oak"]["material"], "Forest")
+        self.assertEqual(grounds["ground_forest_oak"]["category"], "forest")
+        self.assertEqual(grounds["ground_forest_birch"]["category"], "forest")
+        self.assertEqual(grounds["ground_forest_spruce"]["category"], "forest")
         self.assertEqual(grounds["ground_rock"]["pipeline_category"], "rock")
+        self.assertEqual(grounds["ground_asphalt"]["pipeline_category"], "asphalt")
         self.assertEqual(grounds["ground_meadow"]["pipeline_category"], "meadow")
         self.assertEqual(grounds["ground_oil"]["pipeline_category"], "oil")
         self.assertEqual(grounds["ground_water"]["category"], "ground")
-        self.assertTrue(grounds["ground_rock"]["needs_art"])
-        self.assertTrue(grounds["ground_meadow"]["needs_art"])
+
+        self.assertFalse(grounds["ground_asphalt"]["needs_art"])
+        self.assertFalse(grounds["ground_dirt"]["needs_art"])
+        plants = {item["id"]: item for item in load_vegetation(PROJECT)}
+        self.assertEqual(set(plants), {
+            "tree_oak",
+            "tree_birch",
+            "tree_spruce",
+            "stone_boulder",
+            "grass_tuft",
+            "fern",
+        })
+        self.assertEqual(plants["tree_oak"]["asset_kind"], "prop")
+        self.assertEqual(plants["fern"]["pipeline_category"], "fern")
+        self.assertTrue(plants["grass_tuft"]["needs_art"])
 
     def test_subject_override_replaces_the_category_words(self):
         prompts = preview_prompt(
@@ -554,6 +638,316 @@ class PipelineTests(unittest.TestCase):
         self.assertFalse(folder.exists())
         with self.assertRaises(KeyError):
             self.store.get_asset(asset_id)
+
+    def test_workshop_openai_concept_uses_style_prompt_builder(self):
+        from generators.orchestrator import normalize_request, preview_prompt
+
+        folder = self.settings.library_dir / "uploads"
+        folder.mkdir(parents=True, exist_ok=True)
+        request = normalize_request(self.settings, {
+            "workshop_category": "characters",
+            "category": "survivor",
+            "name": "concept_survivor",
+            "provider": "openai",
+            "mesh_provider": "meshy",
+            "prompt": "worn green jacket",
+        })
+        self.assertEqual(request["provider"], "openai")
+        self.assertTrue(request["humanoid"])
+        preview = preview_prompt(self.settings, request)
+        style = self.settings.style()
+        self.assertIn(style["summary"].split(",")[0], preview["prompt"])
+        self.assertIn("worn green jacket", preview["prompt"])
+        self.assertIn("A-pose", preview["prompt"])
+        self.assertIn("photorealism", preview["prompt"].lower())
+
+    def test_skeleton_normalize_maps_meshy_bones_to_godot(self):
+        from processors.skeleton_normalize import load_skeleton_profile, plan_renames, normalize_glb_skeleton
+        from processors.gltf_write import Mesh, write_glb, read_glb_json
+
+        profile = load_skeleton_profile(ROOT / "config" / "humanoid_skeleton.json")
+        plan = plan_renames(
+            ["Hips", "Spine", "Spine01", "Spine02", "neck", "Head", "LeftArm", "LeftForeArm", "LeftHand", "RightArm", "RightForeArm", "RightHand", "LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg", "RightFoot"],
+            profile,
+        )
+        self.assertEqual(plan["renames"]["LeftArm"], "LeftUpperArm")
+        self.assertEqual(plan["renames"]["neck"], "Neck")
+        self.assertEqual(plan["missing_required"], [])
+        path = self.temp / "plain.glb"
+        mesh = Mesh("Body")
+        mesh.add_tri((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1))
+        write_glb(path, [mesh], [{"name": "mat", "base_color": [0.5, 0.5, 0.5, 1.0]}])
+        out = self.temp / "normalized.glb"
+        result = normalize_glb_skeleton(path, out, profile)
+        self.assertTrue(out.is_file())
+        self.assertEqual(result["renamed_bones"], 0)
+        self.assertEqual(read_glb_json(out)["asset"]["version"], "2.0")
+
+    def test_character_template_scene_has_attachment_points(self):
+        from godot.animation_library import load_meshy_actions
+        from godot.character_template import write_character_scene
+
+        glb = self.temp / "hero.glb"
+        glb.write_bytes(b"glTF")
+        scene = self.temp / "hero.tscn"
+        actions = load_meshy_actions(ROOT / "config" / "meshy_actions.json")
+        write_character_scene(
+            scene,
+            "hero",
+            glb,
+            self.temp,
+            {},
+            actions=actions,
+            clip_names=["idle", "walk", "run"],
+            equipment_slots={"helmet": {"attach_bone": "Head", "mesh_name": "Helmet"}},
+        )
+        text = scene.read_text(encoding="utf-8")
+        self.assertIn('type="CharacterBody3D"', text)
+        self.assertIn("AttachmentPoints", text)
+        self.assertIn("PrimaryWeapon", text)
+        self.assertIn("AnimationTree", text)
+        self.assertIn("AnimationNodeBlendSpace1D", text)
+        self.assertIn("active = true", text)
+        self.assertIn("Equipment", text)
+        self.assertIn("helmet", text)
+
+    def test_phase5_shared_animation_library_index(self):
+        from godot.animation_library import load_meshy_actions, clip_set, shared_clip_name, update_library_index
+
+        actions = load_meshy_actions(ROOT / "config" / "meshy_actions.json")
+        clips = clip_set(actions)
+        self.assertIn("walk", clips)
+        self.assertEqual(shared_clip_name("walk", clips["walk"]), "walk")
+        self.assertEqual(clips["walk"]["from_rig_basic"], "walking_glb")
+        index_path = self.temp / "library_index.json"
+        payload = update_library_index(index_path, {"walk": {"path": "assets/characters/Shared/Animations/walk.glb", "source": "meshy"}})
+        self.assertTrue(index_path.is_file())
+        self.assertEqual(payload["clips"]["walk"]["source"], "meshy")
+
+    def test_quaternius_shared_library_wires_character_scene(self):
+        from godot.animation_library import load_shared_animation_library, resolve_shared_library
+        from godot.character_template import write_character_scene
+
+        cfg = load_shared_animation_library(ROOT / "config" / "shared_animation_library.json")
+        self.assertEqual(cfg["provider"], "quaternius")
+        self.assertEqual(cfg["clips"]["idle"], "Idle")
+        shared_dir = self.temp / "assets" / "characters" / "Shared" / "Quaternius"
+        shared_dir.mkdir(parents=True)
+        (shared_dir / "ual_locomotion.res").write_bytes(b"GDRES")
+        shared = resolve_shared_library(self.temp, cfg)
+        self.assertIsNotNone(shared)
+        glb = self.temp / "hero.glb"
+        glb.write_bytes(b"glTF")
+        scene = self.temp / "hero.tscn"
+        write_character_scene(scene, "hero", glb, self.temp, {}, shared_library=shared)
+        text = scene.read_text(encoding="utf-8")
+        self.assertIn("ual_locomotion.res", text)
+        self.assertIn("Idle", text)
+        self.assertIn("Walk", text)
+        self.assertIn("Walk_Bwd", text)
+        self.assertIn("Walk_L", text)
+        self.assertIn("Walk_R", text)
+        self.assertIn("AnimationNodeBlendSpace2D", text)
+        self.assertIn("active = true", text)
+
+    def test_phase6_clothing_slot_matching(self):
+        from processors.clothing import analyze_clothing_glb, clothing_export_plan, load_clothing_slots, match_slots
+        from processors.gltf_write import Mesh, write_glb
+
+        slots = load_clothing_slots(ROOT / "config" / "clothing_slots.json")
+        matched = match_slots(["Body", "Helmet", "Backpack", "LooseProp"], slots)
+        self.assertTrue(matched["slots"]["body"]["present"])
+        self.assertTrue(matched["slots"]["helmet"]["present"])
+        self.assertIn("LooseProp", matched["unmatched_meshes"])
+        path = self.temp / "dressed.glb"
+        body = Mesh("Body")
+        body.add_tri((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1))
+        helmet = Mesh("Helmet")
+        helmet.add_tri((0, 1, 0), (1, 1, 0), (0, 2, 0), (0, 1, 0))
+        write_glb(path, [body, helmet], [{"name": "mat", "base_color": [0.5, 0.5, 0.5, 1.0]}])
+        analysis = analyze_clothing_glb(path, slots)
+        self.assertTrue(analysis["slots"]["body"]["present"] or analysis["slots"]["helmet"]["present"])
+        plan = clothing_export_plan(analysis, self.temp / "clothing")
+        self.assertTrue(any(item["slot"] in {"body", "helmet"} for item in plan))
+
+    def test_phase7_cost_summary_and_budget_gate(self):
+        from core.costs import check_budget, summarize_costs
+
+        records = [
+            {"provider": "meshy", "operation": "rigging", "category": "characters", "actual_usd": 1.5, "created_at": "2026-11-03T10:00:00Z"},
+            {"provider": "tripo", "operation": "image_to_model", "category": "enemies", "estimated_usd": 0.2, "created_at": "2026-11-03T11:00:00Z"},
+            {"provider": "openai", "operation": "image_generation", "category": "characters", "created_at": "2026-11-03T12:00:00Z"},
+        ]
+        summary = summarize_costs(records, {"currency": "USD", "monthly_usd": 50})
+        self.assertAlmostEqual(summary["total_usd"], 1.7, places=4)
+        self.assertEqual(summary["unknown_records"], 1)
+        self.assertIn("meshy", summary["by_provider"])
+        soft = check_budget({"monthly_usd": 1.0, "hard_limit": False}, records=records, estimated_usd=0.5)
+        self.assertTrue(soft["ok"])
+        self.assertTrue(soft["warnings"])
+        hard = check_budget({"monthly_usd": 1.0, "hard_limit": True}, records=records, estimated_usd=0.5)
+        self.assertTrue(hard["blocked"])
+        self.assertFalse(hard["ok"])
+
+    def test_phase8_optimization_profiles_resolve(self):
+        from core.optimization import blender_job_fields, load_profiles, resolve_profile
+
+        profiles = load_profiles(ROOT / "config" / "optimization_profiles.json")
+        character = resolve_profile("character", profiles=profiles, defaults=self.settings.defaults)
+        self.assertEqual(character["target_polycount"], 12000)
+        self.assertFalse(character["add_collision"])
+        self.assertTrue(character["preserve_skin"])
+        deployable = resolve_profile("deployable", profiles=profiles, defaults=self.settings.defaults)
+        self.assertTrue(deployable["add_collision"])
+        fields = blender_job_fields(character)
+        self.assertEqual(fields["optimization_profile"], "character")
+        self.assertFalse(fields["add_collision"])
+
+    def test_threed_provider_protocol_and_capabilities(self):
+        meshy = MeshyProvider("", "latest", 10, 1)
+        tripo = TripoProvider("", "v2.5-20250123", 10, 1)
+        self.assertIsInstance(meshy, ThreeDProvider)
+        self.assertIsInstance(tripo, ThreeDProvider)
+        self.assertIn(CAP_GENERATE_MODEL, meshy.capabilities)
+        self.assertIn(CAP_HUMANOID_RIG, meshy.capabilities)
+        self.assertIn(CAP_ANIMATE, meshy.capabilities)
+        self.assertIn(CAP_ALT_RIG, tripo.capabilities)
+        self.assertEqual(recommended_mesh_provider("creature"), "tripo")
+        self.assertEqual(recommended_mesh_provider("survivor"), "meshy")
+        matrix = capability_matrix()
+        self.assertIn(CAP_ANIMATE, matrix["meshy"])
+        self.assertIn(CAP_ALT_RIG, matrix["tripo"])
+        self.assertEqual(threed_from(self.settings, "meshy_text").name, "meshy")
+        self.assertEqual(threed_from(self.settings, "tripo").name, "tripo")
+
+    def test_workshop_static_profiles_normalize(self):
+        from generators.orchestrator import normalize_request
+
+        folder = self.settings.library_dir / "uploads"
+        folder.mkdir(parents=True, exist_ok=True)
+        concept = folder / "concept.png"
+        concept.write_bytes(b"\x89PNG\r\n\x1a\nfake")
+        deployable = normalize_request(self.settings, {
+            "workshop_category": "deployables",
+            "category": "turret",
+            "name": "field_turret",
+            "provider": "manual",
+            "source_file": str(concept),
+        })
+        self.assertEqual(deployable["kind"], "deployable")
+        self.assertEqual(deployable["godot_folder"], "deployables")
+        self.assertTrue(deployable["expect_collision"])
+        self.assertFalse(deployable["auto_rig"])
+        resource = normalize_request(self.settings, {
+            "workshop_category": "resources",
+            "category": "scrap_pile",
+            "name": "scrap_a",
+            "mesh_provider": "meshy_text",
+        })
+        self.assertEqual(resource["kind"], "resource")
+        creature = normalize_request(self.settings, {
+            "workshop_category": "enemies",
+            "category": "creature",
+            "name": "mutant_dog",
+            "provider": "manual",
+            "source_file": str(concept),
+        })
+        self.assertFalse(creature["humanoid"])
+        self.assertEqual(creature["mesh_provider"], "tripo")
+        self.assertFalse(creature["auto_rig"])
+        raider = normalize_request(self.settings, {
+            "workshop_category": "enemies",
+            "category": "humanoid_raider",
+            "name": "raider_a",
+            "provider": "manual",
+            "source_file": str(concept),
+        })
+        self.assertTrue(raider["humanoid"])
+        self.assertTrue(raider["auto_rig"])
+        self.assertFalse(raider["auto_animate"])
+        survivor = normalize_request(self.settings, {
+            "workshop_category": "characters",
+            "category": "survivor",
+            "name": "survivor_a",
+            "provider": "manual",
+            "source_file": str(concept),
+        })
+        self.assertTrue(survivor["auto_rig"])
+        self.assertFalse(survivor["auto_animate"])
+        animated = normalize_request(self.settings, {
+            "workshop_category": "characters",
+            "category": "survivor",
+            "name": "survivor_b",
+            "provider": "manual",
+            "source_file": str(concept),
+            "auto_animate": True,
+        })
+        self.assertTrue(animated["auto_animate"])
+        self.assertEqual(resolve_category(self.settings.workshop(), "decorations")["kind"], "decoration")
+
+    def test_production_stats_count_approved_assets(self):
+        asset = self.store.create_asset({
+            "asset_name": "scrap_pile_demo",
+            "category": "scrap_pile",
+            "kind": "resource",
+            "workshop_category": "resources",
+            "generation_parameters": {"workshop_category": "resources", "godot_folder": "resources"},
+        })
+        asset["approval_status"] = "approved"
+        asset["processing_status"] = "approved"
+        self.store.save_asset(asset)
+        pending = self.store.create_asset({
+            "asset_name": "turret_review",
+            "category": "turret",
+            "kind": "deployable",
+            "workshop_category": "deployables",
+            "generation_parameters": {"workshop_category": "deployables"},
+            "processing_status": "ready_for_review",
+        })
+        self.store.save_asset(pending)
+        stats = production_stats(self.store, self.settings.project_root, self.settings.workshop())
+        by_id = {row["id"]: row for row in stats["rows"]}
+        self.assertEqual(by_id["resources"]["approved"], 1)
+        self.assertEqual(by_id["deployables"]["pending_review"], 1)
+        self.assertEqual(infer_workshop_category(asset), "resources")
+        self.assertEqual(stats["totals"]["target"], 280)
+
+    def test_generation_task_and_cost_records_persist(self):
+        task = self.store.create_generation_task(
+            {
+                "job_id": "job1",
+                "asset_id": "asset1",
+                "provider": "meshy",
+                "operation": "image_to_3d",
+                "status": "generating",
+                "input": {"polycount": 8000},
+            }
+        )
+        self.store.update_generation_task(task["task_id"], status="succeeded", provider_task_id="prov-1", consumed_credits=30)
+        loaded = self.store.get_generation_task(task["task_id"])
+        self.assertEqual(loaded["provider_task_id"], "prov-1")
+        self.assertEqual(loaded["status"], "succeeded")
+        self.assertTrue(loaded["completed_at"])
+        pricing = load_pricing()
+        estimate = estimate_operation(pricing, "tripo", "image_to_model")
+        self.assertTrue(estimate["known"])
+        self.assertEqual(estimate["credits"], 20)
+        self.assertAlmostEqual(estimate["estimated_usd"], 0.2)
+        unknown = estimate_operation(pricing, "openai", "image_generation")
+        self.assertFalse(unknown["known"])
+        cost = self.store.create_cost_record(
+            {
+                "provider": "meshy",
+                "operation": "image_to_3d",
+                "asset_id": "asset1",
+                "generation_task_id": task["task_id"],
+                "credits": 30,
+                "known": True,
+            }
+        )
+        listed = self.store.list_cost_records(asset_id="asset1")
+        self.assertEqual(listed[0]["cost_id"], cost["cost_id"])
+        self.assertEqual(len(self.store.list_generation_tasks(asset_id="asset1")), 1)
 
     def test_existing_game_files_are_unchanged_by_the_pipeline_package(self):
         project = (PROJECT / "project.godot").read_text(encoding="utf-8")

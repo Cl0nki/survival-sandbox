@@ -1,0 +1,28 @@
+{
+  "currency": "USD",
+  "notes": "Update credit costs here when providers change pricing. Do not hardcode prices in Python.",
+  "meshy": {
+    "credit_usd": null,
+    "operations": {
+      "image_to_3d": {"credits": 30, "notes": "Textured image-to-3D typical cost; verify on Meshy pricing."},
+      "text_to_3d_preview": {"credits": 20, "notes": "Preview mode."},
+      "text_to_3d_refine": {"credits": 10, "notes": "Refine/texture pass."},
+      "rigging": {"credits": 5, "notes": "Humanoid auto-rig."},
+      "animation": {"credits": 3, "notes": "Per action_id / clip."}
+    }
+  },
+  "tripo": {
+    "credit_usd": 0.01,
+    "operations": {
+      "image_to_model": {"credits": 20, "notes": "Image-to-3D typical; range 20–30."},
+      "animate_rig": {"credits": 25, "notes": "Auto rig."},
+      "animate_retarget": {"credits": 10, "notes": "Per animation retarget."}
+    }
+  },
+  "openai": {
+    "credit_usd": null,
+    "operations": {
+      "image_generation": {"credits": null, "usd_estimate": null, "notes": "Priced in USD by OpenAI; mark unknown unless configured."}
+    }
+  }
+}

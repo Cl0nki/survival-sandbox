@@ -21,7 +21,9 @@ class AssetStore:
         self.jobs_dir = self.root / "jobs"
         self.assets_dir = self.root / "assets"
         self.logs_dir = self.root / "logs"
-        for folder in (self.jobs_dir, self.assets_dir, self.logs_dir):
+        self.tasks_dir = self.root / "generation_tasks"
+        self.costs_dir = self.root / "costs"
+        for folder in (self.jobs_dir, self.assets_dir, self.logs_dir, self.tasks_dir, self.costs_dir):
             folder.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
 
@@ -100,6 +102,8 @@ class AssetStore:
             "asset_name": fields["asset_name"],
             "category": fields["category"],
             "kind": fields["kind"],
+            "workshop_category": fields.get("workshop_category") or (fields.get("generation_parameters") or {}).get("workshop_category") or "",
+            "tags": list(fields.get("tags") or []),
             "created_at": utc_now(),
             "provider": fields.get("provider", ""),
             "model": fields.get("model", ""),
@@ -111,6 +115,7 @@ class AssetStore:
             "original_files": [],
             "processed_files": [],
             "polygon_count": None,
+            "dimensions": None,
             "texture_resolution": fields.get("texture_resolution"),
             "processing_status": fields.get("processing_status", "waiting"),
             "approval_status": "pending",
@@ -154,6 +159,101 @@ class AssetStore:
         with self._lock:
             with (folder / "log.txt").open("a", encoding="utf-8") as handle:
                 handle.write(f"{utc_now()} {message}\n")
+
+    def create_generation_task(self, fields: dict) -> dict:
+        task = {
+            "task_id": fields.get("task_id") or new_id(),
+            "created_at": utc_now(),
+            "updated_at": utc_now(),
+            "completed_at": None,
+            "job_id": fields.get("job_id", ""),
+            "asset_id": fields.get("asset_id", ""),
+            "provider": fields.get("provider", ""),
+            "operation": fields.get("operation", ""),
+            "provider_task_id": fields.get("provider_task_id", ""),
+            "status": fields.get("status", "pending"),
+            "input": fields.get("input") or {},
+            "output": fields.get("output") or {},
+            "error": fields.get("error", ""),
+            "consumed_credits": fields.get("consumed_credits"),
+            "attempt": int(fields.get("attempt") or 1),
+            "history": [{"at": utc_now(), "status": fields.get("status", "pending"), "event": "created"}],
+        }
+        self.save_generation_task(task)
+        return task
+
+    def save_generation_task(self, task: dict) -> None:
+        task["updated_at"] = utc_now()
+        path = self.tasks_dir / f"{task['task_id']}.json"
+        text = json.dumps(task, indent=2)
+        with self._lock:
+            path.write_text(text, encoding="utf-8")
+
+    def update_generation_task(self, task_id: str, **fields) -> dict:
+        task = self.get_generation_task(task_id)
+        for key, value in fields.items():
+            if key in {"history"}:
+                continue
+            task[key] = value
+        status = fields.get("status")
+        if status:
+            task.setdefault("history", []).append({"at": utc_now(), "status": status, "event": "status"})
+            if status in {"succeeded", "failed", "canceled", "ready_for_review", "approved", "rejected"}:
+                task["completed_at"] = task.get("completed_at") or utc_now()
+        self.save_generation_task(task)
+        return task
+
+    def get_generation_task(self, task_id: str) -> dict:
+        path = self.tasks_dir / f"{task_id}.json"
+        if not path.is_file():
+            raise KeyError(task_id)
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def list_generation_tasks(self, asset_id: str | None = None, job_id: str | None = None) -> list[dict]:
+        tasks = []
+        for path in self.tasks_dir.glob("*.json"):
+            task = json.loads(path.read_text(encoding="utf-8"))
+            if asset_id and task.get("asset_id") != asset_id:
+                continue
+            if job_id and task.get("job_id") != job_id:
+                continue
+            tasks.append(task)
+        tasks.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+        return tasks
+
+    def create_cost_record(self, fields: dict) -> dict:
+        record = {
+            "cost_id": fields.get("cost_id") or new_id(),
+            "created_at": utc_now(),
+            "provider": fields.get("provider", ""),
+            "operation": fields.get("operation", ""),
+            "asset_id": fields.get("asset_id", ""),
+            "job_id": fields.get("job_id", ""),
+            "generation_task_id": fields.get("generation_task_id", ""),
+            "provider_task_id": fields.get("provider_task_id", ""),
+            "category": fields.get("category", ""),
+            "credits": fields.get("credits"),
+            "estimated_usd": fields.get("estimated_usd"),
+            "actual_usd": fields.get("actual_usd"),
+            "currency": fields.get("currency", "USD"),
+            "known": bool(fields.get("known", False)),
+            "approved": bool(fields.get("approved", False)),
+            "notes": fields.get("notes", ""),
+        }
+        path = self.costs_dir / f"{record['cost_id']}.json"
+        with self._lock:
+            path.write_text(json.dumps(record, indent=2), encoding="utf-8")
+        return record
+
+    def list_cost_records(self, asset_id: str | None = None) -> list[dict]:
+        records = []
+        for path in self.costs_dir.glob("*.json"):
+            record = json.loads(path.read_text(encoding="utf-8"))
+            if asset_id and record.get("asset_id") != asset_id:
+                continue
+            records.append(record)
+        records.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+        return records
 
 
 def _snapshot(asset: dict, event: str) -> dict:

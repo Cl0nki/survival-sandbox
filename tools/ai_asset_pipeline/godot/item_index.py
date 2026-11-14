@@ -2,14 +2,25 @@
 
 Icons in the game are drawn by scripts/items/item_icons.gd from each item's
 swatch. A finished picture belongs at assets/icons/<id>.png.
+
+World meshes for the Ingame tab land at assets/deployables/<id>.glb (placed
+stations) or assets/props/<id>.glb (ground pickups).
 """
+
+from __future__ import annotations
 
 import re
 from pathlib import Path
 
+from godot.deployable_dimensions import dimensions_for, load_dimensions, target_size_for_item
+
 _ASSIGN = re.compile(r"^([A-Za-z0-9_]+)\s*=\s*(.+)$")
 _COLOR = re.compile(r"Color\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\)")
 _ART_SUFFIXES = (".png", ".webp", ".jpg", ".jpeg")
+_MESH_FOLDERS = {
+    "deployable": ("deployables",),
+    "default": ("props", "resources", "equipment", "weapons"),
+}
 
 
 def _unquote(value: str) -> str:
@@ -40,6 +51,14 @@ def _parse_tres(path: Path) -> dict | None:
     }
 
 
+def safe_item_id(value: str) -> str:
+    token = re.sub(r"[^a-z0-9_]+", "_", (value or "").strip().lower())
+    token = re.sub(r"_+", "_", token).strip("_")
+    if not token:
+        raise ValueError("Item id is empty.")
+    return token[:64]
+
+
 def art_path(project_root: Path, item_id: str) -> Path | None:
     folder = project_root / "assets" / "icons"
     for suffix in _ART_SUFFIXES:
@@ -49,9 +68,19 @@ def art_path(project_root: Path, item_id: str) -> Path | None:
     return None
 
 
+def world_mesh_path(project_root: Path, item_id: str, category: str) -> Path | None:
+    folders = _MESH_FOLDERS["deployable"] if category == "deployable" else _MESH_FOLDERS["default"]
+    for folder_name in folders:
+        candidate = project_root / "assets" / folder_name / f"{item_id}.glb"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def load_items(project_root: Path, copy: dict | None = None) -> list[dict]:
     root = project_root / "resources" / "items"
     images = (copy or {}).get("items", {})
+    dims = load_dimensions()
     items = []
     if not root.is_dir():
         return items
@@ -65,6 +94,21 @@ def load_items(project_root: Path, copy: dict | None = None) -> list[dict]:
         parsed["has_art"] = picture is not None
         parsed["art_file"] = picture.name if picture else ""
         parsed["needs_art"] = picture is None
+        mesh = world_mesh_path(project_root, parsed["id"], parsed["category"])
+        parsed["has_world_art"] = mesh is not None
+        parsed["world_art_file"] = f"{mesh.parent.name}/{mesh.name}" if mesh else ""
+        parsed["needs_world_art"] = mesh is None
+        size = target_size_for_item(parsed["id"], parsed["category"], dims)
+        parsed["target_size"] = size
+        if parsed["category"] == "deployable":
+            info = dimensions_for(parsed["id"], dims)
+            parsed["footprint"] = info["footprint"] if info else None
+            parsed["height"] = info["height"] if info else None
+            parsed["mount"] = info["mount"] if info else None
+        else:
+            parsed["footprint"] = None
+            parsed["height"] = None
+            parsed["mount"] = "pickup"
         items.append(parsed)
     items.sort(key=lambda item: (item["category"], item["display_name"].lower(), item["id"]))
     return items

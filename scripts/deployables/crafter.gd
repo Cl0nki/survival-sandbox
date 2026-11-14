@@ -6,10 +6,13 @@ class_name Crafter
 
 var station_kind := "workbench"
 
+const QUEUE_MAX := 6
+
 var _hp := 0
 var _status := ""
 var _job: Dictionary = {}
 var _job_left := 0.0
+var _queue: Array = []
 var _flame: MeshInstance3D
 
 
@@ -42,6 +45,111 @@ func slot_hint() -> String:
 	return CraftRules.hint(station_kind)
 
 
+func output_index() -> int:
+	return CraftRules.OUTPUT
+
+
+func queue_snapshot() -> Array:
+	var rows: Array = []
+	if not _job.is_empty() and bool(_job.get("from_bag", false)):
+		rows.append({
+			"id": str(_job.get("output_id", "")),
+			"qty": int(_job.get("output_count", 1)),
+			"active": true,
+		})
+	for job in _queue:
+		rows.append({
+			"id": str(job.get("output_id", "")),
+			"qty": int(job.get("output_count", 1)),
+			"active": false,
+		})
+	return rows
+
+
+## Queue one or more bag crafts. Finished items land in Output.
+func craft_from_bag(bag: Inventory, input_id: String, extra_id: String, amount: int = 1) -> String:
+	if bag == null or inventory == null:
+		return "Missing"
+	amount = clampi(amount, 1, QUEUE_MAX)
+	var queued := 0
+	var last_reason := "Cannot craft"
+	for _i in amount:
+		if _queue.size() + (0 if _job.is_empty() else 1) >= QUEUE_MAX:
+			break
+		var fuel := _pick_fuel(bag)
+		if str(fuel["id"]) == "":
+			last_reason = "Needs fuel"
+			break
+		var out_slot := _slot(CraftRules.OUTPUT)
+		var out_id := str(out_slot["id"])
+		var out_qty := int(out_slot["qty"])
+		var planned := CraftRules.plan(
+			station_kind,
+			input_id,
+			bag.count_item(input_id),
+			extra_id,
+			bag.count_item(extra_id) if extra_id != "" else 0,
+			str(fuel["id"]),
+			int(fuel["qty"]),
+			"",
+			0,
+			1
+		)
+		if not bool(planned["ok"]):
+			last_reason = str(planned["reason"]) if str(planned["reason"]) != "" else "Cannot craft"
+			break
+		var produced := str(planned["output_id"])
+		if out_id != "" and out_id != produced:
+			last_reason = "Output full"
+			break
+		var reserved := out_qty + _reserved_output(produced)
+		if reserved + int(planned["output_count"]) > _stack_of(produced):
+			last_reason = "Output full"
+			break
+		if not bag.take_item(input_id, int(planned["in_count"])):
+			last_reason = "Not enough"
+			break
+		if int(planned["extra_count"]) > 0 and not bag.take_item(extra_id, int(planned["extra_count"])):
+			bag.add_exact(input_id, int(planned["in_count"]))
+			last_reason = "Not enough"
+			break
+		if not bag.take_item(str(planned["fuel_id"]), int(planned["fuel_count"])):
+			bag.add_exact(input_id, int(planned["in_count"]))
+			if int(planned["extra_count"]) > 0:
+				bag.add_exact(extra_id, int(planned["extra_count"]))
+			last_reason = "Needs fuel"
+			break
+		planned["from_bag"] = true
+		_queue.append(planned)
+		queued += 1
+	if queued <= 0:
+		return last_reason
+	_kick_queue()
+	_publish_slots()
+	_poke_viewers()
+	return ""
+
+
+func _kick_queue() -> void:
+	if not _job.is_empty() or _queue.is_empty():
+		return
+	_job = _queue.pop_front()
+	_job_left = float(_job["seconds"])
+	_glow(true)
+	_push_status(_job_text())
+
+
+func _reserved_output(output_id: String) -> int:
+	var total := 0
+	if not _job.is_empty() and bool(_job.get("from_bag", false)):
+		if output_id == "" or str(_job.get("output_id", "")) == output_id:
+			total += int(_job.get("output_count", 0))
+	for job in _queue:
+		if output_id == "" or str(job.get("output_id", "")) == output_id:
+			total += int(job.get("output_count", 0))
+	return total
+
+
 func set_deployable_health(current: int, _maximum: int) -> void:
 	_hp = current
 	_paint_label()
@@ -50,14 +158,20 @@ func set_deployable_health(current: int, _maximum: int) -> void:
 func set_craft_status(text: String) -> void:
 	if text == _status:
 		return
+	## Timer text changes every second; only poke viewers when a job starts or ends
+	## so the inventory UI is not rebuilt mid-click.
+	var busy_changed := (_status == "") != (text == "")
 	_status = text
 	_paint_label()
-	_poke_viewers()
+	if busy_changed:
+		_poke_viewers()
 
 
 func _process(delta: float) -> void:
 	if not _authority():
 		return
+	if _job.is_empty():
+		_kick_queue()
 	if _job.is_empty():
 		_try_start()
 	if _job.is_empty():
@@ -66,6 +180,7 @@ func _process(delta: float) -> void:
 		_job = {}
 		_job_left = 0.0
 		_push_status("")
+		_kick_queue()
 		return
 	_job_left -= delta
 	if _job_left <= 0.0:
@@ -109,11 +224,13 @@ func _finish() -> void:
 	_glow(false)
 	if not _matches(job):
 		_push_status("")
+		_kick_queue()
 		return
-	inventory.remove_from_slot(CraftRules.INPUT, int(job["in_count"]))
-	if int(job["extra_count"]) > 0:
-		inventory.remove_from_slot(CraftRules.EXTRA, int(job["extra_count"]))
-	inventory.remove_from_slot(CraftRules.FUEL, int(job["fuel_count"]))
+	if not bool(job.get("from_bag", false)):
+		inventory.remove_from_slot(CraftRules.INPUT, int(job["in_count"]))
+		if int(job["extra_count"]) > 0:
+			inventory.remove_from_slot(CraftRules.EXTRA, int(job["extra_count"]))
+		inventory.remove_from_slot(CraftRules.FUEL, int(job["fuel_count"]))
 	var produced := str(job["output_id"])
 	var made := int(job["output_count"])
 	var slot: Dictionary = inventory.slots[CraftRules.OUTPUT]
@@ -124,15 +241,25 @@ func _finish() -> void:
 		inventory.slots[CraftRules.OUTPUT] = slot
 	_push_status("")
 	_publish_slots()
+	_kick_queue()
 
 
 func _matches(job: Dictionary) -> bool:
 	if inventory == null or job.is_empty():
 		return false
+	var output := _slot(CraftRules.OUTPUT)
+	var out_id := str(output["id"])
+	if out_id != "" and out_id != str(job["output_id"]):
+		return false
+	if out_id != "" and int(output["qty"]) + int(job["output_count"]) > _stack_of(out_id):
+		return false
+	if out_id == "" and int(job["output_count"]) > _stack_of(str(job["output_id"])):
+		return false
+	if bool(job.get("from_bag", false)):
+		return true
 	var input := _slot(CraftRules.INPUT)
 	var extra := _slot(CraftRules.EXTRA)
 	var fuel := _slot(CraftRules.FUEL)
-	var output := _slot(CraftRules.OUTPUT)
 	if str(input["id"]) != str(job["input_id"]) or int(input["qty"]) < int(job["in_count"]):
 		return false
 	if int(job["extra_count"]) > 0:
@@ -142,12 +269,21 @@ func _matches(job: Dictionary) -> bool:
 		return false
 	if str(fuel["id"]) != str(job["fuel_id"]) or int(fuel["qty"]) < int(job["fuel_count"]):
 		return false
-	var out_id := str(output["id"])
-	if out_id == "":
-		return true
-	if out_id != str(job["output_id"]):
-		return false
-	return int(output["qty"]) + int(job["output_count"]) <= _stack_of(out_id)
+	return true
+
+
+func _pick_fuel(bag: Inventory) -> Dictionary:
+	var fuels := CraftRules.fuels_of(station_kind)
+	var best_id := ""
+	var best_qty := 0
+	for fuel_id in fuels.keys():
+		var have := bag.count_item(str(fuel_id))
+		if have > best_qty:
+			best_id = str(fuel_id)
+			best_qty = have
+	if best_id == "":
+		return {"id": "", "qty": 0}
+	return {"id": best_id, "qty": best_qty}
 
 
 func _slot(index: int) -> Dictionary:
@@ -236,6 +372,9 @@ func _glow(hot: bool) -> void:
 
 func _dress() -> void:
 	var cook := CraftRules.group_of(station_kind) == "cook"
+	## Published Meshy art replaces the box accents. Cook stations still get a flame mark.
+	if has_meta(&"deployable_art") and not cook:
+		return
 	_flame = MeshInstance3D.new()
 	var mark := BoxMesh.new()
 	if cook and body_size.y < 0.6:

@@ -89,7 +89,8 @@ func request_place(request: Dictionary, requester: int = 0) -> Dictionary:
 		result["ok"] = true
 		result["reason"] = "Already built"
 		return _finish(result)
-	if grid.config.require_resources and not plan.cost.is_empty():
+	var charge := grid.config.require_resources or bool(request.get("charge", false))
+	if charge and not plan.cost.is_empty():
 		var missing := _missing_resources(plan.cost)
 		if missing != "":
 			result["reason"] = missing
@@ -98,6 +99,7 @@ func request_place(request: Dictionary, requester: int = 0) -> Dictionary:
 			if wallet_spend.is_valid():
 				wallet_spend.call(str(item_id), int(plan.cost[item_id]))
 	var change := state.commit(plan)
+
 	result["ok"] = bool(change.get("ok", false))
 	result["changed"] = result["ok"]
 	result["change"] = change
@@ -172,18 +174,36 @@ func apply_explosion(origin: Vector3, radius: float, base_damage: int, event_id:
 	return result
 
 
-func repair(component_id: int) -> Dictionary:
+func repair(component_id: int, charge: bool = false) -> Dictionary:
 	if not writes_enabled:
 		return {"ok": false, "changed": false, "reason": "Not the authority"}
+	var component := state.get_component(component_id)
+	if charge and component != null:
+		var cost := {grid.config.cost_item_id: maxi(grid.config.repair_cost, 1)}
+		var missing := _missing_resources(cost)
+		if missing != "":
+			return _finish_integrity({"ok": false, "changed": false, "reason": missing})
 	var result := state.repair_component(component_id)
+	if charge and bool(result.get("ok", false)) and wallet_spend.is_valid():
+		wallet_spend.call(grid.config.cost_item_id, maxi(grid.config.repair_cost, 1))
 	return _finish_integrity(result)
 
 
-func upgrade(component_id: int) -> Dictionary:
+func upgrade(component_id: int, charge: bool = false) -> Dictionary:
 	if not writes_enabled:
 		return {"ok": false, "changed": false, "reason": "Not the authority", "tier": 0}
+	var component := state.get_component(component_id)
+	if charge and component != null:
+		var amount := maxi(grid.config.cost_of(component.kind), 1)
+		var cost := {grid.config.cost_item_id: amount}
+		var missing := _missing_resources(cost)
+		if missing != "":
+			return _finish_integrity({"ok": false, "changed": false, "reason": missing, "tier": component.tier})
 	var result := state.upgrade_component(component_id)
+	if charge and bool(result.get("ok", false)) and wallet_spend.is_valid() and component != null:
+		wallet_spend.call(grid.config.cost_item_id, maxi(grid.config.cost_of(component.kind), 1))
 	return _finish_integrity(result)
+
 
 
 func rebuild(component_id: int) -> Dictionary:
