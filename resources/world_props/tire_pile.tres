@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "tire_pile"
+display_name = "Tire Pile"
+description = "A heap of worn tires."
+category = "world_prop"
+kind = "resource"
+deposit_id = "tire_pile"
+body_size = Vector3(1.9, 0.85, 1.6)
+swatch = Color(0.12, 0.12, 0.13, 1)

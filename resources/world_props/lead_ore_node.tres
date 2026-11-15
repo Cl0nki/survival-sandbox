@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "lead_ore_node"
+display_name = "Lead Ore Boulder"
+description = "A dull blue-grey ore rock."
+category = "world_prop"
+kind = "resource"
+deposit_id = "lead_ore"
+body_size = Vector3(0.95, 0.85, 0.95)
+swatch = Color(0.36, 0.38, 0.42, 1)

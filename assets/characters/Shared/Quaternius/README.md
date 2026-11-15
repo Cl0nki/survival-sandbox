@@ -30,9 +30,7 @@ CC0 pack used as the **default Shared locomotion library** for pipeline humanoid
 
 ```bat
 Godot_v4.7.2-stable_win64_console.exe --path . --headless --import
-Godot_v4.7.2-stable_win64_console.exe --path . --headless -s res://tools/extract_quaternius_library.gd
-Godot_v4.7.2-stable_win64_console.exe --path . --headless -s res://tools/merge_ual_pro_crouch.gd
-Godot_v4.7.2-stable_win64_console.exe --path . --headless -s res://tools/merge_ual2_strafe_clips.gd
+Godot_v4.7.2-stable_win64_console.exe --path . --headless -s res://tools/bake_shared_locomotion.gd
 ```
 
 `meshy_walk_strafe/` is unused source.

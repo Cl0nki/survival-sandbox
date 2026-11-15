@@ -25,7 +25,11 @@ static func has_art(kind: String) -> bool:
 ## When body_size is set, the mesh is stretched to fill that box.
 ## Returns false when no mesh is available or the scene fails to load.
 static func attach(host: Node3D, kind: String, body_size: Vector3 = Vector3.ZERO) -> bool:
-	var path := path_for(kind)
+	return attach_path(host, path_for(kind), body_size)
+
+
+## Same as attach for a mesh that lives somewhere else (world props reuse this).
+static func attach_path(host: Node3D, path: String, body_size: Vector3 = Vector3.ZERO) -> bool:
 	if path.is_empty() or host == null:
 		return false
 	var packed := load(path) as PackedScene

@@ -130,6 +130,13 @@ def _paint_deployable(draw, color, size, ox, oy):
     _round(draw, color, size, ox, oy, 0.38, 0.28, 0.24, 0.52)
 
 
+def _paint_world_prop(draw, color, size, ox, oy):
+    """A boulder with a small rock beside it. Reads as a thing in the world."""
+    draw.ellipse([_at(size, 0.18, ox), _at(size, 0.34, oy), _at(size, 0.66, ox), _at(size, 0.80, oy)], fill=color)
+    draw.ellipse([_at(size, 0.58, ox), _at(size, 0.54, oy), _at(size, 0.84, ox), _at(size, 0.80, oy)], fill=color)
+    _rect(draw, color, size, ox, oy, 0.14, 0.78, 0.72, 0.05)
+
+
 def _paint_material(draw, color, size, ox, oy):
     _round(draw, color, size, ox, oy, 0.22, 0.30, 0.56, 0.14)
     _round(draw, color, size, ox, oy, 0.22, 0.50, 0.56, 0.14)
@@ -151,6 +158,7 @@ _PAINTERS = {
     "explosive": _paint_explosive,
     "container": _paint_container,
     "deployable": _paint_deployable,
+    "world_prop": _paint_world_prop,
     "material": _paint_material,
 }
 

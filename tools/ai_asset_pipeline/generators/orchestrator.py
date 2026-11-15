@@ -58,6 +58,7 @@ _ICON_CATEGORIES = {
     "explosive",
     "container",
     "deployable",
+    "world_prop",
     "material",
 }
 

@@ -50,7 +50,7 @@ def build_prompts(style: dict, preset: dict, user_text: str, kind: str, customiz
     if style_reference_present:
         reference = "Match the project's style reference image."
         if use_palette:
-            reference += " Stylized shapes, muted military colors, and painted material breakup."
+            reference += " Stylized shapes, muted colors, and painted material breakup."
     full = " ".join(
         part
         for part in (

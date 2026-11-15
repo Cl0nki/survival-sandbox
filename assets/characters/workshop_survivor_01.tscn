@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://assets/characters/workshop_survivor_01.glb" id="1_model"]
 [ext_resource type="AnimationLibrary" path="res://assets/characters/Shared/Quaternius/ual_locomotion.res" id="2_ual"]
+[ext_resource type="Script" path="res://scripts/characters/humanoid_library.gd" id="3_play"]
 
 [sub_resource type="AnimationNodeAnimation" id="anim_idle"]
 animation = &"Idle"
@@ -25,6 +26,7 @@ nodes/loco/position = Vector2(140, 0)
 node_connections = [&"output", 0, &"loco"]
 
 [node name="workshop_survivor_01" type="CharacterBody3D"]
+script = ExtResource("3_play")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 

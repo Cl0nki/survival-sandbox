@@ -50,7 +50,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_style_prompt_uses_the_config_file(self):
         style = self.settings.style()
-        prompts = build_prompts(style, {"prompt": "military backpack"}, "scuffed canvas", "prop")
+        prompts = build_prompts(style, {"prompt": "survival backpack"}, "scuffed canvas", "prop")
         self.assertIn(style["summary"].split(",")[0], prompts["prompt"])
         if style.get("use_palette", True):
             self.assertIn("#354451", prompts["prompt"])
@@ -483,6 +483,99 @@ class PipelineTests(unittest.TestCase):
             staged = stage_item_icon(Settings(library_dir=self.settings.library_dir, project_root=PROJECT), sample.stem)
             self.assertTrue(Path(staged["path"]).is_file())
             self.assertEqual(staged["item_id"], sample.stem)
+
+    def test_world_props_are_gallery_rows_with_a_target_size(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("gen_world_props", PROJECT / "tools" / "gen_world_props.py")
+        gen = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gen)
+        authored = {entry[0]: entry for entry in gen.PROPS}
+        on_disk = {path.stem for path in (PROJECT / "resources" / "world_props").glob("*.tres")}
+        self.assertEqual(on_disk, set(authored), "run python tools/gen_world_props.py")
+
+        items = load_items(PROJECT)
+        by_id = {item["id"]: item for item in items}
+        props = {item["id"]: item for item in items if item["category"] == "world_prop"}
+        self.assertEqual(set(props), set(authored))
+        self.assertEqual(len(by_id), len(items), "a world prop id collides with an item id")
+        for prop_id, entry in authored.items():
+            row = props[prop_id]
+            self.assertEqual(row["target_size"], [round(axis, 4) for axis in entry[4]])
+            self.assertEqual(row["mount"], "world")
+            self.assertEqual(row["height"], entry[4][1])
+            self.assertEqual(row["display_name"], entry[1])
+            self.assertEqual(row["prop_kind"], entry[2])
+            self.assertEqual(row["deposit_id"], entry[3])
+            self.assertEqual(row["needs_art"], not row["has_art"])
+            self.assertEqual(row["needs_world_art"], not row["has_world_art"])
+        self.assertEqual(props["tree_oak"]["target_size"], [2.99, 5.14, 2.99])
+        self.assertEqual(props["broken_car"]["deposit_id"], "broken_car")
+
+    def test_world_prop_ids_match_the_game_catalogs(self):
+        import re
+
+        text = (PROJECT / "scripts" / "world" / "world_prop_catalog.gd").read_text(encoding="utf-8")
+        order = re.search(r"const ORDER: PackedStringArray = \[(.*?)\]", text, re.S).group(1)
+        ordered = re.findall(r'"([a-z0-9_]+)"', order)
+        on_disk = sorted(path.stem for path in (PROJECT / "resources" / "world_props").glob("*.tres"))
+        self.assertEqual(sorted(ordered), on_disk)
+        deployables = set(json.loads((ROOT / "config" / "deployable_dimensions.json").read_text(encoding="utf-8"))["items"])
+        self.assertFalse(deployables & set(ordered), "a world prop id collides with a deployable id")
+        resources = (PROJECT / "scripts" / "items" / "resource_catalog.gd").read_text(encoding="utf-8")
+        for deposit_id in re.findall(r'^\t_add(?:_tree|_flora|_scavenge)?\(\s*"([a-z0-9_]+)"', resources, re.M):
+            definition = (PROJECT / "resources" / "world_props").glob("*.tres")
+            self.assertTrue(
+                any(f'deposit_id = "{deposit_id}"' in path.read_text(encoding="utf-8") for path in definition),
+                f"deposit {deposit_id} has no world prop",
+            )
+
+    def test_world_prop_from_icon_job_normalizes_with_target_size(self):
+        from generators.orchestrator import normalize_request
+
+        folder = self.settings.library_dir / "uploads"
+        folder.mkdir(parents=True, exist_ok=True)
+        concept = folder / "oak.png"
+        concept.write_bytes(b"\x89PNG\r\n\x1a\nfake")
+        request = normalize_request(self.settings, {
+            "workshop_category": "resources",
+            "category": "from_icon",
+            "name": "tree_oak",
+            "provider": "manual",
+            "source_file": str(concept),
+            "target_size": [2.99, 5.14, 2.99],
+            "subject_override": "Oak Tree",
+        })
+        self.assertEqual(request["kind"], "resource")
+        self.assertEqual(request["category"], "from_icon")
+        self.assertEqual(request["godot_folder"], "resources")
+        self.assertEqual(request["target_size"], [2.99, 5.14, 2.99])
+        self.assertTrue(request["expect_collision"])
+        self.assertEqual(request["icon_category"], "misc")
+        icon_job = normalize_request(self.settings, {
+            "kind": "texture",
+            "category": "item_icon",
+            "name": "tree_oak",
+            "provider": "procedural",
+            "resolution": 64,
+            "icon_category": "world_prop",
+            "swatch": [0.42, 0.28, 0.16],
+            "prompt": "Oak Tree",
+        })
+        self.assertEqual(icon_job["icon_category"], "world_prop")
+
+    def test_world_prop_icon_is_painted_without_an_image_provider(self):
+        from processors.icons import procedural_icon
+
+        image = procedural_icon(64, "world_prop", [0.52, 0.52, 0.50], 1)
+        self.assertEqual(image.getpixel((2, 2))[3], 0)
+        self.assertGreater(image.getpixel((26, 36))[3], 0)
+
+    def test_world_prop_description_is_saved_in_its_own_file(self):
+        from godot.descriptions import _item_file
+
+        path = _item_file(PROJECT, "tree_oak")
+        self.assertEqual(path.parent.name, "world_props")
 
     def test_texture_gallery_reads_building_colors(self):
         surfaces = load_surfaces(PROJECT)
@@ -956,7 +1049,10 @@ class PipelineTests(unittest.TestCase):
         geometry = (PROJECT / "scripts" / "building" / "building_geometry.gd").read_text(encoding="utf-8")
         self.assertIn("class_name BuildingGeometry", geometry)
         player = (PROJECT / "scenes" / "player" / "player.tscn").read_text(encoding="utf-8")
-        self.assertIn("CapsuleMesh", player)
+        # The capsule body mesh was replaced by the Quaternius mannequin. The
+        # collision capsule and the player script are what must stay.
+        self.assertIn("CapsuleShape3D", player)
+        self.assertIn("player_controller.gd", player)
 
 
 if __name__ == "__main__":

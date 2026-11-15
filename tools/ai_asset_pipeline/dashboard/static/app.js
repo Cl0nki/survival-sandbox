@@ -1117,7 +1117,7 @@ async function openCopy(kind, record) {
       $("preview-prompt").value = preview.prompt || "";
       state.promptTouched = false;
       $("preview-hint").textContent = kind === "ingame"
-        ? "Generate sends the inventory icon to Meshy. Deployables are scaled to the footprint listed on the card."
+        ? "Generate sends the inventory icon to Meshy. Deployables are scaled to the footprint on the card. World props are scaled to the size on the card."
         : "Generate uses this prompt and any example images. Edit image changes the picture shown here.";
     }
   } catch (error) {
@@ -1170,12 +1170,16 @@ function footprintLabel(item) {
     }
     return "Deployable · add footprint in deployable_dimensions.json";
   }
+  if (item.category === "world_prop") {
+    return `World prop · ${sizeLabel(item.target_size)}`;
+  }
   return `World pickup · ${sizeLabel(item.target_size) || "0.38×0.28×0.38 m"}`;
 }
 
 function ingameRecords() {
   return (state.items || []).map((item) => {
     const deployable = item.category === "deployable";
+    const worldProp = item.category === "world_prop";
     const ready = !!item.has_world_art;
     const base = item.description || "";
     return {
@@ -1184,8 +1188,10 @@ function ingameRecords() {
         ? base
         : (deployable
           ? `Placed object is still a colored box. ${base}`
-          : `World pickup is still a colored box. ${base}`),
-      category: deployable ? "deployable" : "world pickup",
+          : (worldProp
+            ? `World object is still built from primitive shapes. ${base}`
+            : `World pickup is still a colored box. ${base}`)),
+      category: deployable ? "deployable" : (worldProp ? "world prop" : "world pickup"),
       item_category: item.category,
       has_icon: !!item.has_art,
       icon_file: item.art_file || "",
@@ -1198,20 +1204,21 @@ function ingameRecords() {
 
 function ingameRequest(item, extra) {
   const deployable = item.item_category === "deployable" || item.category === "deployable";
+  const worldProp = item.item_category === "world_prop" || item.category === "world_prop";
   const visual = (item.image_description || "").trim();
   const subject = visual
     ? `${item.display_name}. ${visual}`
     : `${item.display_name}`;
   const payload = {
-    workshop_category: deployable ? "deployables" : "",
-    kind: deployable ? "deployable" : "prop",
-    category: deployable ? "from_icon" : "world_pickup",
+    workshop_category: deployable ? "deployables" : (worldProp ? "resources" : ""),
+    kind: deployable ? "deployable" : (worldProp ? "resource" : "prop"),
+    category: deployable || worldProp ? "from_icon" : "world_pickup",
     name: item.id,
     prompt: "",
     subject_override: subject,
     provider: "manual",
     mesh_provider: "meshy",
-    polycount: deployable ? 6000 : 3000,
+    polycount: deployable ? 6000 : (worldProp ? 8000 : 3000),
     variations: 1,
     target_size: item.target_size || undefined,
     ...extra,
@@ -1311,7 +1318,7 @@ async function loadIngame() {
   const payload = await api("/api/items");
   state.items = payload.items;
   fillSelect("item-category", state.items.map((item) => item.category), true);
-  fillSelect("ingame-category", ["world pickup", "deployable"]);
+  fillSelect("ingame-category", ["world pickup", "deployable", "world prop"]);
   renderIngame();
 }
 

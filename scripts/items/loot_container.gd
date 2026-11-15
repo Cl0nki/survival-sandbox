@@ -21,6 +21,9 @@ var display_name := ""
 var slot_labels := PackedStringArray()
 ## Deployable kind used to look up res://assets/deployables/<id>.glb.
 var art_id := ""
+## World prop id (WorldPropCatalog) for storage crates that are not deployables.
+## The box keeps the size it was built with. The mesh is fitted to the prop box.
+var prop_art_id := ""
 
 
 func _ready() -> void:
@@ -46,6 +49,8 @@ func _build_visual() -> void:
 	var used_art := false
 	if not art_id.is_empty():
 		used_art = DeployableArt.attach(self, art_id, size)
+	if not used_art and not prop_art_id.is_empty():
+		used_art = WorldPropArt.attach(self, prop_art_id) != null
 	if not used_art:
 		var mesh := MeshInstance3D.new()
 		var box := BoxMesh.new()

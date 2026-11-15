@@ -61,10 +61,12 @@ func _run() -> int:
 	root.add_child(model)
 	await process_frame
 
-	var sk := _find_skeleton(model)
+	var sk := _visual_skeleton(model)
 	var player := _find_animation_player(model)
 	if sk == null or player == null:
 		return _finish(1, ["mannequin missing Skeleton3D or AnimationPlayer"], warnings, metrics)
+	if model.find_child("RetargetModifier3D", true, false) == null:
+		failures.append("Pro mannequin has no RetargetModifier3D")
 
 	## Install shared library as the sole library on the player.
 	for lib_name in player.get_animation_library_list():
@@ -137,10 +139,7 @@ func _run() -> int:
 		var widest_feet := 0.0
 		for sample_i in 4:
 			var sample_t := anim.length * (float(sample_i) + 0.5) / 4.0
-			player.play(StringName(clip_name))
-			player.seek(sample_t, true)
-			player.advance(0.0)
-			sk.force_update_all_bone_transforms()
+			await _apply_pose(player, sk, clip_name, sample_t)
 			pose = _sample_pose(sk)
 			worst_pole = maxf(worst_pole, float(pose["knee_pole_err"]))
 			widest_feet = maxf(widest_feet, float(pose["foot_spread"]))
@@ -180,23 +179,101 @@ func _run() -> int:
 
 	## Neighbor blend sanity: average Idle+Walk at mid shouldn't explode vs Idle alone.
 	if lib.has_animation(&"Idle") and lib.has_animation(&"Walk"):
-		player.play(&"Idle")
-		player.seek(0.1, true)
-		player.advance(0.0)
-		sk.force_update_all_bone_transforms()
+		await _apply_pose(player, sk, "Idle", 0.1)
 		var idle_pose := _sample_pose(sk)
-		player.play(&"Walk")
-		player.seek(0.2, true)
-		player.advance(0.0)
-		sk.force_update_all_bone_transforms()
+		await _apply_pose(player, sk, "Walk", 0.2)
 		var walk_pose := _sample_pose(sk)
 		var hip_delta: float = absf(idle_pose["hips_y"] - walk_pose["hips_y"])
 		metrics["idle_walk_hips_delta"] = hip_delta
 		if hip_delta > 0.45:
 			failures.append("Idle↔Walk hips_y jump %.3f looks like rest clash" % hip_delta)
 
+	var survivor_failures := await _check_survivor(lib)
+	for reason in survivor_failures:
+		failures.append(reason)
+
 	model.queue_free()
 	return _finish(0 if failures.is_empty() else 1, failures, warnings, metrics)
+
+
+func _apply_pose(player: AnimationPlayer, visual: Skeleton3D, clip_name: String, sample_t: float) -> void:
+	player.play(StringName(clip_name))
+	player.seek(sample_t, true)
+	player.advance(0.0)
+	var profile := _profile_skeleton(visual)
+	if profile != null:
+		profile.notification(Skeleton3D.NOTIFICATION_UPDATE_SKELETON)
+		profile.force_update_all_bone_transforms()
+	visual.force_update_all_bone_transforms()
+	await process_frame
+	if profile != null:
+		profile.notification(Skeleton3D.NOTIFICATION_UPDATE_SKELETON)
+	visual.force_update_all_bone_transforms()
+
+
+func _check_survivor(lib: AnimationLibrary) -> PackedStringArray:
+	var failures: PackedStringArray = []
+	const SURVIVOR_PATH := "res://assets/characters/workshop_survivor_01.glb"
+	var packed := load(SURVIVOR_PATH) as PackedScene
+	if packed == null:
+		failures.append("survivor glb missing")
+		return failures
+	var model := packed.instantiate()
+	root.add_child(model)
+	await process_frame
+	if model.find_child("RetargetModifier3D", true, false) == null:
+		failures.append("survivor has no RetargetModifier3D")
+		model.queue_free()
+		return failures
+	var sk := _visual_skeleton(model)
+	var player := _find_animation_player(model)
+	if sk == null or player == null or sk.find_bone("Hips") < 0 or sk.find_bone("RightHand") < 0:
+		failures.append("survivor skeleton missing Hips or RightHand")
+		model.queue_free()
+		return failures
+	for lib_name in player.get_animation_library_list():
+		player.remove_animation_library(lib_name)
+	player.add_animation_library(&"", lib)
+	player.root_node = player.get_path_to(model)
+	player.active = true
+	player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	for clip_name in ["Idle", "Walk", "Walk_L"]:
+		await _apply_pose(player, sk, clip_name, 0.4)
+		var pose := _sample_pose(sk)
+		print(
+			"SURVIVOR ", clip_name,
+			" hips_y=", snapped(float(pose["hips_y"]), 0.001),
+			" feet=", snapped(float(pose["foot_spread"]), 0.001),
+			" pole=", snapped(float(pose["knee_pole_err"]), 0.001)
+		)
+		if float(pose["knee_pole_err"]) > MAX_KNEE_POLE_ERR:
+			failures.append("survivor %s knee pole %.3f" % [clip_name, pose["knee_pole_err"]])
+		if float(pose["foot_spread"]) > MAX_WALK_FOOT_SPREAD:
+			failures.append("survivor %s foot_spread %.3f exploded" % [clip_name, pose["foot_spread"]])
+		if clip_name != "Idle" and float(pose["foot_spread"]) < 0.05:
+			failures.append("survivor %s feet glued" % clip_name)
+	model.queue_free()
+	return failures
+
+
+func _visual_skeleton(model: Node) -> Skeleton3D:
+	var original := model.find_child("OriginalSkeleton", true, false)
+	if original is Skeleton3D:
+		return original
+	return _find_skeleton(model)
+
+
+func _profile_skeleton(visual: Skeleton3D) -> Skeleton3D:
+	if visual == null:
+		return null
+	var parent := visual.get_parent()
+	if parent is RetargetModifier3D:
+		var general := parent.get_parent()
+		if general is Skeleton3D:
+			return general
+	if String(visual.name) == "GeneralSkeleton":
+		return visual
+	return null
 
 
 func _sample_pose(sk: Skeleton3D) -> Dictionary:

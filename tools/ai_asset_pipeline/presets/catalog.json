@@ -216,15 +216,6 @@
       "palette": ["olive_green", "dark_slate", "sand"],
       "prompt": "heavy canvas weave, hand-painted thread clumps, soft folds as color only, no garment silhouette"
     },
-    "military_camouflage": {
-      "label": "Military camouflage",
-      "implementation": "texture",
-      "godot_folder": "textures",
-      "metallic": 0.0,
-      "roughness": 0.8,
-      "palette": ["olive_green", "muted_forest", "sand", "dark_slate"],
-      "prompt": "stylized woodland camouflage cloth, large readable shapes, muted olive sand and slate, no insignia"
-    },
     "brick": {
       "label": "Brick",
       "implementation": "texture",
@@ -290,7 +281,7 @@
       "label": "Backpack",
       "implementation": "ai_mesh",
       "godot_folder": "equipment",
-      "prompt": "military backpack prop, straps and buckles as simple shapes, empty, no wearer"
+      "prompt": "survival backpack prop, straps and buckles as simple shapes, empty, no wearer"
     },
     "helmet": {
       "label": "Helmet",
@@ -327,13 +318,7 @@
       "label": "Furniture",
       "implementation": "ai_mesh",
       "godot_folder": "props",
-      "prompt": "worn camp or barracks furniture, one piece, strong silhouette"
-    },
-    "military_equipment": {
-      "label": "Military equipment",
-      "implementation": "ai_mesh",
-      "godot_folder": "props",
-      "prompt": "tactical military equipment prop, radio, ammo can, or field case, one object"
+      "prompt": "worn camp furniture, one piece, strong silhouette"
     },
     "vehicle": {
       "label": "Vehicle",
@@ -379,13 +364,6 @@
     }
   },
   "characters": {
-    "military": {
-      "label": "Military",
-      "implementation": "ai_character",
-      "godot_folder": "characters",
-      "workshop_category": "characters",
-      "prompt": "stylized tactical soldier, layered uniform, boots, gloves, vest, helmet optional"
-    },
     "mercenary": {
       "label": "Mercenary",
       "implementation": "ai_character",
@@ -493,13 +471,6 @@
       "procedural_piece": "industrial_shell",
       "prompt": "small industrial shell"
     },
-    "military_structure": {
-      "label": "Military structure",
-      "implementation": "procedural",
-      "godot_folder": "buildings",
-      "procedural_piece": "military_shell",
-      "prompt": "small military shelter"
-    },
     "container": {
       "label": "Container",
       "implementation": "procedural",
@@ -573,12 +544,54 @@
     }
   },
   "resources": {
+    "from_icon": {
+      "label": "From inventory icon",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized low-poly survival world object matching the reference icon, one grounded object that is not placeable by players, clean readable silhouette, no people, no text"
+    },
     "scrap_pile": {
       "label": "Scrap pile",
       "implementation": "ai_mesh",
       "godot_folder": "resources",
       "workshop_category": "resources",
       "prompt": "stylized scrap metal pile resource node, readable as scrap from above, grounded"
+    },
+    "car_wreck": {
+      "label": "Car wreck",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized rusted car wreck resource node, one stripped civilian car, missing wheel, open door, no driver, grounded"
+    },
+    "tire_pile": {
+      "label": "Tire pile",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized heap of worn tires resource node, five to seven tires stacked, one leaning, grounded"
+    },
+    "rubble_pile": {
+      "label": "Rubble pile",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized collapsed masonry rubble pile resource node, concrete chunks and bricks with a bent rebar, grounded"
+    },
+    "drum_stack": {
+      "label": "Drum stack",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized stack of rusty metal drums resource node, three standing and one lying on top, grounded"
+    },
+    "appliance_pile": {
+      "label": "Dead appliances",
+      "implementation": "ai_mesh",
+      "godot_folder": "resources",
+      "workshop_category": "resources",
+      "prompt": "stylized heap of dead household appliances resource node, a leaning fridge, a washing machine, and a microwave, grounded"
     },
     "wood_node": {
       "label": "Wood node",
@@ -705,7 +718,7 @@
     "body_type": ["average", "broad", "lean", "short", "tall"],
     "clothing": ["field uniform", "layered jacket", "shirt and cargos", "coveralls"],
     "helmet": ["none", "bump helmet", "tactical helmet", "cap"],
-    "backpack": ["none", "small daypack", "military rucksack"],
+    "backpack": ["none", "small daypack", "large rucksack"],
     "weapon": ["none", "slung rifle", "holstered sidearm"],
     "boots": ["combat boots", "work boots"],
     "vest": ["none", "light chest rig", "tactical vest"],

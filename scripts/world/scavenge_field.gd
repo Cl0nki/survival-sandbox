@@ -3,13 +3,20 @@ class_name ScavengeField
 
 ## North 10x10. Nodes stay west of the center lane so the north shot and the
 ## walk to the wall stay clear. Crowbars sit on the south edge.
+## Two columns of three. The west column drops its yield on its west side, the
+## east column on its east side, in rows of five.
 
 const NODE_AT := {
-	"broken_car": Vector3(-18.4, 0.0, -6.8),
-	"scrap_pile": Vector3(-16.6, 0.0, -6.8),
-	"rubble_pile": Vector3(-18.4, 0.0, -4.4),
-	"tire_pile": Vector3(-16.6, 0.0, -4.4),
+	"broken_car": Vector3(-17.6, 0.0, -8.4),
+	"scrap_pile": Vector3(-17.6, 0.0, -5.6),
+	"rubble_pile": Vector3(-17.6, 0.0, -2.8),
+	"tire_pile": Vector3(-14.4, 0.0, -8.4),
+	"drum_stack": Vector3(-14.4, 0.0, -5.6),
+	"appliance_pile": Vector3(-14.4, 0.0, -2.8),
 }
+const DROP_ROWS := 5
+const DROP_STEP := 0.42
+const DROP_REACH := 1.6
 
 
 static func build(arena: Node3D) -> void:
@@ -35,16 +42,19 @@ static func build(arena: Node3D) -> void:
 		if deposit == null:
 			continue
 		var entries := deposit.yield_entries()
-		var side := -1.0 if node.position.x < -2.5 else 1.0
-		var span := float(maxi(entries.size() - 1, 0)) * 0.42
+		var side := -1.0 if node.position.x < -16.0 else 1.0
+		var rows := mini(entries.size(), DROP_ROWS)
+		var span := float(maxi(rows - 1, 0)) * DROP_STEP
 		for yield_index in entries.size():
 			var entry: Array = entries[yield_index]
+			var column := floori(float(yield_index) / float(DROP_ROWS))
+			var row := yield_index % DROP_ROWS
 			_pickup(
 				loot,
 				"scavenge_drop_%s_%s" % [deposit_id, str(entry[0])],
 				str(entry[0]),
 				int(entry[1]),
-				node.position + Vector3(side * 1.05, 0.15, -span * 0.5 + float(yield_index) * 0.42)
+				node.position + Vector3(side * (DROP_REACH + float(column) * 0.5), 0.15, -span * 0.5 + float(row) * DROP_STEP)
 			)
 	var tools := [
 		["scavenge_crowbar_scrap", "crowbar_scrap"],

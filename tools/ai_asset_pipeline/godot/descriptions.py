@@ -10,7 +10,7 @@ from pathlib import Path
 
 from core.errors import PipelineError
 from core.settings import Settings
-from godot.item_index import _parse_tres, load_items
+from godot.item_index import _parse_tres, load_items, row_paths
 from godot.surface_index import load_grounds, load_surfaces, load_vegetation
 
 _ITEM_ID = re.compile(r"[a-z0-9_]+")
@@ -92,11 +92,8 @@ def _find_surface(project_root: Path, copy: dict, surface_id: str) -> dict:
 def _item_file(project_root: Path, item_id: str) -> Path:
     if not _ITEM_ID.fullmatch(item_id):
         raise PipelineError("Unknown item.")
-    root = project_root / "resources" / "items"
-    if not root.is_dir():
-        raise PipelineError("Unknown item.")
     matches = []
-    for path in root.rglob("*.tres"):
+    for path in row_paths(project_root):
         parsed = _parse_tres(path)
         if parsed and parsed["id"] == item_id:
             matches.append(path)

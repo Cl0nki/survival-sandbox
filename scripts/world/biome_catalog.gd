@@ -152,6 +152,8 @@ static func _city() -> BiomeDefinition:
 		{"id": "scrap_pile", "min": 8, "max": 12, "spacing": 2.8},
 		{"id": "rubble_pile", "min": 5, "max": 8, "spacing": 3.2},
 		{"id": "tire_pile", "min": 4, "max": 6, "spacing": 3.0},
-		{"id": "broken_car", "min": 2, "max": 4, "spacing": 4.5},
+		{"id": "drum_stack", "min": 3, "max": 5, "spacing": 3.0},
+		{"id": "appliance_pile", "min": 3, "max": 5, "spacing": 3.0},
+		{"id": "broken_car", "min": 3, "max": 5, "spacing": 4.5},
 	]
 	return biome

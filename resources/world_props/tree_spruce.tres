@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "tree_spruce"
+display_name = "Spruce Tree"
+description = "A tall conical spruce."
+category = "world_prop"
+kind = "resource"
+deposit_id = "spruce"
+body_size = Vector3(2.47, 4.88, 2.47)
+swatch = Color(0.32, 0.24, 0.18, 1)

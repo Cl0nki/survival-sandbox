@@ -36,8 +36,8 @@
   "ual2_directional": {
     "Mining": "assets/characters/Shared/Quaternius/ual2/quaternius-ual2-mining-loop.glb",
     "TreeChopping": "assets/characters/Shared/Quaternius/ual2/quaternius-ual2-tree-chopping-loop.glb",
-    "merge_script": "tools/merge_ual2_strafe_clips.gd",
-    "notes": "UAL2 Walk_* are NOT merged onto the Pro mannequin — rest mismatch breaks stand BlendSpace legs."
+    "bake_script": "tools/bake_shared_locomotion.gd",
+    "notes": "UAL2 clips are copied after Use Retarget Modifier import. Track paths are not rewritten."
   },
   "animation_tree": {
     "type": "blend_space_2d",
@@ -56,5 +56,5 @@
     "shoot_request_param": "parameters/shoot/request",
     "harvest_request_param": "parameters/harvest/request"
   },
-  "notes": "Stand loco: Pro Idle/Walk plus Walk_LeanL/R (Jog_Fwd_Lean stretched). Walk_L/R/Bwd from UAL2, imported as skeleton with UAL2BoneMap so they share the Pro rest. Diagonals blend. Crouch+pistol Pro. UAL2 mining/chopping. Rebuild: import, merge_ual_pro_crouch, merge_ual2_strafe_clips."
+  "notes": "Stand loco: Pro Idle/Walk plus Walk_LeanL/R. Walk_L/R/Bwd, mining, and chopping come from UAL2. Every source GLB imports with Retarget Method = Use Retarget Modifier so clips share profile space. Rebuild: reimport those GLBs, then tools/bake_shared_locomotion.gd."
 }

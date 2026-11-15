@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "appliance_pile"
+display_name = "Dead Appliances"
+description = "A fridge, a washer and a microwave."
+category = "world_prop"
+kind = "resource"
+deposit_id = "appliance_pile"
+body_size = Vector3(1.5, 1.55, 1)
+swatch = Color(0.78, 0.78, 0.76, 1)

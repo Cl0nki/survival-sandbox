@@ -113,6 +113,17 @@ Approval copies files into the project and refuses to replace an approved file u
 | Characters | `assets/characters/` |
 | Vehicles | `assets/vehicles/` |
 | Environment | `assets/environment/` |
+| World props (resource kind) | `assets/resources/<id>.glb` |
+| Deployables | `assets/deployables/<id>.glb` |
+
+### World props
+
+Trees, boulders, salvage wrecks and loot crates are not placeable, but they are defined like deployables: one id for the definition, the gameplay box, the mesh and the Meshy job.
+
+- `resources/world_props/<id>.tres` holds name, description, kind, `deposit_id` and `body_size` (meters, the Meshy `target_size`). Add or change a prop in the table in `tools/gen_world_props.py`, run it, and add the id to `ORDER` in `scripts/world/world_prop_catalog.gd`. Health, tool and yield stay in `scripts/items/resource_catalog.gd`.
+- The Icons tab lists them with category `world_prop`. Make the icon first, then **Make model** on the Ingame tab. The job runs as workshop category `resources`, preset `from_icon`.
+- Approving the model writes `assets/resources/<id>.glb`. `ResourceNode` and `LootContainer` pick it up through `WorldPropArt` and fit it to `body_size`. Without a file they keep their primitive meshes. A model from the Surfaces tab at `assets/environment/<id>.glb` (for example `tree_oak`) works too.
+- `tests/world_props.gd` and the world prop tests in `tests/test_pipeline.py` check the files, ids, sizes and the link to the deposits.
 
 Metadata for approved assets is `assets/pipeline_meta/<name>.json`. That folder contains `.gdignore`, so Godot does not import the JSON. Working copies, prompts, seeds, and version history stay in `tools/ai_asset_pipeline/library/`, which is gitignored.
 

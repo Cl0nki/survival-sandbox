@@ -26,6 +26,12 @@ var _crown_material: StandardMaterial3D
 var _alive_color := Color(0.52, 0.52, 0.50)
 var _crown_tint := Color.WHITE
 var _visual := "rock"
+## Salvage props are built from several parts under one root, so a depleted
+## heap can be squashed and darkened as a whole.
+var _prop_root: Node3D
+var _prop_materials: Array[StandardMaterial3D] = []
+## Holder for the published mesh. Null while the primitive meshes are in use.
+var _art_root: Node3D
 
 
 func _ready() -> void:
@@ -34,6 +40,8 @@ func _ready() -> void:
 	collision_mask = 0
 	_apply_deposit()
 	_build_visual()
+	if depleted:
+		_mark_depleted()
 	_refresh_label()
 
 
@@ -161,6 +169,10 @@ func _item_name(item_id: String) -> String:
 func _mark_depleted() -> void:
 	depleted = true
 	health = 0
+	if _art_root != null:
+		_art_root.scale = Vector3(1.0, 0.3, 1.0)
+		_refresh_label()
+		return
 	if _material != null:
 		_material.albedo_color = Color(0.16, 0.15, 0.14)
 	if _visual == "tree" or _visual == "cactus":
@@ -175,6 +187,10 @@ func _mark_depleted() -> void:
 			_mesh.position.y = 0.18
 		if _crown != null:
 			_crown.visible = false
+	elif _prop_root != null:
+		_prop_root.scale = Vector3(1.0, 0.3, 1.0)
+		for part_material in _prop_materials:
+			part_material.albedo_color = part_material.albedo_color.darkened(0.55)
 	elif _mesh != null:
 		_mesh.scale = Vector3(1.0, 0.35, 1.0)
 		_mesh.position.y = 0.12
@@ -200,8 +216,11 @@ func _build_visual() -> void:
 			_build_cactus()
 		"bush":
 			_build_bush()
+		"car", "tires", "scrap", "rubble", "drums", "appliances":
+			_build_prop(_visual)
 		_:
 			_build_rock()
+	_attach_art()
 	_label = Label3D.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_label.position = Vector3(0.0, _label_height(), 0.0)
@@ -213,6 +232,28 @@ func _build_visual() -> void:
 	add_child(_label)
 
 
+## A published Meshy mesh (WorldPropArt) replaces the primitive meshes. The
+## collision hulls the builders made stay, and the mesh is fitted to the
+## prop's body box from WorldPropCatalog.
+func _attach_art() -> void:
+	var prop_id := WorldPropCatalog.id_for_deposit(deposit_id)
+	if prop_id.is_empty() or not WorldPropArt.has_art(prop_id):
+		return
+	var holder := Node3D.new()
+	holder.name = "ArtRoot"
+	add_child(holder)
+	if WorldPropArt.attach(holder, prop_id) == null:
+		holder.queue_free()
+		return
+	_art_root = holder
+	for primitive in [_mesh, _crown, _prop_root]:
+		if primitive != null:
+			primitive.visible = false
+	_material = null
+	_crown_material = null
+	_prop_materials.clear()
+
+
 func _label_height() -> float:
 	match _visual:
 		"tree":
@@ -221,8 +262,205 @@ func _label_height() -> float:
 			return 2.4
 		"bush":
 			return 1.6
+		"car":
+			return 2.1
+		"tires":
+			return 1.6
+		"scrap":
+			return 1.7
+		"rubble":
+			return 1.6
+		"drums":
+			return 2.0
+		"appliances":
+			return 2.2
 		_:
 			return 1.35
+
+
+## Low-poly salvage props out of primitives, the same way trees and cacti are
+## built. The yaw comes from the node id, so every peer turns a wreck the same way.
+func _build_prop(kind: String) -> void:
+	_prop_root = Node3D.new()
+	_prop_root.name = "Prop"
+	var yaw := 0.0
+	if not node_id.is_empty():
+		yaw = float(absi(node_id.hash()) % 628) / 100.0
+	_prop_root.rotation.y = yaw
+	add_child(_prop_root)
+	var hull := Vector3.ONE
+	var hull_at := Vector3.ZERO
+	match kind:
+		"car":
+			_build_car()
+			hull = Vector3(2.2, 1.3, 1.1)
+		"tires":
+			_build_tires()
+			hull = Vector3(1.9, 0.85, 1.6)
+			hull_at.x = 0.1
+		"scrap":
+			_build_scrap()
+			hull = Vector3(1.6, 0.9, 1.4)
+		"rubble":
+			_build_rubble()
+			hull = Vector3(1.5, 1.0, 1.3)
+		"drums":
+			_build_drums()
+			hull = Vector3(1.1, 1.5, 1.0)
+		"appliances":
+			_build_appliances()
+			hull = Vector3(1.5, 1.55, 1.0)
+	var box := BoxShape3D.new()
+	box.size = hull
+	var shape := CollisionShape3D.new()
+	shape.shape = box
+	shape.rotation.y = yaw
+	## Keep the off-center hull offset on the same side as the visual.
+	shape.position = Vector3(hull_at.x, 0.0, hull_at.z).rotated(Vector3.UP, yaw) + Vector3(0.0, hull.y * 0.5, 0.0)
+	add_child(shape)
+
+
+## One primitive part. The first part with `primary` set drives the flash and
+## the depleted tint, so it carries the deposit color.
+func _part(
+	mesh: Mesh,
+	color: Color,
+	at: Vector3,
+	rot_deg := Vector3.ZERO,
+	primary := false,
+	metallic := 0.0,
+	rough := 0.9
+) -> MeshInstance3D:
+	var part := MeshInstance3D.new()
+	part.mesh = mesh
+	part.position = at
+	part.rotation_degrees = rot_deg
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.metallic = metallic
+	material.roughness = rough
+	part.set_surface_override_material(0, material)
+	_prop_root.add_child(part)
+	_prop_materials.append(material)
+	if primary:
+		_mesh = part
+		_material = material
+	return part
+
+
+static func _box(size: Vector3) -> BoxMesh:
+	var box := BoxMesh.new()
+	box.size = size
+	return box
+
+
+static func _cylinder(radius: float, height: float, segments := 10) -> CylinderMesh:
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = radius
+	cylinder.bottom_radius = radius
+	cylinder.height = height
+	cylinder.radial_segments = segments
+	return cylinder
+
+
+static func _tire_mesh() -> TorusMesh:
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.17
+	torus.outer_radius = 0.40
+	torus.rings = 14
+	torus.ring_segments = 8
+	return torus
+
+
+## Car wreck. Long axis on X. One wheel is gone and a door hangs open.
+func _build_car() -> void:
+	var body := _alive_color
+	_part(_box(Vector3(2.1, 0.5, 1.0)), body, Vector3(0.0, 0.5, 0.0), Vector3.ZERO, true, 0.35, 0.7)
+	_part(_box(Vector3(0.75, 0.12, 0.92)), body.darkened(0.12), Vector3(0.72, 0.82, 0.0), Vector3(0.0, 0.0, -9.0), false, 0.35, 0.7)
+	_part(_box(Vector3(1.05, 0.5, 0.88)), body.darkened(0.08), Vector3(-0.25, 0.98, 0.0), Vector3.ZERO, false, 0.35, 0.7)
+	_part(_box(Vector3(0.9, 0.26, 0.9)), Color(0.12, 0.16, 0.2), Vector3(-0.25, 1.0, 0.0), Vector3.ZERO, false, 0.1, 0.25)
+	_part(_box(Vector3(1.0, 0.06, 0.84)), Color(0.38, 0.2, 0.12), Vector3(-0.25, 1.25, 0.0), Vector3.ZERO, false, 0.4, 0.9)
+	_part(_box(Vector3(0.7, 0.4, 0.05)), body.darkened(0.05), Vector3(-0.05, 0.66, 0.66), Vector3(0.0, -28.0, 0.0), false, 0.35, 0.7)
+	_part(_box(Vector3(0.12, 0.14, 1.04)), Color(0.5, 0.5, 0.52), Vector3(1.08, 0.36, 0.0), Vector3.ZERO, false, 0.6, 0.5)
+	var tire_color := Color(0.08, 0.08, 0.09)
+	var wheel := _cylinder(0.32, 0.2, 10)
+	for wheel_at in [Vector3(-0.7, 0.32, 0.5), Vector3(-0.7, 0.32, -0.5), Vector3(0.7, 0.32, -0.5)]:
+		_part(wheel, tire_color, wheel_at, Vector3(90.0, 0.0, 0.0), false, 0.0, 0.95)
+	_part(_box(Vector3(0.1, 0.1, 0.1)), Color(0.4, 0.4, 0.42), Vector3(0.7, 0.18, 0.46), Vector3.ZERO, false, 0.6, 0.6)
+
+
+## A heap of tires. The fallen-over one leans on the side.
+func _build_tires() -> void:
+	var tire := _tire_mesh()
+	var base := _alive_color
+	var layers := [
+		[Vector3(0.45, 0.115, 0.0), Vector3.ZERO],
+		[Vector3(-0.225, 0.115, 0.39), Vector3(0.0, 40.0, 0.0)],
+		[Vector3(-0.225, 0.115, -0.39), Vector3(0.0, 80.0, 0.0)],
+		[Vector3(0.2, 0.345, 0.12), Vector3(3.0, 20.0, -3.0)],
+		[Vector3(-0.2, 0.345, -0.12), Vector3(-3.0, 60.0, 4.0)],
+		[Vector3(0.0, 0.575, 0.0), Vector3(8.0, 10.0, -6.0)],
+		[Vector3(0.98, 0.4, 0.2), Vector3(78.0, 0.0, 14.0)],
+	]
+	for index in layers.size():
+		var entry: Array = layers[index]
+		var tint := base.lightened(0.03 * float(index % 3))
+		_part(tire, tint, entry[0], entry[1], index == 0, 0.0, 0.95)
+
+
+func _build_scrap() -> void:
+	_part(_box(Vector3(1.5, 0.3, 1.2)), _alive_color, Vector3(0.0, 0.15, 0.0), Vector3(0.0, 10.0, 0.0), true, 0.6, 0.6)
+	var sheets := [
+		[Vector3(-0.2, 0.42, 0.1), Vector3(1.1, 0.08, 0.8), Vector3(8.0, -25.0, 6.0), Color(0.55, 0.35, 0.22)],
+		[Vector3(0.25, 0.5, -0.15), Vector3(0.9, 0.06, 0.7), Vector3(-10.0, 40.0, 12.0), Color(0.6, 0.62, 0.64)],
+		[Vector3(-0.35, 0.3, -0.4), Vector3(0.8, 0.06, 0.5), Vector3(20.0, 70.0, -5.0), Color(0.42, 0.26, 0.18)],
+		[Vector3(0.4, 0.3, 0.4), Vector3(0.6, 0.5, 0.6), Vector3(0.0, 25.0, 0.0), Color(0.34, 0.36, 0.38)],
+		[Vector3(-0.5, 0.6, 0.25), Vector3(0.06, 0.8, 0.7), Vector3(0.0, 15.0, 12.0), Color(0.5, 0.3, 0.2)],
+	]
+	for sheet in sheets:
+		_part(_box(sheet[1]), sheet[3], sheet[0], sheet[2], false, 0.6, 0.65)
+	_part(_cylinder(0.06, 1.4, 6), Color(0.4, 0.38, 0.34), Vector3(0.0, 0.62, 0.1), Vector3(0.0, 35.0, 80.0), false, 0.6, 0.6)
+
+
+func _build_rubble() -> void:
+	_part(_box(Vector3(1.4, 0.4, 1.2)), _alive_color, Vector3(0.0, 0.2, 0.0), Vector3(0.0, 8.0, 0.0), true, 0.0, 0.95)
+	var chunks := [
+		[Vector3(0.3, 0.55, 0.2), Vector3(0.55, 0.4, 0.45), Vector3(12.0, 30.0, 8.0), Color(0.62, 0.58, 0.52)],
+		[Vector3(-0.35, 0.5, -0.15), Vector3(0.5, 0.35, 0.5), Vector3(-8.0, 55.0, 15.0), Color(0.5, 0.47, 0.44)],
+		[Vector3(0.1, 0.78, -0.1), Vector3(0.4, 0.3, 0.38), Vector3(20.0, 10.0, -10.0), Color(0.66, 0.62, 0.56)],
+		[Vector3(-0.45, 0.3, 0.4), Vector3(0.4, 0.3, 0.55), Vector3(5.0, 70.0, 0.0), Color(0.45, 0.44, 0.42)],
+		[Vector3(0.55, 0.25, -0.4), Vector3(0.5, 0.25, 0.4), Vector3(0.0, -20.0, 6.0), Color(0.58, 0.5, 0.46)],
+		[Vector3(0.1, 0.38, 0.5), Vector3(0.35, 0.2, 0.2), Vector3(0.0, 15.0, 0.0), Color(0.62, 0.3, 0.24)],
+	]
+	for chunk in chunks:
+		_part(_box(chunk[1]), chunk[3], chunk[0], chunk[2], false, 0.0, 0.95)
+	_part(_cylinder(0.025, 1.1, 6), Color(0.45, 0.25, 0.15), Vector3(-0.1, 0.9, 0.1), Vector3(0.0, 0.0, 70.0), false, 0.5, 0.7)
+
+
+## Three drums standing, one lying across the top.
+func _build_drums() -> void:
+	var drum := _cylinder(0.3, 0.9, 10)
+	var lid := _cylinder(0.28, 0.02, 10)
+	var standing := [
+		[Vector3(-0.32, 0.45, -0.2), _alive_color],
+		[Vector3(0.32, 0.45, -0.2), Color(0.2, 0.32, 0.5)],
+		[Vector3(0.0, 0.45, 0.35), Color(0.25, 0.38, 0.28)],
+	]
+	for index in standing.size():
+		var entry: Array = standing[index]
+		var at: Vector3 = entry[0]
+		_part(drum, entry[1], at, Vector3.ZERO, index == 0, 0.5, 0.65)
+		_part(lid, Color(0.14, 0.14, 0.15), at + Vector3(0.0, 0.46, 0.0), Vector3.ZERO, false, 0.6, 0.5)
+	_part(drum, Color(0.5, 0.34, 0.2), Vector3(0.0, 1.2, -0.1), Vector3(0.0, 15.0, 90.0), false, 0.5, 0.65)
+
+
+## A fridge leaning, a washer, and a microwave on top.
+func _build_appliances() -> void:
+	_part(_box(Vector3(0.7, 1.5, 0.7)), _alive_color, Vector3(-0.4, 0.75, 0.0), Vector3(0.0, 0.0, -6.0), true, 0.2, 0.55)
+	_part(_box(Vector3(0.04, 0.45, 0.06)), Color(0.4, 0.4, 0.42), Vector3(-0.02, 1.0, 0.22), Vector3(0.0, 0.0, -6.0), false, 0.6, 0.4)
+	_part(_box(Vector3(0.7, 0.8, 0.7)), Color(0.72, 0.74, 0.76), Vector3(0.4, 0.4, 0.15), Vector3(0.0, 0.0, 0.0), false, 0.2, 0.55)
+	_part(_cylinder(0.22, 0.04, 12), Color(0.18, 0.22, 0.26), Vector3(0.4, 0.45, 0.51), Vector3(90.0, 0.0, 0.0), false, 0.1, 0.25)
+	_part(_box(Vector3(0.45, 0.28, 0.35)), Color(0.3, 0.3, 0.32), Vector3(0.4, 0.94, 0.15), Vector3(0.0, 15.0, 0.0), false, 0.3, 0.6)
 
 
 func _build_rock() -> void:

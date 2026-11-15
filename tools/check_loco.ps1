@@ -22,11 +22,9 @@ if (-not (Test-Path $Console)) {
 Push-Location $Root
 try {
     if ($Rebuild) {
-        Write-Host "=== rebuild loco library ==="
-        & $Console --path $Root --headless -s res://tools/merge_ual_pro_crouch.gd
-        if ($LASTEXITCODE -ne 0) { throw "merge_ual_pro_crouch failed ($LASTEXITCODE)" }
-        & $Console --path $Root --headless -s res://tools/merge_ual2_strafe_clips.gd
-        if ($LASTEXITCODE -ne 0) { throw "merge_ual2_strafe_clips failed ($LASTEXITCODE)" }
+        Write-Host "=== bake shared loco library ==="
+        & $Console --path $Root --headless -s res://tools/bake_shared_locomotion.gd
+        if ($LASTEXITCODE -ne 0) { throw "bake_shared_locomotion failed ($LASTEXITCODE)" }
     }
 
     Write-Host "=== loco QA (headless) ==="

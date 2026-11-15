@@ -31,6 +31,8 @@ const SCAVENGE_ORDER: PackedStringArray = [
 	"scrap_pile",
 	"rubble_pile",
 	"tire_pile",
+	"drum_stack",
+	"appliance_pile",
 ]
 
 static var _by_id: Dictionary = {}
@@ -141,7 +143,11 @@ static func _ensure() -> void:
 		56,
 		1.4,
 		Color(0.45, 0.22, 0.16),
-		[["scrap_metal", 6], ["steel_scrap", 3], ["rubber", 2], ["mechanical_part", 1], ["glass", 2], ["plastic", 2]]
+		[
+			["scrap_metal", 6], ["steel_scrap", 3], ["tire", 2], ["car_door", 2], ["engine_block", 1],
+			["radiator", 1], ["headlight", 2], ["mechanical_part", 1], ["glass", 2], ["plastic", 2],
+		],
+		"car"
 	)
 	_add_scavenge(
 		"scrap_pile",
@@ -149,7 +155,8 @@ static func _ensure() -> void:
 		32,
 		0.8,
 		Color(0.48, 0.50, 0.52),
-		[["scrap_metal", 10], ["steel_scrap", 2], ["plastic", 4]]
+		[["scrap_metal", 10], ["steel_scrap", 2], ["plastic", 4]],
+		"scrap"
 	)
 	_add_scavenge(
 		"rubble_pile",
@@ -157,7 +164,8 @@ static func _ensure() -> void:
 		40,
 		1.1,
 		Color(0.55, 0.50, 0.44),
-		[["stone", 6], ["limestone", 4], ["scrap_metal", 2]]
+		[["stone", 6], ["limestone", 4], ["scrap_metal", 2]],
+		"rubble"
 	)
 	_add_scavenge(
 		"tire_pile",
@@ -165,7 +173,26 @@ static func _ensure() -> void:
 		24,
 		0.7,
 		Color(0.12, 0.12, 0.13),
-		[["rubber", 8]]
+		[["tire", 3], ["rubber", 4]],
+		"tires"
+	)
+	_add_scavenge(
+		"drum_stack",
+		"Drum Stack",
+		36,
+		0.9,
+		Color(0.55, 0.30, 0.18),
+		[["scrap_metal", 4], ["fuel", 2], ["chemicals", 2]],
+		"drums"
+	)
+	_add_scavenge(
+		"appliance_pile",
+		"Dead Appliances",
+		44,
+		1.0,
+		Color(0.78, 0.78, 0.76),
+		[["scrap_metal", 6], ["appliance_motor", 2], ["electronics", 3], ["battery", 1], ["plastic", 3]],
+		"appliances"
 	)
 
 
@@ -255,7 +282,8 @@ static func _add_scavenge(
 	health: int,
 	resistance: float,
 	color: Color,
-	yields: Array
+	yields: Array,
+	visual: String
 ) -> void:
 	var deposit := ResourceDeposit.new()
 	deposit.id = deposit_id
@@ -267,6 +295,6 @@ static func _add_scavenge(
 	deposit.resistance = resistance
 	deposit.tool_multiplier = 1.0
 	deposit.color = color
-	deposit.visual = "rock"
+	deposit.visual = visual
 	deposit.yields = yields
 	_by_id[deposit_id] = deposit

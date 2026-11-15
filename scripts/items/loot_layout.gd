@@ -41,6 +41,12 @@ const SCAVENGE := [
 	["plastic", 20],
 	["stone", 20],
 	["limestone", 20],
+	["tire", 5],
+	["car_door", 5],
+	["engine_block", 2],
+	["radiator", 5],
+	["headlight", 10],
+	["appliance_motor", 5],
 ]
 
 ## Materials only. Doors and window bars live in the doors chest.
@@ -320,6 +326,7 @@ static func _crate(
 	crate.container_id = container_id
 	crate.prompt = prompt
 	crate.box_color = color
+	crate.prop_art_id = "loot_crate"
 	crate.slot_count = NetConfig.CONTAINER_SLOTS
 	crate.position = pos
 	folder.add_child(crate)

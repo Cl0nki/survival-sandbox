@@ -1386,20 +1386,13 @@ func _apply_weapon_pitch() -> void:
 func _prepare_character_model() -> void:
 	if _character_model == null:
 		return
-	# Quaternius tracks use %GeneralSkeleton — that unique name only resolves
-	# inside the instanced model, so locomotion must run on its AnimationPlayer.
-	# Mesh/Quaternius face +Z; VisualRoot forward is -Z — yaw 180° to match aim.
+	# Clips use %GeneralSkeleton, which only resolves inside the instanced model.
+	# Mesh faces +Z; VisualRoot forward is -Z — yaw 180° to match aim.
 	_character_model.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE)
 	_character_model.rotation.y = PI
-	var embedded := _character_model.get_node_or_null("AnimationPlayer") as AnimationPlayer
-	var lib: AnimationLibrary = load("res://assets/characters/Shared/Quaternius/ual_locomotion.res") as AnimationLibrary
-	if embedded == null or lib == null:
+	var embedded := HumanoidClips.install(_character_model)
+	if embedded == null:
 		return
-	for lib_name in embedded.get_animation_library_list():
-		embedded.remove_animation_library(lib_name)
-	embedded.add_animation_library(&"", lib)
-	embedded.root_node = NodePath("..")
-	embedded.active = true
 	_anim_player = embedded
 	_attach_weapon_to_hand()
 	if _anim_tree != null:
@@ -1421,7 +1414,7 @@ func _prepare_character_model() -> void:
 func _attach_weapon_to_hand() -> void:
 	if _weapon_mesh == null or _character_model == null or _weapon_in_hand:
 		return
-	var skeleton := _character_model.find_child("GeneralSkeleton", true, false) as Skeleton3D
+	var skeleton := HumanoidClips.skinned_skeleton(_character_model)
 	if skeleton == null or skeleton.find_bone("RightHand") < 0:
 		return
 	var attach := BoneAttachment3D.new()

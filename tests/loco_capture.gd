@@ -66,6 +66,9 @@ func _run() -> void:
 	if tree == null or model == null:
 		push_error("player AnimationTree/CharacterModel missing")
 		return
+	# Player physics stays off. The skinned skeleton still has to run so
+	# RetargetModifier3D copies the profile pose onto the mesh.
+	model.process_mode = Node.PROCESS_MODE_ALWAYS
 
 	## Ensure shared library is loaded the same way as gameplay.
 	var lib: AnimationLibrary = load(LIBRARY_PATH) as AnimationLibrary

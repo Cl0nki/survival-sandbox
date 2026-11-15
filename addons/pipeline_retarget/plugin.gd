@@ -25,13 +25,19 @@ func _queue_reimport() -> void:
 		return
 	_reimport_queued = true
 	var stamp_path := "res://addons/pipeline_retarget/.reimport_stamp"
-	var expected := "quaternius-v1"
+	var expected := "retarget-modifier-v1"
 	if FileAccess.file_exists(stamp_path):
 		var existing_stamp := FileAccess.get_file_as_string(stamp_path).strip_edges()
 		if existing_stamp == expected:
 			return
 	var paths: PackedStringArray = PackedStringArray([
 		"res://assets/characters/Shared/Quaternius/AnimationLibrary_Godot_Standard.glb",
+		"res://assets/characters/Shared/Quaternius/AnimationLibrary_Godot_Pro.glb",
+		"res://assets/characters/Shared/Quaternius/ual2/quaternius-ual2-walk-l-loop.glb",
+		"res://assets/characters/Shared/Quaternius/ual2/quaternius-ual2-walk-r-loop.glb",
+		"res://assets/characters/Shared/Quaternius/ual2/quaternius-ual2-walk-bwd-loop.glb",
+		"res://assets/characters/Shared/Quaternius/ual2/quaternius-ual2-mining-loop.glb",
+		"res://assets/characters/Shared/Quaternius/ual2/quaternius-ual2-tree-chopping-loop.glb",
 		"res://assets/characters/workshop_survivor_01.glb",
 	])
 	var existing: PackedStringArray = PackedStringArray()

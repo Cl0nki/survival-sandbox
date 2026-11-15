@@ -22,11 +22,28 @@ const EXPECTED_TREES := {
 }
 
 const EXPECTED_SCAVENGE := {
-	"broken_car": [56, "crowbar", 1.4, [["scrap_metal", 6], ["steel_scrap", 3], ["rubber", 2], ["mechanical_part", 1], ["glass", 2], ["plastic", 2]]],
+	"broken_car": [56, "crowbar", 1.4, [
+		["scrap_metal", 6], ["steel_scrap", 3], ["tire", 2], ["car_door", 2], ["engine_block", 1],
+		["radiator", 1], ["headlight", 2], ["mechanical_part", 1], ["glass", 2], ["plastic", 2],
+	]],
 	"scrap_pile": [32, "crowbar", 0.8, [["scrap_metal", 10], ["steel_scrap", 2], ["plastic", 4]]],
 	"rubble_pile": [40, "crowbar", 1.1, [["stone", 6], ["limestone", 4], ["scrap_metal", 2]]],
-	"tire_pile": [24, "crowbar", 0.7, [["rubber", 8]]],
+	"tire_pile": [24, "crowbar", 0.7, [["tire", 3], ["rubber", 4]]],
+	"drum_stack": [36, "crowbar", 0.9, [["scrap_metal", 4], ["fuel", 2], ["chemicals", 2]]],
+	"appliance_pile": [44, "crowbar", 1.0, [["scrap_metal", 6], ["appliance_motor", 2], ["electronics", 3], ["battery", 1], ["plastic", 3]]],
 }
+
+## Each wreck is built from parts, not a single cube.
+const EXPECTED_VISUAL := {
+	"broken_car": "car",
+	"scrap_pile": "scrap",
+	"rubble_pile": "rubble",
+	"tire_pile": "tires",
+	"drum_stack": "drums",
+	"appliance_pile": "appliances",
+}
+
+const SALVAGE_ITEMS := ["tire", "car_door", "engine_block", "radiator", "headlight", "appliance_motor"]
 
 
 func _init() -> void:
@@ -151,8 +168,8 @@ func _run() -> int:
 		if wreck.health != int(salvage[0]) or wreck.tool_kind != str(salvage[1]) or not is_equal_approx(wreck.resistance, float(salvage[2])):
 			print("FAIL scavenge stats %s" % scavenge_id)
 			return 1
-		if wreck.visual != "rock":
-			print("FAIL %s is not a cube" % scavenge_id)
+		if wreck.visual != str(EXPECTED_VISUAL[scavenge_id]):
+			print("FAIL %s visual %s" % [scavenge_id, wreck.visual])
 			return 1
 		var salvage_got := wreck.yield_entries()
 		var salvage_want: Array = salvage[3]
@@ -334,8 +351,43 @@ func _run() -> int:
 	while not tires.depleted and tire_swings < 6:
 		tires.harvest("crowbar_scrap", bag)
 		tire_swings += 1
-	if not tires.depleted or bag.count_item("rubber") != 8:
-		print("FAIL tire yield rubber=%d" % bag.count_item("rubber"))
+	if not tires.depleted or bag.count_item("rubber") != 4 or bag.count_item("tire") != 3:
+		print("FAIL tire yield rubber=%d tire=%d" % [bag.count_item("rubber"), bag.count_item("tire")])
 		return 1
+	## A wreck is a node with parts and a hull, and flattens when it is spent.
+	var wreck_node := scavenge.get_node("broken_car") as ResourceNode
+	var wreck_prop := wreck_node.get_node_or_null("Prop") as Node3D
+	if wreck_prop == null or wreck_prop.get_child_count() < 6:
+		print("FAIL broken_car has no parts")
+		return 1
+	var wreck_hull := false
+	for child in wreck_node.get_children():
+		if child is CollisionShape3D:
+			wreck_hull = true
+	if not wreck_hull:
+		print("FAIL broken_car has no hull")
+		return 1
+	var spent_car := ResourceNode.new()
+	spent_car.configure("test_spent_car", "broken_car")
+	root.add_child(spent_car)
+	var car_swings := 0
+	while not spent_car.depleted and car_swings < 20:
+		spent_car.harvest("crowbar_composite", bag)
+		car_swings += 1
+	if not spent_car.depleted or (spent_car.get_node("Prop") as Node3D).scale.y >= 0.5:
+		print("FAIL spent car did not flatten")
+		return 1
+	for salvage_id in SALVAGE_ITEMS:
+		if not ItemCatalog.known(salvage_id):
+			print("FAIL salvage item missing %s" % salvage_id)
+			return 1
+	for salvage_id in EXPECTED_VISUAL.values():
+		var seen := false
+		for deposit_id in ResourceCatalog.scavenge_ids():
+			if ResourceCatalog.get_deposit(deposit_id).visual == salvage_id:
+				seen = true
+		if not seen:
+			print("FAIL no scavenge deposit uses %s" % salvage_id)
+			return 1
 	print("harvest deposits %d trees %d scavenge %d" % [ResourceCatalog.mineral_ids().size(), ResourceCatalog.tree_ids().size(), ResourceCatalog.scavenge_ids().size()])
 	return 0

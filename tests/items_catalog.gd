@@ -38,6 +38,7 @@ const REQUIRED := [
 	"workbench_iron", "workbench_steel", "workbench_composite", "machine_shop",
 	"chem_bench", "refinery", "ammo_bench", "armory",
 	"campfire", "fire_pit", "cooking_pot", "stove", "kitchen",
+	"tire", "car_door", "engine_block", "radiator", "headlight", "appliance_motor",
 ]
 
 

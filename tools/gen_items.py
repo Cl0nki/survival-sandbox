@@ -70,6 +70,13 @@ ITEMS = [
     item("harvestable", "oil_drum_empty", "Empty Oil Drum", "Place in a crude pump jack. Comes out full.", 1, 8.0, "container", (0.42, 0.36, 0.28)),
     item("harvestable", "oil_drum_full", "Full Oil Drum", "A drum of crude oil.", 1, 20.0, "container", (0.16, 0.12, 0.1)),
     item("harvestable", "battery", "Battery", "Salvaged cells. Still hold a charge.", 20, 0.40, "harvest", (0.28, 0.62, 0.36)),
+    # Salvage. Whole parts pulled off wrecks. A bench strips them for raw stock.
+    item("salvage", "tire", "Tire", "Worn tire pulled off a wreck. Cut it down for rubber.", 10, 2.5, "harvest", (0.14, 0.14, 0.15)),
+    item("salvage", "car_door", "Car Door", "Dented door panel. Strip it for steel scrap.", 5, 4.0, "harvest", (0.46, 0.24, 0.18)),
+    item("salvage", "engine_block", "Engine Block", "Seized block. Heavy, and full of usable parts.", 2, 12.0, "harvest", (0.34, 0.34, 0.36)),
+    item("salvage", "radiator", "Radiator", "Copper-cored radiator. Strip it for copper.", 5, 2.5, "harvest", (0.62, 0.46, 0.30)),
+    item("salvage", "headlight", "Headlight", "Glass lens and reflector. Strip it for glass.", 20, 0.35, "harvest", (0.84, 0.86, 0.70)),
+    item("salvage", "appliance_motor", "Appliance Motor", "Small motor from a fridge or washer. Copper windings inside.", 10, 1.4, "harvest", (0.50, 0.50, 0.54)),
     item("food", "raw_meat", "Raw Meat", "Uncooked meat. Cook it on a fire.", 20, 0.40, "food", (0.62, 0.22, 0.20)),
     item("food", "cooked_meat", "Cooked Meat", "Meat cooked over a fire.", 20, 0.35, "food", (0.48, 0.28, 0.16)),
     item("food", "raw_fish", "Raw Fish", "Uncooked fish. Cook it on a fire.", 20, 0.30, "food", (0.72, 0.74, 0.70)),

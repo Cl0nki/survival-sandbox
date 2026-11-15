@@ -244,10 +244,6 @@ def industrial_shell(grid: dict) -> list[Mesh]:
     return _shell("industrial_shell", grid, 5)
 
 
-def military_shell(grid: dict) -> list[Mesh]:
-    return _shell("military_shell", grid, 1)
-
-
 BUILDERS = {
     "concrete_wall": concrete_wall,
     "concrete_floor": concrete_floor,
@@ -264,7 +260,6 @@ BUILDERS = {
     "shipping_container": shipping_container,
     "watchtower": watchtower,
     "industrial_shell": industrial_shell,
-    "military_shell": military_shell,
 }
 
 PIECE_META = {
@@ -283,7 +278,6 @@ PIECE_META = {
     "shipping_container": {"pivot": "center_bottom", "footprint_m": [6.0, 2.4]},
     "watchtower": {"pivot": "footprint_center_bottom", "footprint_m": [2.0, 2.0], "height_m": 6.0},
     "industrial_shell": {"pivot": "footprint_center_bottom", "footprint_m": [3.0, 3.0]},
-    "military_shell": {"pivot": "footprint_center_bottom", "footprint_m": [3.0, 3.0]},
 }
 
 

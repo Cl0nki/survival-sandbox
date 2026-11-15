@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "tree_oak"
+display_name = "Oak Tree"
+description = "A broad oak with a round crown."
+category = "world_prop"
+kind = "resource"
+deposit_id = "oak"
+body_size = Vector3(2.99, 5.14, 2.99)
+swatch = Color(0.42, 0.28, 0.16, 1)

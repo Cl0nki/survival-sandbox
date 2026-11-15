@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "scrap_pile"
+display_name = "Scrap Pile"
+description = "A heap of scrap metal."
+category = "world_prop"
+kind = "resource"
+deposit_id = "scrap_pile"
+body_size = Vector3(1.6, 0.9, 1.4)
+swatch = Color(0.48, 0.5, 0.52, 1)

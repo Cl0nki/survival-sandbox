@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "drum_stack"
+display_name = "Drum Stack"
+description = "Rusty metal drums."
+category = "world_prop"
+kind = "resource"
+deposit_id = "drum_stack"
+body_size = Vector3(1.1, 1.5, 1)
+swatch = Color(0.55, 0.3, 0.18, 1)
