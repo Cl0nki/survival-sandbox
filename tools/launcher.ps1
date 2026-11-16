@@ -264,11 +264,13 @@ function Wait-Dashboard {
 }
 
 function Start-AssetDashboard {
+    param([string]$Page = "")
     $endpoint = Get-DashboardEndpoint
+    $target = $endpoint.Url + $Page
     $running = @(Get-DashboardProcesses)
     if ($running.Count -gt 0 -or (Test-DashboardPort -Endpoint $endpoint)) {
-        Write-Log "Asset dashboard is already available at $($endpoint.Url)."
-        Start-Process $endpoint.Url | Out-Null
+        Write-Log "Asset dashboard is already available at $target."
+        Start-Process $target | Out-Null
         return $true
     }
     $python = Get-PythonExe
@@ -296,8 +298,8 @@ function Start-AssetDashboard {
     }
     $script:DashboardProcess = $process
     if (Wait-Dashboard -Endpoint $endpoint) {
-        Write-Log "Asset dashboard is ready at $($endpoint.Url)."
-        Start-Process $endpoint.Url | Out-Null
+        Write-Log "Asset dashboard is ready at $target."
+        Start-Process $target | Out-Null
         return $true
     }
     if ($process.HasExited) {
@@ -546,9 +548,14 @@ $form.Controls.Add((New-ActionButton "Close clients" 348 282 150 {
         else { Write-Log "Closed $removed client process(es)." }
     }
 }))
-$form.Controls.Add((New-ActionButton "Open dashboard" 22 328 316 {
+$form.Controls.Add((New-ActionButton "Open dashboard" 22 328 150 {
     Invoke-LauncherAction {
         Start-AssetDashboard | Out-Null
+    }
+}))
+$form.Controls.Add((New-ActionButton "Open sounds" 182 328 156 {
+    Invoke-LauncherAction {
+        Start-AssetDashboard -Page "/sounds" | Out-Null
     }
 }))
 $form.Controls.Add((New-ActionButton "Stop dashboard" 348 328 150 {

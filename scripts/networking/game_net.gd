@@ -556,6 +556,36 @@ func health_update(kind: int, id: int, current: int) -> void:
 
 
 @rpc("authority", "reliable")
+func creature_spawn(id: int, kind: int, pos: Vector3, yaw: float, hp: int, max_hp: int, state_id: int) -> void:
+	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != 1 or _enemies == null:
+		return
+	_enemies.client_spawn(id, kind, pos, yaw, hp, max_hp, state_id)
+
+
+@rpc("authority", "reliable")
+func creature_despawn(id: int) -> void:
+	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != 1 or _enemies == null:
+		return
+	_enemies.client_despawn(id)
+
+
+@rpc("authority", "reliable")
+func creature_health(id: int, hp: int) -> void:
+	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != 1 or _enemies == null:
+		return
+	_enemies.client_health(id, hp)
+
+
+@rpc("authority", "unreliable_ordered")
+func creature_snapshot(tick: int, ids: PackedInt32Array, data: PackedFloat32Array) -> void:
+	if multiplayer.is_server() or multiplayer.get_remote_sender_id() != 1 or _enemies == null:
+		return
+	if tick < 0:
+		return
+	_enemies.client_snapshot(_snapshot_stamp(tick), ids, data)
+
+
+@rpc("authority", "reliable")
 func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, harvest: bool = false) -> void:
 	if multiplayer.is_server():
 		return
@@ -565,6 +595,9 @@ func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool
 		return
 	# Visual only. Damage arrives through health_update / snapshots.
 	# A harvest swing draws the tracer only while F1 debug mode is on.
+	# A gunshot is heard from the muzzle. The shooter hears their own flat.
+	if not harvest:
+		Sfx.play_at(&"shot", origin, shooter == multiplayer.get_unique_id())
 	last_shot_origin = origin
 	last_shot_end = end_point
 	last_shot_text = "peer %d %s" % [shooter, "hit" if damaged else "impact"]
@@ -708,6 +741,12 @@ func _boot_systems() -> void:
 	_vitals.name = "VitalsSystem"
 	add_child(_vitals)
 	_vitals.bind(self)
+	_boot_enemies()
+	# Only the real dedicated server populates the world. Tests spawn by hand.
+	_enemies.auto_spawn = _session_mode() == NetConfig.MODE_SERVER
+
+
+func _boot_enemies() -> void:
 	_enemies = EnemySystem.new()
 	_enemies.name = "EnemySystem"
 	add_child(_enemies)
@@ -722,7 +761,30 @@ func enemies() -> EnemySystem:
 	return _enemies
 
 
+func server_tick() -> int:
+	return _tick
+
+
+func map_id() -> String:
+	return _session_map()
+
+
+func view_distance() -> float:
+	return _view_distance
+
+
+## Public wrapper so other systems can put an item on the ground.
+func spawn_loot(item_id: String, quantity: int, pos: Vector3) -> void:
+	_spawn_drop(item_id, quantity, pos)
+
+
+## Public wrapper so other systems can announce a health change.
+func replicate_health(target: Object) -> void:
+	_replicate_collider_health(target)
+
+
 func _boot_client() -> void:
+	_boot_enemies()
 	_strip_client_container_secrets()
 	_ready_timer = Timer.new()
 	_ready_timer.wait_time = 0.2
@@ -933,6 +995,8 @@ func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: flo
 	var damaged := false
 	var collider: Object = result["collider"]
 	if collider != null and collider != player and collider.has_method("receive_damage"):
+		if collider.has_method("note_attacker"):
+			collider.call("note_attacker", sender)
 		damaged = bool(collider.call("receive_damage", weapon.damage, result["point"]))
 	var cooldown_ms := int(round(weapon.cooldown_seconds * 1000.0))
 	_next_fire_msec[sender] = now + maxi(cooldown_ms, 1)

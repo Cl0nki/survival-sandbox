@@ -135,6 +135,30 @@ Materials are `StandardMaterial3D` resources. Roughness, metallic, and AO are re
 
 Open the project in the Godot editor once after approval so it imports the new GLB and PNG files. Nothing in the current gameplay scenes references those paths, so the prototype keeps using its primitive meshes.
 
+## Sounds
+
+The third page of the dashboard, next to the Workshop and the Codex: `http://127.0.0.1:8765/sounds`, or **Open sounds** in the game launcher. It needs no key and no network.
+
+The game has five sound events: `footstep`, `shot`, `hurt`, `craft_start`, `craft_done`. Each is a column. A column with no file is silent in the game.
+
+1. **Add files.** Drop WAV, OGG, MP3, or a pack ZIP on the drawer. Or use **Scan a folder or ZIP on this PC** with a name filter such as `footstep`. That is the way to work through a big download like the Sonniss bundle. Files over 8 MB are skipped.
+2. **Sort the inbox.** Each file gets a suggested event from its name and, for ZIPs and folders, its parent folder. Pick another event if it is wrong. Press **Add** or drag the row onto a column.
+3. **Tune.** Open **Tune** on a column for volume, pitch range, cooldown, and hearing range. **Test** plays a random file of that event with the same volume and a random pitch from your range.
+4. **Play the game.** Nothing else to do. The next launch reads the new files.
+
+**Import into Godot** runs `godot --headless --import`, so the files get `.import` records and are bundled in an export. It is optional for playing: a file Godot has not imported yet is decoded from its bytes at startup. Close the editor first if it is open on this project.
+
+| Path | What |
+| --- | --- |
+| `config/sounds.json` | The event list, defaults, auto-sort keywords, and the sources shown in the drawer. Add an event here and play it from game code with `Sfx.play_at(&"id", position)`. |
+| `assets/audio/sfx/<event>/` | The sound files. Dropping one in by hand works too. |
+| `resources/audio/sounds.json` | Written by the tool on every change. The game reads it. Tuning lives here. |
+| `library/sounds_inbox/` | Files waiting for an event. Gitignored. |
+
+An exported build needs `*.json` in the export's non-resource file filter, or it will not find the manifest.
+
+`tests/sfx.gd` fails if the event list here and the events the game code plays ever disagree.
+
 ## Style and prompts
 
 Edit `config/style.json` and `presets/catalog.json`. The next job reads them. No code change is required for palette, avoid-list, or category prompts.
@@ -157,12 +181,14 @@ tools/ai_asset_pipeline/
   generators/    textures, modular kit, job orchestration
   processors/    glTF writer, PBR maps, validation
   blender/       background processing
-  godot/         tres and tscn publishing
+  godot/         tres and tscn publishing, sound bank
   jobqueue/      background worker
-  dashboard/     local review UI
+  dashboard/     local review UI (Workshop, Codex, Sounds share static/shared.css and shared.js)
   docs/          workshop architecture map
   tests/
 ```
+
+All three web tools (Workshop `/`, Codex `/codex`, Sounds `/sounds`) share one look and one top bar. Colors, type, buttons, chips, and inputs come from `dashboard/static/shared.css`. The bar with the links comes from `shared.js`. To add a tool, add one line to the list in `shared.js` and one route in `dashboard/server.py`.
 
 New image or mesh services should follow the provider modules: build a documented request, poll the documented task endpoint, and return files plus parameters. Do not add a provider that returns stand-in geometry.
 

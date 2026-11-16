@@ -93,6 +93,7 @@ func progress() -> float:
 
 ## Client side: the server announced a new queue / running job.
 func apply_job(rows: Array, total: float, left: float) -> void:
+	hear_queue_change(_remote_rows.size(), rows.size())
 	_remote_rows = rows
 	_remote_total = total
 	_remote_left = left
@@ -203,6 +204,7 @@ func _kick_queue() -> void:
 		return
 	_job = _queue.pop_front()
 	_job_left = float(_job["seconds"])
+	hear_job(&"craft_start")
 	_glow(true)
 	_push_status(_job_text())
 	_publish_job()
@@ -278,6 +280,7 @@ func _try_start() -> void:
 		return
 	_job = planned
 	_job_left = float(planned["seconds"])
+	hear_job(&"craft_start")
 	_glow(true)
 	_push_status(_job_text())
 	_publish_job()
@@ -305,6 +308,7 @@ func _finish() -> void:
 	else:
 		slot["qty"] = int(slot["qty"]) + made
 		inventory.slots[CraftRules.OUTPUT] = slot
+	hear_job(&"craft_done")
 	_push_status("")
 	_publish_slots()
 	_advance()

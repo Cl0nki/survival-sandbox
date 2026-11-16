@@ -38,6 +38,8 @@ func try_fire(origin: Vector3, direction: Vector3) -> void:
 	if world == null:
 		return
 	_cooldown = cooldown_seconds
+	# Local play only, so the shooter is always this player: flat, not placed in the world.
+	Sfx.play_at(&"shot", origin, true)
 	var result := resolve_shot(world.direct_space_state, origin, direction, range_meters)
 	result["damaged"] = _apply_local_damage(result)
 	last_feedback = _describe(result)

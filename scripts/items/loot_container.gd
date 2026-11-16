@@ -32,9 +32,11 @@ var art_id := ""
 ## World prop id (WorldPropCatalog) for storage crates that are not deployables.
 ## The box keeps the size it was built with. The mesh is fitted to the prop box.
 var prop_art_id := ""
+var _born_msec := 0
 
 
 func _ready() -> void:
+	_born_msec = Time.get_ticks_msec()
 	add_to_group(&"loot_container")
 	collision_layer = PhysicsLayers.WORLD
 	collision_mask = 0
@@ -44,6 +46,24 @@ func _ready() -> void:
 	if inventory == null:
 		inventory = Inventory.new(slot_count)
 	_build_visual()
+
+
+## Presentation only. A station that starts or finishes a job is heard where it stands.
+## event is craft_start or craft_done. The server and headless clients make no sound.
+func hear_job(event: StringName) -> void:
+	Sfx.play_at(event, global_position)
+
+
+## Client side: the server sent a new queue. A queue that grew from empty is a job starting
+## and one that shrank is a job done. Stations already running when this client
+## arrived stay quiet, so joining a busy yard is not a burst of noise.
+func hear_queue_change(before: int, after: int) -> void:
+	if Time.get_ticks_msec() - _born_msec < 1500:
+		return
+	if after < before:
+		hear_job(&"craft_done")
+	elif before == 0 and after > 0:
+		hear_job(&"craft_start")
 
 
 func clear_contents() -> void:

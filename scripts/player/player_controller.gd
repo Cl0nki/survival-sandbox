@@ -63,6 +63,21 @@ const HAND_WEAPON_OFFSET := Vector3(0.0, 0.1, 0.0)
 const WEAPON_ANCHOR := Vector3(0.22, 0.3, -0.35)
 const MUZZLE_REST := Vector3(0.22, 0.3, -0.75)
 const WEAPON_REST := Vector3(0.22, 0.3, -0.45)
+## Footsteps. Metres of ground between footfalls, and the speed that counts as running.
+## Measured from where the body is drawn, so one rule covers the local player,
+## the owning client and every other player's puppet.
+const STEP_STRIDE_WALK := 0.8
+const STEP_STRIDE_RUN := 1.15
+const STEP_RUN_SPEED := 2.4
+const STEP_MIN_SPEED := 0.3
+## Faster than any real move means a teleport or respawn. It makes no steps.
+const STEP_TELEPORT_SPEED := 14.0
+const STEP_WINDOW_SEC := 0.1
+const STEP_CROUCH_GAIN_DB := -9.0
+const STEP_RUN_GAIN_DB := 2.0
+## A health drop this soon after the body appears is the server telling us the
+## state it already has, not a new hit.
+const HURT_QUIET_MSEC := 1000
 
 @onready var _visual_root: Node3D = $VisualRoot
 @onready var _lean_pivot: Node3D = $VisualRoot/LeanPivot
@@ -107,6 +122,12 @@ var _owner_crouch := 0.0
 var _owner_pitch := 0.0
 var _body_shape: CapsuleShape3D
 var _session: Node
+var _born_msec := 0
+var _step_prev := Vector3.ZERO
+var _step_primed := false
+var _step_travel := 0.0
+var _step_window_dist := 0.0
+var _step_window_time := 0.0
 var _reports_input := true
 var _motion := MotionBuffer.new()
 var _has_authoritative_pose := false
@@ -131,6 +152,8 @@ signal item_notice(text: String)
 signal downed
 ## revive() ran: the body is alive again at a new place.
 signal revived
+## One footfall, drawn or heard. Fires on every role except the server.
+signal footstep_taken(running: bool, crouching: bool)
 
 ## Seconds until respawn, as last told by the server. Only the owning client sets it.
 var respawn_eta := 0.0
@@ -168,6 +191,9 @@ func _ready() -> void:
 		set_process(false)
 		return
 	add_to_group(&"player")
+	_born_msec = Time.get_ticks_msec()
+	if net_role != NetRole.SERVER:
+		Sfx.warm()
 	collision_layer = PhysicsLayers.PLAYER
 	collision_mask = PhysicsLayers.WORLD | PhysicsLayers.BUILDING
 	floor_snap_length = 0.45
@@ -222,6 +248,7 @@ func _process(delta: float) -> void:
 	_poll_harvest_swing(delta)
 	_update_upper_blend(delta)
 	if net_role != NetRole.OWNER and net_role != NetRole.PUPPET:
+		_update_footsteps(delta)
 		return
 	var delay := NetConfig.OWNER_INTERP_DELAY_SEC if net_role == NetRole.OWNER else NetConfig.INTERP_DELAY_SEC
 	present_at(Time.get_ticks_msec() / 1000.0 - delay)
@@ -229,6 +256,47 @@ func _process(delta: float) -> void:
 		_crouch = _owner_crouch
 		_aim_pitch = _owner_pitch
 		set_lean_visual(_lean_offset)
+	_update_footsteps(delta)
+
+
+## One footfall sound per stride of ground actually covered. Reads where the body is
+## drawn, so it works the same for the local player, the owning client and puppets.
+## Positions only change on physics ticks, so distance is summed over a short window.
+func _update_footsteps(delta: float) -> void:
+	if net_role == NetRole.SERVER or delta <= 0.0:
+		return
+	var here := global_position
+	if not _step_primed:
+		_step_prev = here
+		_step_primed = true
+		return
+	_step_window_dist += Vector2(here.x - _step_prev.x, here.z - _step_prev.z).length()
+	_step_window_time += delta
+	_step_prev = here
+	if _step_window_time < STEP_WINDOW_SEC:
+		return
+	var moved := _step_window_dist
+	var speed := moved / _step_window_time
+	_step_window_dist = 0.0
+	_step_window_time = 0.0
+	if _down or speed < STEP_MIN_SPEED or speed > STEP_TELEPORT_SPEED:
+		# Standing still: the next footfall comes half a stride after the first move.
+		_step_travel = STEP_STRIDE_WALK * 0.5
+		return
+	var running := speed >= STEP_RUN_SPEED
+	var stride := STEP_STRIDE_RUN if running else STEP_STRIDE_WALK
+	_step_travel += moved
+	if _step_travel < stride:
+		return
+	_step_travel = fmod(_step_travel, stride)
+	var crouching := _crouch > 0.5
+	var gain := 0.0
+	if crouching:
+		gain = STEP_CROUCH_GAIN_DB
+	elif running:
+		gain = STEP_RUN_GAIN_DB
+	footstep_taken.emit(running, crouching)
+	Sfx.play_at(&"footstep", here, is_controlled_locally(), gain)
 
 
 func blocks_camera_input() -> bool:
@@ -1206,6 +1274,8 @@ func apply_authoritative_health(current: int) -> void:
 	health = current
 	var was_down := _down
 	_down = health == 0
+	if net_role != NetRole.SERVER and Time.get_ticks_msec() - _born_msec > HURT_QUIET_MSEC:
+		Sfx.play_at(&"hurt", global_position, is_controlled_locally())
 	_apply_down_pose()
 	if _down and not was_down:
 		if net_role == NetRole.OWNER:

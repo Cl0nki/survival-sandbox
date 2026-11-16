@@ -1,0 +1,129 @@
+{
+  "audio_dir": "assets/audio/sfx",
+  "manifest": "resources/audio/sounds.json",
+  "extensions": [".wav", ".ogg", ".mp3"],
+  "max_file_bytes": 8388608,
+  "events": [
+    {
+      "id": "footstep",
+      "label": "Footsteps",
+      "group": "Walking",
+      "played": "Each footfall of any player in view. Walk, run and crouch change the spacing and loudness.",
+      "positional": true,
+      "volume_db": -6.0,
+      "pitch_min": 0.92,
+      "pitch_max": 1.08,
+      "cooldown": 0.0,
+      "max_distance": 24.0,
+      "keywords": ["footstep", "footsteps", "step", "steps", "walk", "walking", "boots", "gravel", "grass", "dirt", "stride"],
+      "find": "footstep gravel"
+    },
+    {
+      "id": "shot",
+      "label": "Gunshot",
+      "group": "Shooting",
+      "played": "A pistol or debug-weapon shot. The shooter hears it flat, everyone else hears it from the muzzle.",
+      "positional": true,
+      "volume_db": 0.0,
+      "pitch_min": 0.96,
+      "pitch_max": 1.04,
+      "cooldown": 0.04,
+      "max_distance": 90.0,
+      "keywords": ["shot", "shots", "gunshot", "gunshots", "gun", "pistol", "shoot", "shooting", "fire", "rifle", "9mm", "revolver", "bang"],
+      "find": "pistol gunshot"
+    },
+    {
+      "id": "hurt",
+      "label": "Getting hurt",
+      "group": "Damage",
+      "played": "A player loses health. Own hits play flat, other players are heard where they stand.",
+      "positional": true,
+      "volume_db": 0.0,
+      "pitch_min": 0.94,
+      "pitch_max": 1.06,
+      "cooldown": 0.25,
+      "max_distance": 40.0,
+      "keywords": ["hurt", "pain", "damage", "damaged", "grunt", "ouch", "hit", "hits", "impact", "punch", "injured", "oof"],
+      "find": "male hurt grunt"
+    },
+    {
+      "id": "craft_start",
+      "label": "Crafting starts",
+      "group": "Crafting",
+      "played": "A workbench, campfire or other station begins a job.",
+      "positional": true,
+      "volume_db": -3.0,
+      "pitch_min": 0.97,
+      "pitch_max": 1.03,
+      "cooldown": 0.1,
+      "max_distance": 26.0,
+      "keywords": ["craft", "crafting", "hammer", "anvil", "saw", "sawing", "forge", "build", "tool", "tools", "wood", "workbench", "start"],
+      "find": "crafting hammer"
+    },
+    {
+      "id": "craft_done",
+      "label": "Crafting done",
+      "group": "Crafting",
+      "played": "A station finishes a job and the result lands in its output slot.",
+      "positional": true,
+      "volume_db": -3.0,
+      "pitch_min": 0.98,
+      "pitch_max": 1.02,
+      "cooldown": 0.1,
+      "max_distance": 26.0,
+      "keywords": ["done", "complete", "completed", "finish", "finished", "success", "ding", "ready", "bell", "pickup", "item"],
+      "find": "item crafted complete"
+    }
+  ],
+  "sources": [
+    {
+      "name": "SFXMint: Survival crafting set",
+      "url": "https://sfxmint.com/sets/survival-crafting",
+      "license": "CC0",
+      "best_for": ["footstep", "craft_start", "craft_done"],
+      "note": "17 matching sounds: gravel and snow footsteps, hammer, saw, anvil, forge, crafting, campfire. Single files need no sign-up. The whole-pack ZIP needs a free account."
+    },
+    {
+      "name": "Kenney: Impact Sounds and RPG Audio",
+      "url": "https://kenney.nl/assets/category:Audio",
+      "license": "CC0",
+      "best_for": ["footstep", "hurt", "craft_done"],
+      "note": "Consistent, small packs. Impact Sounds has footsteps on grass, concrete, wood and snow plus body hits. RPG Audio has cloth, metal and item sounds."
+    },
+    {
+      "name": "OpenGameArt: Gunshot Sounds (Tabasco)",
+      "url": "https://opengameart.org/content/gunshot-sounds",
+      "license": "CC0",
+      "best_for": ["shot"],
+      "note": "Real recordings of a CZ-52 pistol, rifle, SKS and shotgun. The author warns they are noisy: trim and normalize them."
+    },
+    {
+      "name": "OpenGameArt: Playersounds 1 (EmoPreben)",
+      "url": "https://opengameart.org/content/playersounds-1-by-emopreben",
+      "license": "CC0",
+      "best_for": ["hurt"],
+      "note": "Four player hurt sounds, WAV and OGG zips."
+    },
+    {
+      "name": "OpenGameArt: Hurt Sound Effects (EZduzziteh)",
+      "url": "https://opengameart.org/content/hurt-sound-effects",
+      "license": "CC0",
+      "best_for": ["hurt"],
+      "note": "Six pain and grunt vocalizations as small MP3 files."
+    },
+    {
+      "name": "Sonniss GDC Game Audio Bundle",
+      "url": "https://gdc.sonniss.com/",
+      "license": "Royalty-free, no attribution",
+      "best_for": ["shot", "footstep", "hurt", "craft_start"],
+      "note": "Free professional libraries, several GB per year. Use Scan a folder with a filter such as pistol or footstep instead of unpacking everything."
+    },
+    {
+      "name": "Freesound (CC0 filter)",
+      "url": "https://freesound.org/search/?f=license%3A%22Creative+Commons+0%22",
+      "license": "Check each file",
+      "best_for": ["footstep", "shot", "hurt", "craft_start", "craft_done"],
+      "note": "Largest library. Needs a free account to download. Filter to CC0 so you owe no credit."
+    }
+  ]
+}

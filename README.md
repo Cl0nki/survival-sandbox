@@ -56,7 +56,7 @@ Authoritative simulation check:
 
 A passing run prints `MILESTONE2_NET_OK`. The launch flags, manual checklist, and limitations are in [docs/milestone-2.md](docs/milestone-2.md).
 
-Line-of-sight filtering is [docs/milestone-3.md](docs/milestone-3.md). Inventories, pickups, and crates are [docs/milestone-4.md](docs/milestone-4.md). World save and reconnect are [docs/milestone-7.md](docs/milestone-7.md). Death, drops, and respawn, plus the scope freeze for the vertical slice, are [docs/milestone-8.md](docs/milestone-8.md).
+Line-of-sight filtering is [docs/milestone-3.md](docs/milestone-3.md). Inventories, pickups, and crates are [docs/milestone-4.md](docs/milestone-4.md). World save and reconnect are [docs/milestone-7.md](docs/milestone-7.md). Death, drops, and respawn, plus the scope freeze for the vertical slice, are [docs/milestone-8.md](docs/milestone-8.md). The first creature, the hog, and the shared creature base are [docs/milestone-9.md](docs/milestone-9.md).
 
 Run every headless test at once with `tools\run_tests.ps1`.
 
@@ -77,3 +77,9 @@ Generated textures, props, characters, and modular building pieces are produced 
 ```powershell
 python tools\ai_asset_pipeline\run.py serve
 ```
+
+## Sound
+
+Footsteps, gunshots, getting hurt, and crafting have sound slots. The game stays silent for a slot until it has a file. Fill them in the **Sounds** tool: open the dashboard (launcher button **Open sounds**, or `http://127.0.0.1:8765/sounds`). Upload WAV, OGG, MP3, or a pack ZIP, or scan a folder on this PC with a name filter. Each file lands in an inbox with a suggested slot. Press **Add**, or drag it onto a column. Files go to `assets/audio/sfx/<event>/` and the game reads `resources/audio/sounds.json`, so the next launch plays them. Per-event volume, pitch, cooldown, and hearing range are on each column. Details are in [tools/ai_asset_pipeline/README.md](tools/ai_asset_pipeline/README.md#sounds).
+
+Check: `tools\run_tests.ps1 -Only sfx` prints `SFX_OK`.

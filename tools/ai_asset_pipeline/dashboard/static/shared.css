@@ -1,0 +1,150 @@
+/* One look for every dashboard page: Workshop, Codex, Sounds.
+   Colors, type, the top bar, and the controls they all use live here.
+   Page files add layout only. Do not redefine :root colors in them. */
+:root {
+  color-scheme: dark;
+  --bg: #141b22;
+  --panel: #1e2831;
+  --panel-2: #26323d;
+  --inset: #12181e;
+  --ink: #efe8db;
+  --muted: #9aa6b1;
+  --line: #33414d;
+  --accent: #d4896a;
+  --accent-ink: #1c140f;
+  --olive: #8ea35a;
+  --sand: #c6b48a;
+  --water: #7ea4b8;
+  --cook: #e0b15a;
+  --danger: #e07a6a;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 16px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  font: 15px/1.45 "Segoe UI", sans-serif;
+  background:
+    radial-gradient(1200px 400px at 10% -10%, rgba(212, 137, 106, 0.16), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--ink);
+}
+button, input, select, textarea { font: inherit; color: var(--ink); }
+button { cursor: pointer; }
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+h1, h2 { font-weight: 620; margin: 0; letter-spacing: -0.02em; }
+h1 { font-size: 28px; letter-spacing: -0.03em; }
+.eyebrow {
+  margin: 0;
+  color: var(--sand);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.muted { color: var(--muted); margin: 0; }
+.bad { color: var(--danger); }
+.ok { color: var(--olive); }
+
+/* Text fields: the same shape everywhere. */
+select,
+textarea,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]) {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+select:focus, textarea:focus, input:focus-visible {
+  outline: 2px solid rgba(212, 137, 106, 0.45);
+  border-color: var(--accent);
+}
+input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color: var(--accent); }
+
+/* Buttons. */
+.ghost, button.ghost {
+  display: inline-block;
+  text-decoration: none;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.ghost:hover { border-color: var(--accent); }
+.primary, #new-item {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-weight: 650;
+}
+.primary:hover:not(:disabled) { filter: brightness(1.06); }
+
+/* Filter chips and tabs. */
+.chip {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 11px;
+}
+.chip:hover { color: var(--ink); }
+.chip.on {
+  color: var(--ink);
+  border-color: var(--sand);
+  background: rgba(198, 180, 138, 0.12);
+}
+
+.status { min-height: 1.2em; margin: 8px 22px; color: var(--sand); }
+.status.bad { color: var(--danger); }
+
+/* Top bar: the same on every page. Built by shared.js. */
+.toolnav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  padding: 10px 22px;
+  background: rgba(20, 27, 34, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.toolnav .brand-mark {
+  margin: 0 14px 0 0;
+  color: var(--sand);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.toolnav a {
+  text-decoration: none;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-weight: 600;
+}
+.toolnav a:hover { color: var(--ink); border-color: var(--line); }
+.toolnav a[aria-current="page"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}

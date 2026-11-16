@@ -32,6 +32,7 @@ from generators.style_image import (
 )
 from godot.codex_edit import apply_tier_moves, create_item, update_item
 from godot.codex_index import publish_codex
+from godot import sound_bank
 from godot.descriptions import load_descriptions, save_item_copy, save_surface_copy
 from godot.item_index import load_items
 from godot.surface_index import load_grounds, load_surfaces, load_vegetation
@@ -82,6 +83,14 @@ class App:
             "grid": self.settings.grid(),
             "costs": self.cost_summary(),
         }
+
+    def sounds_snapshot(self) -> dict:
+        return sound_bank.snapshot(
+            self.settings.project_root,
+            self.settings.sounds_inbox(),
+            self.settings.sounds(),
+            self.settings.godot_bin,
+        )
 
     def cost_summary(self) -> dict:
         workshop = self.settings.workshop()
@@ -138,6 +147,10 @@ def make_handler(app: App):
                     self._file(STATIC / "app.js")
                 elif path == "/app.css":
                     self._file(STATIC / "app.css")
+                elif path == "/shared.css":
+                    self._file(STATIC / "shared.css")
+                elif path == "/shared.js":
+                    self._file(STATIC / "shared.js")
                 elif path == "/codex":
                     self._file(STATIC / "codex.html")
                 elif path == "/codex.css":
@@ -146,6 +159,16 @@ def make_handler(app: App):
                     self._file(STATIC / "codex.js")
                 elif path == "/api/codex":
                     self._send(200, publish_codex(app.settings.project_root))
+                elif path == "/sounds":
+                    self._file(STATIC / "sounds.html")
+                elif path == "/sounds.css":
+                    self._file(STATIC / "sounds.css")
+                elif path == "/sounds.js":
+                    self._file(STATIC / "sounds.js")
+                elif path == "/api/sounds":
+                    self._send(200, app.sounds_snapshot())
+                elif path.startswith("/sound-file/"):
+                    self._sound_file(path)
                 elif path == "/api/bootstrap":
                     self._send(200, app.bootstrap())
                 elif path == "/api/jobs":
@@ -217,6 +240,9 @@ def make_handler(app: App):
                     return
                 if path == "/api/style/candidate/discard":
                     self._send(200, discard_style_candidate(app.settings))
+                    return
+                if path.startswith("/api/sounds/"):
+                    self._send(200, self._sounds_post(path))
                     return
                 if path == "/api/codex/tier":
                     body = self._read_json()
@@ -335,6 +361,82 @@ def make_handler(app: App):
                 return
             content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
             self._send(200, target.read_bytes(), content_type)
+
+        def _sound_file(self, path: str) -> None:
+            parts = path.strip("/").split("/")
+            config = app.settings.sounds()
+            if len(parts) == 4 and parts[1] == "bank":
+                target = sound_bank.bank_file(app.settings.project_root, config, parts[2], parts[3])
+            elif len(parts) == 3 and parts[1] == "inbox":
+                target = sound_bank.inbox_file(app.settings.sounds_inbox(), parts[2])
+            else:
+                raise PipelineError("Invalid sound path.")
+            kinds = {".wav": "audio/wav", ".ogg": "audio/ogg", ".mp3": "audio/mpeg"}
+            self._send(200, target.read_bytes(), kinds.get(target.suffix.lower(), "application/octet-stream"))
+
+        def _sounds_post(self, path: str) -> dict:
+            config = app.settings.sounds()
+            root = app.settings.project_root
+            inbox = app.settings.sounds_inbox()
+            action = path[len("/api/sounds/"):]
+            message = ""
+            if action == "upload":
+                added, matched, skipped = [], 0, 0
+                for part in self._parts():
+                    if part["name"] != "files" or not part["filename"] or not part["data"]:
+                        continue
+                    outcome = sound_bank.inbox_add_upload(inbox, config, Path(part["filename"]).name, part["data"])
+                    added += outcome["added"]
+                    matched += outcome["matched"]
+                    skipped += outcome["skipped_large"]
+                if not added and not skipped:
+                    raise PipelineError("Choose WAV, OGG, MP3, or ZIP files to add.")
+                message = f"Added {len(added)} sound(s) to the inbox."
+                if skipped:
+                    message += f" {skipped} were over the size limit."
+            else:
+                body = self._read_json()
+                if action == "scan":
+                    outcome = sound_bank.inbox_scan(
+                        inbox, config, str(body.get("path") or ""), str(body.get("query") or ""), body.get("limit") or 200
+                    )
+                    message = f"Added {len(outcome['added'])} of {outcome['matched']} matching sound(s) to the inbox."
+                    if outcome.get("skipped_large"):
+                        message += f" {outcome['skipped_large']} were over the size limit."
+                    if outcome["matched"] > len(outcome["added"]) + outcome.get("skipped_large", 0):
+                        message += " More matched than the limit. Narrow the filter to see the rest."
+                    if outcome.get("truncated"):
+                        message += " The folder is very large, so the scan stopped early."
+                elif action == "assign":
+                    done = sound_bank.assign(root, inbox, config, str(body.get("name") or ""), str(body.get("event") or ""))
+                    label = sound_bank.event_of(config, done["event"])["label"]
+                    message = f"Added to {label}."
+                elif action == "remove":
+                    sound_bank.remove(root, config, str(body.get("event") or ""), str(body.get("name") or ""))
+                    message = "Removed."
+                elif action == "tune":
+                    sound_bank.tune(root, config, str(body.get("event") or ""), body)
+                    message = "Saved."
+                elif action == "tune/reset":
+                    sound_bank.reset_tuning(root, config, str(body.get("event") or ""))
+                    message = "Back to the defaults."
+                elif action == "inbox/delete":
+                    sound_bank.inbox_delete(inbox, str(body.get("name") or ""))
+                    message = "Removed from the inbox."
+                elif action == "inbox/clear":
+                    message = f"Cleared {sound_bank.inbox_clear(inbox)} sound(s) from the inbox."
+                elif action == "import":
+                    outcome = sound_bank.import_in_godot(app.settings.godot_bin, root)
+                    message = (
+                        f"Godot imported the sounds in {outcome['seconds']} s."
+                        if outcome["ok"]
+                        else "Godot reported a problem while importing. If the editor is open, close it and try again."
+                    )
+                else:
+                    raise PipelineError("Unknown sounds action.")
+            snapshot = app.sounds_snapshot()
+            snapshot["message"] = message
+            return snapshot
 
         def _style_image(self) -> None:
             self._png(app.settings.style_reference(), "No style image yet.")
