@@ -110,10 +110,18 @@ func _body() -> int:
 	net.debug_place(2, Vector3(0.0, 0.15, -18.0))
 	for _step in 8:
 		await physics_frame
-	for _step in 45:
+	# Walk until the wall stops the body (speed is tuned elsewhere, so no fixed tick count).
+	var stalled := 0
+	var last_z := net.debug_position(2).z
+	for _step in 600:
 		move_seq += 1
 		net._handle_input(2, move_seq, 0.0, -1.0, 0.0, 0.0, 0.0)
 		await physics_frame
+		var now_z := net.debug_position(2).z
+		stalled = stalled + 1 if absf(now_z - last_z) < 0.001 else 0
+		last_z = now_z
+		if stalled >= 10:
+			break
 	for _step in 8:
 		await physics_frame
 	var blocked := net.debug_position(2)
@@ -303,8 +311,12 @@ func _body() -> int:
 	var survivor_health := open_server.health
 	var again := _aim_from_server(net.debug_player(2), open_server.global_position)
 	_fire(net, 2, again)
+	# Earlier shots left the dummy at 32, so this one takes it to 0. Health clamps at 0.
+	var survivor_after := maxi(survivor_health - 34, 0)
+	if survivor_health <= 0:
+		return _fail("open dummy was already destroyed before the final shot")
 	var still_shooting: bool = await _wait_until(20, func() -> bool:
-		return open_server.health == survivor_health - 34
+		return open_server.health == survivor_after
 	)
 	if not still_shooting:
 		return _fail("server stopped resolving shots after disconnect, health=%s" % open_server.health)

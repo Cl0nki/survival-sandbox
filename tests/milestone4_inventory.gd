@@ -227,11 +227,13 @@ func _body() -> int:
 
 	var moved := false
 	var start := net.debug_position(2)
-	for step in 8:
+	# Walking is slow and accelerates, so give it up to half a second to cover 0.2 m.
+	for step in 30:
 		net._handle_input(2, 200 + step, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 		await physics_frame
-	if net.debug_position(2).distance_to(start) > 0.2:
-		moved = true
+		if net.debug_position(2).distance_to(start) > 0.2:
+			moved = true
+			break
 	if not moved:
 		return _fail("closing the crate did not restore movement")
 

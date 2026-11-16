@@ -55,6 +55,10 @@ func _body() -> void:
 		return
 	net._spawn_authority(2)
 	net._spawn_authority(3)
+	# Spawn pads are in the south-west yard, past the 15 m build reach of the origin
+	# where this test builds. Stand both players beside the build site.
+	net.debug_place(2, Vector3(0.5, 0.15, 3.0))
+	net.debug_place(3, Vector3(1.5, 0.15, 3.0))
 	for _frame in 8:
 		await physics_frame
 	var mirror_a := _mirror(arena, "ClientA")

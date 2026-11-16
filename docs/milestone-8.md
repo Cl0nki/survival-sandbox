@@ -14,19 +14,21 @@ Order of work: death loop (this milestone), enemy v1, `use_item` and stamina, hu
 powershell -ExecutionPolicy Bypass -File "C:\Users\Admin\Documents\VSC\survival-sandbox\tools\run_tests.ps1"
 ```
 
-Runs every headless test and prints one line each. Add `-Refresh` after adding a `class_name` script, `-Only milestone8` for one test, `-Strict` to count the known failures below. The new test alone prints `MILESTONE8_DEATH_OK`. The HUD can be rendered to PNGs (needs a window, not `--headless`) with `tests/vitals_capture.gd`; shots land in `user://vitals_shots/`.
+Runs every headless test and prints one line each. Add `-Refresh` after adding a `class_name` script, `-Only milestone8` for one test, `-Slow` to add the building stress test. A test that is accepted as failing for now goes in the `$Known` table in the script (it prints `KNOWN` and is not counted; `-Strict` counts it). The table is empty. The new test alone prints `MILESTONE8_DEATH_OK`. The HUD can be rendered to PNGs (needs a window, not `--headless`) with `tests/vitals_capture.gd`; shots land in `user://vitals_shots/`.
 
-### Known failures before this milestone
+### Tests repaired
 
-Five tests failed before any of this work, from uncommitted gameplay changes. The runner shows them as `KNOWN` and does not count them, so only a new regression turns the run red. Delete a line from `$Known` in `tools/run_tests.ps1` when its test is fixed.
+Five tests failed before the death-loop work started. None was a game bug. Each test assumed something the game had since changed on purpose, and two of them stopped early, so most of their checks had not run for a while.
 
-| Test | Failure |
-| --- | --- |
-| `milestone2_net` | The player never reaches the north wall (spawn z=-19.4). It stops there, so it checks nothing after that point. |
-| `milestone4_inventory` | Closing a crate does not restore movement. |
-| `building_phase1` | 6c: a doorway started a size drag. |
-| `building_phase2` | Upgrade tiers: composite wall and floor tint are not distinct. |
-| `building_phase4` | Two-client rooms are refused as "Too far". |
+| Test | What had changed | Fix |
+| --- | --- | --- |
+| `milestone2_net` | Walking is slower (1.25 × 1.3 m/s), so 45 ticks no longer reached the wall. | Walk until blocked, with a time limit. It then also hit an impossible expectation (a dummy at 32 HP "dropping to -2"; health clamps at 0), now corrected. |
+| `milestone4_inventory` | Same pace change; 8 ticks no longer cover 0.2 m after closing a crate. | Allow up to 30 ticks. |
+| `building_phase1` | Doorways are draggable runs now (`doorway.tres`, "Wände ziehbar"). | The check "a doorway cannot drag" became checks that it drags along its edge, stays straight, and cancels cleanly. |
+| `building_phase2` | Tiers have texture art, and a textured material keeps a white `albedo_color`. | One helper compares the texture (or the colour when a tier has no art), and now also asserts composite differs from scrap. |
+| `building_phase4` | Players spawn in the south-west yard, past the 15 m build reach of the origin. | Stand both players beside the build site. |
+
+Repairing `milestone2_net` and `building_phase4` also means their shot, crouch, disconnect, damage, repair, blast and collapse checks now run against the death-loop code (that was 17 of 90 checks before for phase 4).
 
 `scripts/core/debug_flags.gd` replaces four direct `InputBindings.debug_enabled` reads. An autoload name does not compile under `godot --script`, so every test that loaded the player scene failed. `DebugFlags.enabled()` looks the autoload up at call time and behaves the same in the game.
 

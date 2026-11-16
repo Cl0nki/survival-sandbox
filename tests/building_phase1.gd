@@ -351,9 +351,16 @@ func _test_snapping() -> void:
 func _test_drag_rooms() -> void:
 	var system := _begin("6c rooms sized by dragging")
 	var tool := _tool(system)
+	# Doorways drag as a straight run along the edge, like walls (see doorway.tres).
 	tool.select_by_id("doorway")
 	tool.update_aim(Vector3(0.5, 0.0, 0.05))
-	_check(not tool.begin_drag(), "a doorway started a size drag")
+	_check(tool.begin_drag() and tool.is_dragging(), "a doorway did not start a run drag")
+	tool.update_aim(Vector3(3.5, 0.0, 0.05))
+	_check(tool.current_request.get("size") == Vector2i(4, 1) and int(tool.current_request.get("axis")) == BuildTypes.AXIS_X, "doorway drag along X: %s" % str(tool.current_request))
+	tool.update_aim(Vector3(0.5, 0.0, 4.5))
+	_check(tool.current_request.get("size") == Vector2i(1, 1), "dragging a doorway off the line turned the corner: %s" % str(tool.current_request))
+	tool.cancel_drag()
+	_check(not tool.is_dragging(), "a cancelled doorway drag is still active")
 	tool.select_by_id("room")
 	tool.update_aim(Vector3(0.5, 0.0, 0.5))
 	_check(tool.current_request.get("size") == Vector2i(1, 1), "hover is not 1x1: %s" % str(tool.current_request))

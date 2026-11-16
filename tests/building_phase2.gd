@@ -574,7 +574,8 @@ func _test_upgrade_tiers() -> void:
 		system.authority.upgrade(wall.id)
 	_check(wall.tier == 6 and wall.max_health == 8000 and wall.health == 8000, "did not reach composite")
 	var composite := mesh.get_surface_override_material(0) as StandardMaterial3D
-	_check(composite != null and composite.albedo_color.is_equal_approx(BuildingTier.color_for(6, BuildTypes.Kind.WALL)), "composite wall was not distinct")
+	_check(_wears_tier(composite, 6, BuildTypes.Kind.WALL), "composite wall was not distinct")
+	_check(not _wears_tier(composite, 1, BuildTypes.Kind.WALL), "composite wall still looks like scrap")
 	var capped := system.authority.upgrade(wall.id)
 	_check(not bool(capped.get("ok", false)) and wall.tier == 6, "composite accepted another upgrade")
 	_built(system, "floor_1x1", Vector2i(4, 0))
@@ -586,8 +587,20 @@ func _test_upgrade_tiers() -> void:
 	var floor_id := system.state.slab_at(GridSystem.slab_key(Vector2i(4, 0), 0))
 	var floor_mesh := system.world.node_for(floor_id).get_node("Mesh") as MeshInstance3D if floor_id != 0 else null
 	var floor_mat := floor_mesh.get_surface_override_material(0) as StandardMaterial3D if floor_mesh != null else null
-	_check(floor_mat != null and floor_mat.albedo_color.is_equal_approx(BuildingTier.color_for(1, BuildTypes.Kind.SLAB)), "floor lost its darker tint")
+	_check(_wears_tier(floor_mat, 1, BuildTypes.Kind.SLAB), "floor lost its darker tint")
 	_audit(system, "after upgrades")
+
+
+## True when the material is the one BuildingTier makes for this tier and piece.
+## A tier with texture art is told apart by its texture (the colour stays white);
+## a tier without art, by its colour.
+func _wears_tier(material: StandardMaterial3D, tier: int, kind: int) -> bool:
+	if material == null:
+		return false
+	var expected := BuildingTier.make_material(tier, kind)
+	if expected.albedo_texture != null:
+		return material.albedo_texture == expected.albedo_texture
+	return material.albedo_texture == null and material.albedo_color.is_equal_approx(expected.albedo_color)
 
 
 func _component_id(collider: Object) -> int:

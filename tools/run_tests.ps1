@@ -50,16 +50,11 @@ $Tests = @(
     @("building_phase3", "BUILDING_PHASE3_OK"),
     @("building_phase4", "BUILDING_PHASE4_OK")
 )
-# Failing before the death-loop work started (uncommitted gameplay changes, Nov 16 2026).
-# Reported as KNOWN and not counted, so a new regression is the only thing that
-# turns the run red. Delete a line when its test is fixed. -Strict counts them.
-$Known = @{
-    "milestone2_net"       = "player never reaches the north wall (spawn z=-19.4)"
-    "milestone4_inventory" = "closing a crate does not restore movement"
-    "building_phase1"      = "6c: a doorway started a size drag"
-    "building_phase2"      = "upgrade tiers: composite wall/floor tint not distinct"
-    "building_phase4"      = "two-client rooms refused as Too far"
-}
+# Tests that are known to fail, as name = reason. They print KNOWN and are not
+# counted, so a new regression is the only thing that turns the run red.
+# -Strict counts them. Empty on purpose: add a line only for a failure you accept
+# for now, and delete it when the test is fixed.
+$Known = @{}
 if ($Slow) {
     $Tests += , @("building_stress", "BUILDING_STRESS_OK")
 }
