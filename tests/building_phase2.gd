@@ -32,6 +32,7 @@ func _body() -> void:
 	_test_profiles_and_falloff()
 	_test_spawn_health()
 	await _test_bullets_repair_rebuild()
+	_test_column_follows_wall_damage()
 	_test_destroyed_wall_and_room()
 	await _test_explosions()
 	await _test_blast_reaches_neighbours()
@@ -94,6 +95,23 @@ func _audit(system: BuildingSystem, label: String) -> void:
 
 func _edge(system: BuildingSystem, key: Vector4i) -> BuildComponent:
 	return system.state.get_component(system.state.edges.component_at(key))
+
+
+func _post(system: BuildingSystem, vertex: Vector2i, level: int = 0) -> BuildComponent:
+	return system.state.get_component(system.state.post_at(GridSystem.post_key(vertex, level)))
+
+
+func _post_color(system: BuildingSystem, post: BuildComponent) -> Color:
+	var node := system.world.node_for(post.id)
+	var mesh := node.get_node("Mesh") as MeshInstance3D
+	var material := mesh.get_surface_override_material(0) as StandardMaterial3D
+	return material.albedo_color
+
+
+func _worn_post_color(post: BuildComponent, ratio: float, tier: int) -> Color:
+	var material := BuildingTier.make_material(tier, post.kind)
+	BuildingTier.style_material(material, tier, ratio, post.kind)
+	return material.albedo_color
 
 
 func _ray(from: Vector3, to: Vector3) -> Dictionary:
@@ -226,6 +244,48 @@ func _test_bullets_repair_rebuild() -> void:
 	_check(bool(placed["ok"]) and bool(placed["changed"]) and system.state.edges.component_at(wall_key) != 0, "the gap did not accept a new wall: %s" % placed.get("reason", ""))
 	_check(neighbour_node.transform == neighbour_xform, "neighbour moved during destruction")
 	_audit(system, "after a wall was destroyed and replaced")
+
+
+func _test_column_follows_wall_damage() -> void:
+	var system := _begin("column follows wall damage")
+	_built(system, "floor_1x1", Vector2i(0, 0))
+	_built(system, "floor_1x1", Vector2i(0, -1))
+	_built(system, "floor_1x1", Vector2i(1, 0))
+	_built(system, "floor_1x1", Vector2i(1, -1))
+	_built(system, "wall", Vector2i(0, 0), 0, 0, BuildTypes.AXIS_X)
+	_built(system, "wall", Vector2i(1, 0), 0, 0, BuildTypes.AXIS_X)
+	var damaged := _edge(system, Vector4i(0, 0, 0, BuildTypes.AXIS_X))
+	var healthy := _edge(system, Vector4i(1, 0, 0, BuildTypes.AXIS_X))
+	_check(damaged != null and healthy != null, "paired walls missing")
+	if damaged == null or healthy == null:
+		return
+	var shared := _post(system, Vector2i(1, 0))
+	var near := _post(system, Vector2i(0, 0))
+	var other := _post(system, Vector2i(2, 0))
+	_check(shared != null and near != null and other != null, "wall columns missing")
+	if shared == null or near == null or other == null:
+		return
+	var tier := system.state.display_tier(shared)
+	system.authority.apply_bullet(damaged.id, 80, Vector3.ZERO, "column-chip")
+	var ratio := float(damaged.health) / float(damaged.max_health)
+	_check(ratio < 0.999, "chip did not wear the wall")
+	_check(is_equal_approx(system.state.display_ratio(shared), ratio), "shared column ignored the damaged wall")
+	_check(is_equal_approx(system.state.display_ratio(near), ratio), "far column ignored the damaged wall")
+	_check(is_equal_approx(system.state.display_ratio(other), 1.0), "healthy wall's column picked up damage")
+	_check(_post_color(system, shared).is_equal_approx(_worn_post_color(shared, ratio, tier)), "shared column stayed clean")
+	_check(_post_color(system, near).is_equal_approx(_worn_post_color(near, ratio, tier)), "far column stayed clean")
+	_check(_post_color(system, other).is_equal_approx(_worn_post_color(other, 1.0, tier)), "untouched column looked damaged")
+	_check(bool(system.authority.repair(damaged.id).get("ok", false)), "repair failed")
+	_check(_post_color(system, shared).is_equal_approx(_worn_post_color(shared, 1.0, tier)), "repaired wall left the column worn")
+	system.authority.apply_bullet(damaged.id, 80, Vector3.ZERO, "column-chip-2")
+	_check(_post_color(system, shared).is_equal_approx(_worn_post_color(shared, system.state.display_ratio(shared), tier)), "column did not wear again")
+	var killed := system.authority.apply_bullet(damaged.id, 10000, Vector3.ZERO, "column-kill")
+	_check(bool(killed.get("destroyed", false)) and system.state.get_component(damaged.id) == null, "damaged wall survived")
+	var stayed := _post(system, Vector2i(1, 0))
+	_check(stayed != null and stayed.id == shared.id, "shared column left with the destroyed wall")
+	if stayed != null:
+		_check(is_equal_approx(system.state.display_ratio(stayed), 1.0), "column kept the dead wall's wear")
+		_check(_post_color(system, stayed).is_equal_approx(_worn_post_color(stayed, 1.0, tier)), "column still looked damaged after the wall fell")
 
 
 func _test_destroyed_wall_and_room() -> void:

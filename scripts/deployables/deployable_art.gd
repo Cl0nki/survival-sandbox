@@ -3,6 +3,7 @@ class_name DeployableArt
 
 ## Approved Meshy meshes land at res://assets/deployables/<id>.glb.
 ## Spawn code attaches them when present; otherwise stations keep the colored box.
+## A deployable mesh is fitted inside its station box. It is not stretched to fill it.
 
 
 static func path_for(kind: String) -> String:
@@ -22,14 +23,15 @@ static func has_art(kind: String) -> bool:
 
 
 ## Instance the published mesh under host. Host keeps its own BoxShape collision.
-## When body_size is set, the mesh is stretched to fill that box.
+## Deployables are fitted inside body_size with their proportions kept.
 ## Returns false when no mesh is available or the scene fails to load.
 static func attach(host: Node3D, kind: String, body_size: Vector3 = Vector3.ZERO) -> bool:
-	return attach_path(host, path_for(kind), body_size)
+	return attach_path(host, path_for(kind), body_size, true)
 
 
-## Same as attach for a mesh that lives somewhere else (world props reuse this).
-static func attach_path(host: Node3D, path: String, body_size: Vector3 = Vector3.ZERO) -> bool:
+## Same as attach for a mesh that lives somewhere else.
+## World props pass uniform false so they still fill their authored box.
+static func attach_path(host: Node3D, path: String, body_size: Vector3 = Vector3.ZERO, uniform: bool = false) -> bool:
 	if path.is_empty() or host == null:
 		return false
 	var packed := load(path) as PackedScene
@@ -42,7 +44,10 @@ static func attach_path(host: Node3D, path: String, body_size: Vector3 = Vector3
 	_strip_imported_collision(root)
 	host.add_child(root)
 	if body_size.x > 0.0 and body_size.y > 0.0 and body_size.z > 0.0:
-		_fit_to_body(root, body_size)
+		if uniform:
+			_fit_inside(root, body_size)
+		else:
+			_fit_to_body(root, body_size)
 	else:
 		_seat_on_ground(root)
 	host.set_meta(&"deployable_art", true)
@@ -58,6 +63,21 @@ static func _strip_imported_collision(node: Node) -> void:
 			_strip_imported_collision(child)
 
 
+static func _fit_inside(root: Node3D, body_size: Vector3) -> void:
+	var bounds := _visual_aabb(root, Transform3D.IDENTITY)
+	if bounds.size == Vector3.ZERO:
+		return
+	var factor := minf(
+		body_size.x / maxf(bounds.size.x, 0.001),
+		minf(
+			body_size.y / maxf(bounds.size.y, 0.001),
+			body_size.z / maxf(bounds.size.z, 0.001)
+		)
+	)
+	root.scale = Vector3.ONE * factor
+	_seat_centered(root)
+
+
 static func _fit_to_body(root: Node3D, body_size: Vector3) -> void:
 	var bounds := _visual_aabb(root, Transform3D.IDENTITY)
 	if bounds.size == Vector3.ZERO:
@@ -67,7 +87,11 @@ static func _fit_to_body(root: Node3D, body_size: Vector3) -> void:
 		body_size.y / maxf(bounds.size.y, 0.001),
 		body_size.z / maxf(bounds.size.z, 0.001)
 	)
-	bounds = _visual_aabb(root, Transform3D.IDENTITY)
+	_seat_centered(root)
+
+
+static func _seat_centered(root: Node3D) -> void:
+	var bounds := _visual_aabb(root, Transform3D.IDENTITY)
 	var center := bounds.get_center()
 	root.position.x -= center.x
 	root.position.z -= center.z

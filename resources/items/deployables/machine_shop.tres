@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "machine_shop"
 display_name = "Machine Shop"
-description = "3x3 shop. The same bench jobs, twelve at a time. 1200 HP."
+description = "2x3 shop. The same bench jobs, twelve at a time. 1200 HP."
 max_stack = 1
 weight = 55.0
 category = "deployable"

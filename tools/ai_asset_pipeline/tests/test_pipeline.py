@@ -18,7 +18,9 @@ from core.settings import Settings
 from core.store import AssetStore
 from dashboard.server import App, make_handler
 from generators.modular import build_piece
-from generators.orchestrator import approve_asset, discard_asset, execute_job, preview_prompt
+from generators.orchestrator import approve_asset, discard_asset, execute_job, preview_prompt, rotate_asset_images
+from godot.codex_edit import apply_tier_moves, create_item, set_recipe_tier, update_item
+from godot.codex_index import build_codex
 from godot.descriptions import load_descriptions, save_item_copy, save_surface_copy
 from godot.item_index import load_items
 from godot.surface_index import load_grounds, load_surfaces
@@ -111,6 +113,11 @@ class PipelineTests(unittest.TestCase):
         self.assertNotIn("pose_mode", image)
         character = image_to_3d_payload(b"\x89PNG\r\n", 12000, "2k", True, "latest")
         self.assertEqual(character["pose_mode"], "a-pose")
+        self.assertNotIn("auto_size", character)
+        sized = image_to_3d_payload(b"\x89PNG\r\n", 6000, "2k", False, "latest", auto_size=True)
+        self.assertTrue(sized["auto_size"])
+        self.assertEqual(sized["origin_at"], "bottom")
+        self.assertNotIn("pose_mode", sized)
         preview = text_preview_payload("a crate", 4000, False, "latest")
         self.assertEqual(preview["mode"], "preview")
         self.assertLessEqual(len(preview["prompt"]), 800)
@@ -239,12 +246,61 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("OPENAI_API_KEY", job["message"])
         self.assertEqual(list((self.store.asset_dir(job["asset_ids"][0]) / "processed").glob("*.png")), [])
 
+    def test_gun_jobs_use_a_high_quality_side_view(self):
+        from generators.orchestrator import normalize_request
+
+        icon = normalize_request(self.settings, {
+            "kind": "texture",
+            "category": "item_icon",
+            "name": "blast_gun",
+            "provider": "procedural",
+            "resolution": 512,
+            "quality": "medium",
+            "prompt": "Inventory icon of one Blast Gun.",
+            "icon_category": "debug",
+        })
+        self.assertTrue(icon["firearm"])
+        self.assertEqual(icon["quality"], "high")
+        prompted = preview_prompt(self.settings, {
+            "kind": "texture",
+            "category": "item_icon",
+            "name": "blast_gun",
+            "provider": "procedural",
+            "resolution": 512,
+            "prompt": "Inventory icon of one Blast Gun.",
+        })
+        self.assertIn("pointing to the right", prompted["prompt"].lower())
+        self.assertIn("grip", prompted["prompt"].lower())
+        mesh = normalize_request(self.settings, {
+            "kind": "prop",
+            "category": "world_pickup",
+            "name": "build_tool",
+            "provider": "openai",
+            "mesh_provider": "meshy_text",
+            "prompt": "Build Tool",
+            "target_size": [0.38, 0.28, 0.38],
+        })
+        self.assertEqual(mesh["target_size"], [0.30, 0.22, 0.12])
+        self.assertEqual(mesh["quality"], "high")
+        plain = normalize_request(self.settings, {
+            "kind": "texture",
+            "category": "item_icon",
+            "name": "canned_food",
+            "provider": "procedural",
+            "resolution": 512,
+            "quality": "medium",
+            "prompt": "Inventory icon of one canned food.",
+        })
+        self.assertFalse(plain["firearm"])
+        self.assertEqual(plain["quality"], "medium")
+
     def test_item_icon_prompt_is_an_object_not_a_tile(self):
         preset = self.settings.catalog()["textures"]["item_icon"]
         prompts = build_prompts(self.settings.style(), preset, "Debug Weapon. A test pistol.", "texture", None, False)
         self.assertIn("one object", prompts["provider_prompt"].lower())
         self.assertIn("from the side", prompts["provider_prompt"].lower())
-        self.assertNotIn("point to the right", prompts["provider_prompt"].lower())
+        self.assertIn("pointing to the right", prompts["provider_prompt"].lower())
+        self.assertIn("grip", prompts["provider_prompt"].lower())
         self.assertNotIn("pointing left", prompts["provider_prompt"].lower())
         self.assertIn("empty alpha", prompts["provider_prompt"].lower())
         self.assertIn("5 percent empty margin", prompts["provider_prompt"].lower())
@@ -256,6 +312,9 @@ class PipelineTests(unittest.TestCase):
         self.assertNotIn("Palette:", open_colors["provider_prompt"])
         self.assertNotIn("#354451", open_colors["provider_prompt"])
         self.assertNotIn("palette dark slate", open_colors["compact_prompt"])
+        tin = build_prompts(self.settings.style(), preset, "Round tin.", "texture", None, False)
+        self.assertNotIn("pointing to the right", tin["provider_prompt"].lower())
+        self.assertNotIn("grip and magazine", tin["provider_prompt"].lower())
 
     def test_style_image_prompt_is_sent_unchanged_and_kept_only_on_accept(self):
         from PIL import Image
@@ -451,8 +510,8 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(any(item["id"].startswith("door_") for item in deployables))
         workbench = by_id["workbench"]
         self.assertEqual(workbench["footprint"], [2, 1])
-        self.assertAlmostEqual(workbench["height"], 1.428)
-        self.assertEqual(workbench["target_size"], [1.81, 1.428, 0.81])
+        self.assertAlmostEqual(workbench["height"], 2.0)
+        self.assertEqual(workbench["target_size"], [1.81, 2.0, 0.81])
         self.assertIn("needs_world_art", workbench)
         self.assertEqual(workbench["needs_world_art"], not workbench["has_world_art"])
         self.assertEqual(by_id["hatchet_scrap"]["target_size"], [0.38, 0.28, 0.38])
@@ -477,6 +536,12 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(request["category"], "from_icon")
         self.assertEqual(request["target_size"], [1.81, 1.428, 0.81])
         self.assertEqual(request["mesh_provider"], "meshy")
+        from generators.orchestrator import _meshy_auto_size, _prompts
+        self.assertTrue(_meshy_auto_size(request))
+        prompt = _prompts(self.settings, request)["provider_prompt"]
+        self.assertIn("1.81 m wide", prompt)
+        self.assertIn("1.43 m tall", prompt)
+        self.assertIn("0.81 m deep", prompt)
         icons = PROJECT / "assets" / "icons"
         sample = next(icons.glob("*.png"), None)
         if sample is not None:
@@ -731,6 +796,44 @@ class PipelineTests(unittest.TestCase):
         self.assertFalse(folder.exists())
         with self.assertRaises(KeyError):
             self.store.get_asset(asset_id)
+
+    def test_rotate_asset_images_rewrites_albedo_clockwise(self):
+        from PIL import Image
+
+        job = self.store.create_job(
+            {
+                "kind": "texture",
+                "category": "item_icon",
+                "name": "debugweapon",
+                "provider": "procedural",
+                "resolution": 32,
+                "icon_category": "weapon",
+                "swatch": [0.35, 0.38, 0.42],
+            }
+        )
+        execute_job(self.settings, self.store, job)
+        asset_id = job["asset_ids"][0]
+        folder = self.store.asset_dir(asset_id)
+        albedo = folder / "original" / "albedo.png"
+        with self.assertRaises(PipelineError):
+            rotate_asset_images(self.settings, self.store, asset_id, 90)
+        approve_asset(self.settings, self.store, asset_id, False, False, False)
+        with Image.open(albedo) as image:
+            image.load()
+            before = image.copy()
+        rotated = rotate_asset_images(self.settings, self.store, asset_id, 90)
+        self.assertEqual(rotated["history"][-1]["event"], "rotated_90")
+        with Image.open(albedo) as image:
+            image.load()
+            expected = before.transpose(Image.Transpose.ROTATE_270)
+            self.assertEqual(image.size, expected.size)
+            self.assertEqual(image.getpixel((0, 0)), expected.getpixel((0, 0)))
+        icon = self.settings.project_root / "assets" / "icons" / "debugweapon.png"
+        self.assertTrue(icon.is_file())
+        with Image.open(icon) as image:
+            self.assertEqual(image.getpixel((0, 0)), expected.getpixel((0, 0)))
+        with self.assertRaises(PipelineError):
+            rotate_asset_images(self.settings, self.store, asset_id, 45)
 
     def test_workshop_openai_concept_uses_style_prompt_builder(self):
         from generators.orchestrator import normalize_request, preview_prompt
@@ -1053,6 +1156,118 @@ class PipelineTests(unittest.TestCase):
         # collision capsule and the player script are what must stay.
         self.assertIn("CapsuleShape3D", player)
         self.assertIn("player_controller.gd", player)
+
+    def test_codex_lists_plank_and_stone_sources(self):
+        codex = build_codex(PROJECT)
+        items = {item["id"]: item for item in codex["items"]}
+        plank = items["plank"]
+        self.assertEqual(plank["column"], "sawbench")
+        saw = next(source for source in plank["sources"] if source["kind"] == "craft")
+        self.assertEqual(saw["input"], "log")
+        self.assertEqual(saw["tier"], 1)
+        self.assertEqual(saw["out_n"], 4)
+        self.assertEqual(saw["station"], "Sawbench")
+        stone = items["stone"]
+        self.assertEqual(stone["column"], "gather")
+        node = next(source for source in stone["sources"] if source["node"] == "stone")
+        self.assertEqual(node["tool"], "pickaxe")
+        self.assertIn("Hills", [biome["name"] for biome in node["biomes"]])
+        self.assertIn("Meadow", [biome["name"] for biome in node["biomes"]])
+        self.assertEqual(codex["families"]["saw"]["max_tier"], 2)
+        self.assertEqual(codex["families"]["cook"]["max_tier"], 4)
+
+    def _codex_copy(self) -> Path:
+        root = self.temp / "codex"
+        for relative in (
+            "scripts/deployables/craft_rules.gd",
+            "scripts/deployables/smelt_rules.gd",
+            "scripts/items/resource_catalog.gd",
+            "scripts/world/biome_catalog.gd",
+            "scripts/deployables/fill_rules.gd",
+            "scripts/items/loot_layout.gd",
+            "resources/items/harvestable/log.tres",
+        ):
+            source = PROJECT / relative
+            destination = root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(source, destination)
+        return root
+
+    def test_tier_edit_changes_one_recipe_line(self):
+        root = self._codex_copy()
+        rules = root / "scripts" / "deployables" / "craft_rules.gd"
+        before = rules.read_text(encoding="utf-8")
+        note = set_recipe_tier(root, "saw", "log", "", "plank", 2)
+        self.assertEqual(note, "Sawmill and above")
+        text = rules.read_text(encoding="utf-8")
+        self.assertIn('_out("saw", 2, "log", "", "plank", 1, 0, 4)', text)
+        self.assertNotIn('_out("saw", 1, "log", "", "plank", 1, 0, 4)', text)
+        self.assertIn('_out("kiln", 1, "clay", "", "brick", 1, 0, 1)', text)
+        with self.assertRaises(PipelineError):
+            set_recipe_tier(root, "saw", "log", "", "plank", 3)
+        self.assertEqual(rules.read_text(encoding="utf-8"), text)
+        notes = apply_tier_moves(root, [
+            {"family": "chem", "input": "chemicals", "extra": "", "output": "fuel", "tier": 2},
+        ])
+        self.assertEqual(notes, ["Refinery and above"])
+        moved = rules.read_text(encoding="utf-8")
+        self.assertIn('_out("chem", 2, "chemicals", "", "fuel", 1, 0, 1)', moved)
+        self.assertIn('_out("chem", 2, "oil_drum_full", "", "fuel", 1, 0, 4)', moved)
+        self.assertNotEqual(before, moved)
+
+    def test_create_item_writes_a_tres_and_optional_recipe(self):
+        root = self._codex_copy()
+        created = create_item(root, {
+            "id": "Field Notes",
+            "display_name": "Field Notes",
+            "description": "A bound sheaf of notes.",
+            "category": "component",
+            "folder": "components",
+            "max_stack": 10,
+            "weight": 0.25,
+            "swatch": [0.4, 0.3, 0.2],
+            "recipe": {
+                "kind": "craft",
+                "family": "bench",
+                "tier": 1,
+                "input": "log",
+                "extra": "",
+                "in_n": 1,
+                "extra_n": 0,
+                "out_n": 1,
+            },
+        })
+        self.assertEqual(created["id"], "field_notes")
+        path = root / "resources" / "items" / "components" / "field_notes.tres"
+        text = path.read_text(encoding="utf-8")
+        self.assertIn('id = "field_notes"', text)
+        self.assertIn('display_name = "Field Notes"', text)
+        self.assertIn("max_stack = 10", text)
+        rules = (root / "scripts" / "deployables" / "craft_rules.gd").read_text(encoding="utf-8")
+        self.assertIn('_out("bench", 1, "log", "", "field_notes", 1, 0, 1)', rules)
+        self.assertIn('_out("saw", 1, "log", "", "plank", 1, 0, 4)', rules)
+        with self.assertRaises(PipelineError):
+            create_item(root, {
+                "id": "field_notes",
+                "display_name": "Again",
+                "category": "component",
+                "folder": "components",
+                "max_stack": 1,
+                "weight": 0.1,
+                "swatch": [1, 1, 1, 1],
+            })
+        update_item(root, {
+            "id": "field_notes",
+            "display_name": "Field Journal",
+            "description": "Rewritten.",
+            "max_stack": 8,
+            "weight": 0.3,
+            "swatch": [0.2, 0.2, 0.2, 1],
+        })
+        updated = path.read_text(encoding="utf-8")
+        self.assertIn('display_name = "Field Journal"', updated)
+        self.assertIn('id = "field_notes"', updated)
+        self.assertIn("max_stack = 8", updated)
 
 
 if __name__ == "__main__":

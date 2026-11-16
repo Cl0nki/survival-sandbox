@@ -116,6 +116,10 @@ Approval copies files into the project and refuses to replace an approved file u
 | World props (resource kind) | `assets/resources/<id>.glb` |
 | Deployables | `assets/deployables/<id>.glb` |
 
+### Ground pickups without a model
+
+An item with no `assets/props/<id>.glb` (or `equipment/`, `weapons/`) is drawn in the world by `scripts/items/item_placeholder.gd`: a small 3D shape per category (ammo, food, medical, weapon, tool, harvest, refined, component, explosive, container, default) tinted with the item swatch. These are the rows the Ingame tab marks as "Placeholder". Approving the model replaces the stand-in on its own, nothing else to change. The world never draws the 2D icon. The name label shows only while the cursor is on the stack or the player stands within reach.
+
 ### World props
 
 Trees, boulders, salvage wrecks and loot crates are not placeable, but they are defined like deployables: one id for the definition, the gameplay box, the mesh and the Meshy job.

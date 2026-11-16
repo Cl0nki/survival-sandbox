@@ -1,3 +1,36 @@
+# Tokens that mean the subject is a firearm. "weapon" alone is not enough:
+# character prompts say "no weapons" and must stay untouched.
+_FIREARM_TOKENS = (
+    "gun",
+    "pistol",
+    "rifle",
+    "revolver",
+    "shotgun",
+    "firearm",
+    "sidearm",
+    "carbine",
+    "blaster",
+    "build tool",
+)
+FIREARM_DIRECTION = (
+    "Firearm: one handheld gun only, strict side profile, barrel horizontal and pointing to the right, "
+    "grip and magazine hanging straight down, sights on top, the whole gun inside the frame, "
+    "clean readable painted shapes, no hands, no person, no stand, no second object."
+)
+FIREARM_COMPACT = "one gun, side profile, barrel pointing to the right, grip down, no hands, no stand"
+# Handheld proportions. The in-game mount rescales, but the published mesh should already be gun-sized.
+FIREARM_TARGET_SIZE = [0.30, 0.22, 0.12]
+# Generic world-pickup box. A gun job that still carries this gets the firearm size instead.
+GENERIC_PICKUP_SIZE = [0.38, 0.28, 0.38]
+
+
+def is_firearm(*parts: str, icon_category: str = "") -> bool:
+    if str(icon_category or "").strip().lower() == "weapon":
+        return True
+    blob = " ".join(str(part or "") for part in parts).lower().replace("_", " ")
+    return any(token in blob for token in _FIREARM_TOKENS)
+
+
 def _palette_text(style: dict) -> str:
     parts = [f"{name.replace('_', ' ')} {value}" for name, value in style.get("palette", {}).items()]
     return ", ".join(parts)
@@ -28,7 +61,7 @@ def _direction(style: dict, preset: dict, kind: str) -> tuple[str, str]:
     return style.get("texture_direction") or _TILE_DIRECTION, "; ".join(kept)
 
 
-def build_prompts(style: dict, preset: dict, user_text: str, kind: str, customization: dict | None = None, style_reference_present: bool = False) -> dict:
+def build_prompts(style: dict, preset: dict, user_text: str, kind: str, customization: dict | None = None, style_reference_present: bool = False, firearm: bool | None = None) -> dict:
     subject = preset.get("prompt", preset.get("label", "game asset"))
     user = " ".join((user_text or "").split())
     custom_bits = []
@@ -42,6 +75,10 @@ def build_prompts(style: dict, preset: dict, user_text: str, kind: str, customiz
         "building": "building_suffix",
     }.get(kind, "prop_suffix")
     suffix = preset.get("suffix") or style.get(suffix_key, "")
+    if firearm is None:
+        firearm = is_firearm(subject, user)
+    if firearm:
+        suffix = f"{suffix} {FIREARM_DIRECTION}".strip()
     reference = ""
     negative = negative_prompt(style, preset)
     direction, requirements = _direction(style, preset, kind)
@@ -72,6 +109,7 @@ def build_prompts(style: dict, preset: dict, user_text: str, kind: str, customiz
         for part in (
             subject,
             user,
+            FIREARM_COMPACT if firearm else "",
             custom,
             "stylized low-poly hand-painted tactical survival game asset",
             "palette dark slate, blue gray, olive, sand, rust, concrete" if use_palette else "",

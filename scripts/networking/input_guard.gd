@@ -18,13 +18,14 @@ static func sanitize_move(
 	aim_yaw: float,
 	lean: float,
 	crouch: float = 0.0,
-	aim_pitch: float = 0.0
+	aim_pitch: float = 0.0,
+	sprint: float = 0.0
 ) -> Dictionary:
-	if not _numbers([move_x, move_y, camera_yaw, aim_yaw, lean, crouch, aim_pitch]):
+	if not _numbers([move_x, move_y, camera_yaw, aim_yaw, lean, crouch, aim_pitch, sprint]):
 		return _reject("non_finite")
 	if absf(move_x) > MAX_AXIS_MAGNITUDE or absf(move_y) > MAX_AXIS_MAGNITUDE or absf(lean) > MAX_AXIS_MAGNITUDE:
 		return _reject("axis_range")
-	if crouch < -0.05 or crouch > 1.05 or absf(aim_pitch) > 3.0:
+	if crouch < -0.05 or crouch > 1.05 or absf(aim_pitch) > 3.0 or sprint < -0.05 or sprint > 1.05:
 		return _reject("axis_range")
 	if absf(camera_yaw) > MAX_ABS_YAW or absf(aim_yaw) > MAX_ABS_YAW:
 		return _reject("yaw_range")
@@ -36,6 +37,7 @@ static func sanitize_move(
 		"lean": clampf(lean, -1.0, 1.0),
 		"crouch": clampf(crouch, 0.0, 1.0),
 		"aim_pitch": clampf(aim_pitch, -MAX_AIM_PITCH, MAX_AIM_PITCH),
+		"sprint": sprint > 0.5,
 	}
 
 

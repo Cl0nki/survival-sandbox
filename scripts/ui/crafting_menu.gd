@@ -6,6 +6,7 @@ class_name CraftingMenu
 signal craft_pressed(input_id: String, extra_id: String, amount: int)
 
 const _Icons = preload("res://scripts/items/item_icons.gd")
+const _UiStyle = preload("res://scripts/ui/ui_style.gd")
 
 const SLOT := 96
 const GRID_GAP := 4
@@ -42,6 +43,7 @@ var _needs: GridContainer
 var _qty_label: Label
 var _craft: Button
 var _queue_grid: GridContainer
+var _progress: ProgressBar
 var _output_host: Control
 var _output_ghost: TextureRect
 
@@ -51,11 +53,12 @@ var _list_buttons: Array = []
 
 func _ready() -> void:
 	visible = false
-	custom_minimum_size = Vector2(GRID_W, 0)
+	## Same outer width as the inventory panel (grid + panel padding).
+	custom_minimum_size = Vector2(GRID_W + _UiStyle.PANEL_PAD_X * 2, 0)
 	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
 	var root := VBoxContainer.new()
-	root.add_theme_constant_override(&"separation", 6)
+	root.add_theme_constant_override(&"separation", 12)
 	add_child(root)
 
 	var head := HBoxContainer.new()
@@ -65,25 +68,42 @@ func _ready() -> void:
 	_title = Label.new()
 	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title.text = "Station"
+	_UiStyle.title(_title)
 	head.add_child(_title)
 	_status = Label.new()
+	_status.add_theme_color_override(&"font_color", _UiStyle.ACCENT)
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	head.add_child(_status)
+	var queue_box := VBoxContainer.new()
+	queue_box.add_theme_constant_override(&"separation", 6)
+	head.add_child(queue_box)
 	_queue_grid = GridContainer.new()
 	_queue_grid.columns = QUEUE_SLOTS
 	_queue_grid.add_theme_constant_override(&"h_separation", 2)
 	_queue_grid.add_theme_constant_override(&"v_separation", 2)
-	head.add_child(_queue_grid)
+	queue_box.add_child(_queue_grid)
 	for _i in QUEUE_SLOTS:
 		_queue_grid.add_child(_empty_slot(QUEUE_SLOT))
+	_progress = ProgressBar.new()
+	_progress.min_value = 0.0
+	_progress.max_value = 1.0
+	_progress.step = 0.0
+	_progress.show_percentage = false
+	_progress.custom_minimum_size = Vector2(0, 8)
+	_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_progress.add_theme_stylebox_override(&"background", _UiStyle.box(Color(1, 1, 1, 0.08), Color(1, 1, 1, 0.06), 4))
+	_progress.add_theme_stylebox_override(&"fill", _UiStyle.box(_UiStyle.ACCENT, Color(0, 0, 0, 0), 4, 0))
+	queue_box.add_child(_progress)
+
+	root.add_child(HSeparator.new())
 
 	_tabs = HBoxContainer.new()
-	_tabs.add_theme_constant_override(&"separation", 8)
+	_tabs.add_theme_constant_override(&"separation", 18)
 	root.add_child(_tabs)
 
 	var body := HBoxContainer.new()
-	body.add_theme_constant_override(&"separation", 12)
+	body.add_theme_constant_override(&"separation", 20)
 	root.add_child(body)
 
 	## Left: recipe icon grid (3 cols, height matches detail through Craft).
@@ -103,11 +123,12 @@ func _ready() -> void:
 	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail.custom_minimum_size = Vector2(0, LIST_H)
-	detail.add_theme_constant_override(&"separation", 6)
+	detail.add_theme_constant_override(&"separation", 10)
 	body.add_child(detail)
 
 	_name = Label.new()
-	_name.add_theme_font_size_override(&"font_size", 18)
+	_name.add_theme_font_size_override(&"font_size", 20)
+	_name.add_theme_color_override(&"font_color", Color.WHITE)
 	detail.add_child(_name)
 
 	_blurb = Label.new()
@@ -166,7 +187,8 @@ func _ready() -> void:
 	actions_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	actions.add_child(actions_spacer)
 	_craft = Button.new()
-	_craft.custom_minimum_size = Vector2(SLOT * 2 + GRID_GAP, 40)
+	_craft.custom_minimum_size = Vector2(SLOT * 2 + GRID_GAP, 44)
+	_craft.theme_type_variation = _UiStyle.ACCENT_BUTTON
 	_craft.focus_mode = Control.FOCUS_NONE
 	_craft.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_craft.pressed.connect(_on_craft)
@@ -175,6 +197,12 @@ func _ready() -> void:
 
 func output_host() -> Control:
 	return _output_host
+
+
+## Progress of the running job (0..1). Called every frame while the menu is open.
+func set_progress(value: float) -> void:
+	if _progress != null:
+		_progress.value = clampf(value, 0.0, 1.0)
 
 
 func show_station(
@@ -192,7 +220,14 @@ func show_station(
 	_bag = bag
 	_action_label = action_label
 	_title.text = station_name if station_name != "" else action_label
-	_status.text = status_text
+	## While a job runs the progress bar replaces the "Name 12s" countdown text.
+	var running := false
+	for entry in queue:
+		if bool((entry as Dictionary).get("active", false)):
+			running = true
+	_status.text = "" if running else status_text
+	if not running:
+		set_progress(0.0)
 	_queue = queue
 	_recipes = SmeltRules.recipes_for(station_kind) if mode == "smelt" else CraftRules.recipes_for(station_kind)
 	if same:
@@ -253,11 +288,6 @@ func _rebuild_tabs() -> void:
 	_tab_buttons.clear()
 	var cats := _categories()
 	for i in cats.size():
-		if i > 0:
-			var sep := Label.new()
-			sep.text = "||"
-			sep.modulate = Color(1, 1, 1, 0.35)
-			_tabs.add_child(sep)
 		var cat := str(cats[i])
 		var tab := Button.new()
 		tab.text = cat
@@ -295,16 +325,17 @@ func _style_tabs() -> void:
 		var selected := str(cat) == _category
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(0, 0, 0, 0)
-		style.content_margin_left = 2
-		style.content_margin_right = 2
+		style.content_margin_left = 4
+		style.content_margin_right = 4
 		style.content_margin_top = 2
-		style.content_margin_bottom = 4
-		style.border_width_bottom = 2
-		style.border_color = Color.WHITE if selected else Color(0, 0, 0, 0)
+		style.content_margin_bottom = 6
+		style.border_width_bottom = 3
+		style.border_color = _UiStyle.ACCENT if selected else Color(0, 0, 0, 0)
 		tab.add_theme_stylebox_override(&"normal", style)
 		tab.add_theme_stylebox_override(&"hover", style)
 		tab.add_theme_stylebox_override(&"pressed", style)
 		tab.add_theme_stylebox_override(&"focus", style)
+		tab.add_theme_font_size_override(&"font_size", 17)
 		tab.add_theme_color_override(&"font_color", Color.WHITE if selected else Color(1, 1, 1, 0.55))
 		tab.add_theme_color_override(&"font_hover_color", Color.WHITE)
 
@@ -436,17 +467,7 @@ func _qty_overlay(text: String, color: Color, small := false) -> Label:
 	return count
 
 func _selection_border() -> Panel:
-	var frame := Panel.new()
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
-	frame.z_index = 3
-	var style := StyleBoxFlat.new()
-	style.draw_center = false
-	style.bg_color = Color(0, 0, 0, 0)
-	style.border_color = Color(1, 1, 1, 0.95)
-	style.set_border_width_all(2)
-	frame.add_theme_stylebox_override(&"panel", style)
-	return frame
+	return _UiStyle.selection_frame()
 
 
 func _clear_slot_contents(slot: Button) -> void:

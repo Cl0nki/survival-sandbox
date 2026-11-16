@@ -666,6 +666,9 @@ func _gate(sender: int, seq: int, item_ids: Variant, point: Vector3, reach: floa
 		return _deny(sender, "Not the authority")
 	if sender <= 1 or not _players().has(sender):
 		return _deny(sender, "No player")
+	var vitality: Variant = (_players()[sender] as Object).get("health")
+	if vitality != null and int(vitality) <= 0:
+		return _deny(sender, "You are down")
 	if not _accept_seq(sender, seq):
 		return _deny(sender, "Repeated request")
 	if not _rate_ok(sender):

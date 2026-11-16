@@ -1,5 +1,7 @@
 extends StaticBody3D
 
+const _READOUT := preload("res://scripts/deployables/deployable_readout.gd")
+
 ## Door or window bars. The deployable system owns the health.
 ## A door swings on its hinge when the player uses it.
 
@@ -13,6 +15,9 @@ var swing_yaw := 0.0
 var _label: Label3D
 var _pivot: Node3D
 var _health := 0
+var _show_name := false
+var _in_reach := false
+var _show_hp := false
 
 
 func _ready() -> void:
@@ -20,15 +25,25 @@ func _ready() -> void:
 		_build_hinge()
 		add_to_group(&"deployable_door")
 	_label = Label3D.new()
-	_label.name = "Health"
+	_label.name = "NameLabel"
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_label.no_depth_test = true
 	_label.position = Vector3(0.0, label_y, 0.0)
 	_label.pixel_size = 0.005
 	_label.font_size = 28
 	_label.outline_size = 6
-	_label.text = display_name
+	_label.visible = false
 	add_child(_label)
+
+
+## `show_name` is hover, standing close, or F1. `show_hp` is F1 only.
+func set_label_focus(show_name: bool, in_reach: bool = false, show_hp: bool = false) -> void:
+	if show_name == _show_name and in_reach == _in_reach and show_hp == _show_hp:
+		return
+	_show_name = show_name
+	_in_reach = in_reach
+	_show_hp = show_hp
+	_refresh_label()
 
 
 func set_deployable_health(current: int, _maximum: int) -> void:
@@ -91,11 +106,11 @@ func _build_hinge() -> void:
 func _refresh_label() -> void:
 	if _label == null:
 		return
-	if is_door:
-		var state := "Open  [F]" if open else "[F]"
-		_label.text = "%s\n%d HP\n%s" % [display_name, _health, state]
-	else:
-		_label.text = "%s\n%d HP" % [display_name, _health]
+	_label.visible = _show_name
+	if not _label.visible:
+		return
+	var extra := "Open" if is_door and open else ""
+	_label.text = _READOUT.text(display_name, _health, _show_hp, _in_reach and is_door, extra)
 
 
 func receive_damage(amount: int, _point: Vector3) -> bool:

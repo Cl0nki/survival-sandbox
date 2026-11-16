@@ -1,19 +1,19 @@
 {
-  "asset_id": "0504f34d2d0c",
+  "asset_id": "fb866d93431e",
   "asset_name": "workbench",
   "category": "from_icon",
   "kind": "deployable",
   "workshop_category": "deployables",
   "tags": [],
-  "created_at": "2026-11-03T22:36:01+00:00",
+  "created_at": "2026-11-15T21:26:28+00:00",
   "provider": "meshy",
   "model": "latest",
-  "prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
   "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
   "seed": null,
   "seed_supported": false,
   "generation_parameters": {
-    "sent_prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "sent_prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
     "prompt_truncated": false,
     "godot_folder": "deployables",
     "polycount": 6000,
@@ -22,6 +22,8 @@
     "image_provider": "manual",
     "workshop_category": "deployables",
     "humanoid": false,
+    "auto_rig": false,
+    "auto_animate": false,
     "optimization_profile": "deployable",
     "expect_collision": true,
     "provider_parameters": {
@@ -36,8 +38,8 @@
       ],
       "texture_resolution": "2k"
     },
-    "provider_task_id": "01a1a38e-1f86-76c4-9bdc-d4480500e627",
-    "generation_task_id": "6c611c4a947f",
+    "provider_task_id": "01a1e11a-bf01-7706-a6d5-4cbaeb07ba1d",
+    "generation_task_id": "9aabb2c168cc",
     "optimization": {
       "profile": "deployable",
       "target_polycount": 6000,
@@ -47,8 +49,8 @@
       ],
       "add_collision": true,
       "target_size": [
-        0.81,
-        0.84,
+        1.81,
+        1.428,
         0.81
       ]
     }
@@ -64,22 +66,22 @@
     "processed/lod1.glb",
     "processed/lod2.glb"
   ],
-  "polygon_count": 5947,
+  "polygon_count": 5132,
   "dimensions": {
     "min": [
-      -0.4050000011920929,
-      -0.2854585349559784,
-      -0.4165711998939514
+      -0.48440036177635193,
+      -0.4050000309944153,
+      -0.42354512214660645
     ],
     "max": [
-      0.4050000011920929,
-      0.285458505153656,
-      0.2082855999469757
+      0.48440033197402954,
+      0.4050000309944153,
+      0.21177256107330322
     ],
     "size": [
-      0.8100000023841858,
-      0.5709170401096344,
-      0.6248567998409271
+      0.9688006937503815,
+      0.8100000619888306,
+      0.6353176832199097
     ]
   },
   "texture_resolution": null,
@@ -89,11 +91,11 @@
   "history": [
     {
       "event": "created",
-      "at": "2026-11-03T22:36:01+00:00",
+      "at": "2026-11-15T21:26:28+00:00",
       "version": 1,
       "provider": "meshy",
       "model": "",
-      "prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
       "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "generating",
@@ -103,11 +105,11 @@
     },
     {
       "event": "processed",
-      "at": "2026-11-03T22:38:01+00:00",
+      "at": "2026-11-15T21:27:57+00:00",
       "version": 1,
       "provider": "meshy",
       "model": "latest",
-      "prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "prompt": "Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
       "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "ready_for_review",
@@ -132,7 +134,7 @@
   },
   "errors": [],
   "warnings": [],
-  "job_id": "d3b73b5e56ac",
+  "job_id": "e292b7c85777",
   "production_files": [
     "assets/deployables/workbench.glb",
     "assets/deployables/workbench.tscn",

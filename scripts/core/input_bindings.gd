@@ -3,6 +3,9 @@ extends Node
 ## Registers prototype actions in code so the binding list stays next to the
 ## systems that use them and does not depend on serialized InputEvent text.
 ## Keys use physical positions: WASD / Q / E on a US keyboard, ZQSD / A / E on AZERTY.
+## F1 flips debug_enabled. Starts off, same as the resource labels and the zoom cap.
+
+var debug_enabled := false
 
 func _enter_tree() -> void:
 	_bind_key(&"move_forward", KEY_W)
@@ -16,6 +19,7 @@ func _enter_tree() -> void:
 	_bind_key(&"lean_left", KEY_Q)
 	_bind_key(&"lean_right", KEY_E)
 	_bind_key(&"crouch", KEY_CTRL)
+	_bind_key(&"sprint", KEY_SHIFT)
 	_bind_key(&"interact", KEY_F)
 	_bind_key(&"inventory", KEY_TAB)
 	_bind_key(&"tech_tree", KEY_H)
@@ -34,6 +38,11 @@ func _enter_tree() -> void:
 	_bind_key(&"build_next", KEY_BRACKETRIGHT)
 	_bind_key(&"build_prev", KEY_BRACKETLEFT)
 	_bind_key(&"build_debug", KEY_F3)
+
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"debug_toggle"):
+		debug_enabled = not debug_enabled
 
 
 func _bind_key(action: StringName, keycode: Key) -> void:

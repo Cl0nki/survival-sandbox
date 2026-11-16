@@ -66,6 +66,14 @@ var _peer_token: Dictionary = {}
 var _token_peer: Dictionary = {}
 var _local_token := ""
 var _autosave: Timer
+## Server only. Death and respawn live in VitalsSystem, enemy AI in EnemySystem.
+## GameNet routes to them and keeps the RPC surface.
+var _vitals: VitalsSystem
+var _enemies: EnemySystem
+var deaths := 0
+var respawns := 0
+## Bodies dropped by the last death, for the log and the tests.
+var last_death_drops := 0
 
 
 func _ready() -> void:
@@ -116,12 +124,13 @@ func send_owner_input(
 	aim_yaw: float,
 	lean: float,
 	crouch: float,
-	aim_pitch: float
+	aim_pitch: float,
+	sprinting: bool = false
 ) -> void:
 	if not _client_connected():
 		return
 	_move_seq_out += 1
-	submit_input.rpc_id(1, _move_seq_out, move.x, move.y, camera_yaw, aim_yaw, lean, crouch, aim_pitch)
+	submit_input.rpc_id(1, _move_seq_out, move.x, move.y, camera_yaw, aim_yaw, lean, crouch, aim_pitch, 1.0 if sprinting else 0.0)
 
 
 func send_owner_fire(direction: Vector3, aim_yaw: float, lean: float, crouch: float) -> void:
@@ -241,7 +250,8 @@ func submit_input(
 	aim_yaw: float,
 	lean: float,
 	crouch: float,
-	aim_pitch: float
+	aim_pitch: float,
+	sprint: float = 0.0
 ) -> void:
 	if not multiplayer.is_server():
 		return
@@ -254,7 +264,8 @@ func submit_input(
 		aim_yaw,
 		lean,
 		crouch,
-		aim_pitch
+		aim_pitch,
+		sprint
 	)
 
 
@@ -478,6 +489,40 @@ func spawn_player(peer_id: int, pos: Vector3, yaw: float) -> void:
 	_spawn_visual(peer_id, pos, yaw)
 
 
+## The owning client died. The server has already dropped its bag; this only
+## starts the countdown on screen.
+@rpc("authority", "reliable")
+func death_notice(respawn_in: float) -> void:
+	if multiplayer.is_server():
+		return
+	if multiplayer.get_remote_sender_id() != 1:
+		return
+	if not is_finite(respawn_in):
+		return
+	var player := _owner_visual()
+	if player == null:
+		return
+	player.respawn_eta = clampf(respawn_in, 0.0, 60.0)
+
+
+## A pawn this client can see came back to life. apply_authoritative_health
+## never raises health, so this is the only way a downed body stands up.
+@rpc("authority", "reliable")
+func player_respawned(peer_id: int, pos: Vector3, yaw: float) -> void:
+	if multiplayer.is_server():
+		return
+	if multiplayer.get_remote_sender_id() != 1:
+		return
+	if not NetConfig.finite_vector(pos) or not is_finite(yaw):
+		return
+	_pending_player_health.erase(peer_id)
+	var player := _visuals.get(peer_id) as PlayerController
+	if player == null or not is_instance_valid(player):
+		_spawn_visual(peer_id, pos, yaw)
+		return
+	player.revive(pos, yaw)
+
+
 @rpc("authority", "reliable")
 func despawn_player(peer_id: int) -> void:
 	if multiplayer.is_server():
@@ -511,7 +556,7 @@ func health_update(kind: int, id: int, current: int) -> void:
 
 
 @rpc("authority", "reliable")
-func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool) -> void:
+func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, harvest: bool = false) -> void:
 	if multiplayer.is_server():
 		return
 	if multiplayer.get_remote_sender_id() != 1:
@@ -519,9 +564,17 @@ func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool
 	if not NetConfig.finite_vector(origin) or not NetConfig.finite_vector(end_point):
 		return
 	# Visual only. Damage arrives through health_update / snapshots.
+	# A harvest swing draws the tracer only while F1 debug mode is on.
 	last_shot_origin = origin
 	last_shot_end = end_point
 	last_shot_text = "peer %d %s" % [shooter, "hit" if damaged else "impact"]
+	if harvest and damaged:
+		var away := end_point - origin
+		if away.length_squared() < 0.0001:
+			away = Vector3.UP
+		HitBurst.spawn(get_parent(), end_point, away + Vector3.UP * 0.35, HitBurst.color_for(""))
+	if harvest and not DebugFlags.enabled():
+		return
 	ShotVisual.spawn(get_parent(), origin, end_point, damaged)
 
 
@@ -647,6 +700,26 @@ func _boot_server() -> void:
 	if _session_mode() == NetConfig.MODE_SERVER:
 		NetConfig.append_line(_status_path(), line)
 	_server_log("arena ready tick_hz=%d snapshot_every=%d" % [Engine.physics_ticks_per_second, _snapshot_every])
+	_boot_systems()
+
+
+func _boot_systems() -> void:
+	_vitals = VitalsSystem.new()
+	_vitals.name = "VitalsSystem"
+	add_child(_vitals)
+	_vitals.bind(self)
+	_enemies = EnemySystem.new()
+	_enemies.name = "EnemySystem"
+	add_child(_enemies)
+	_enemies.bind(self)
+
+
+func vitals() -> VitalsSystem:
+	return _vitals
+
+
+func enemies() -> EnemySystem:
+	return _enemies
 
 
 func _boot_client() -> void:
@@ -712,6 +785,7 @@ func _server_physics(delta: float) -> void:
 		var lean := 0.0
 		var crouch := 0.0
 		var aim_pitch := 0.0
+		var sprinting := false
 		var cmd: Dictionary = _commands.get(id, {})
 		var stamp := float(_command_time.get(id, 0.0))
 		if not cmd.is_empty() and now - stamp <= NetConfig.STALE_INPUT_SEC:
@@ -721,12 +795,15 @@ func _server_physics(delta: float) -> void:
 			lean = float(cmd["lean"])
 			crouch = float(cmd["crouch"])
 			aim_pitch = float(cmd["aim_pitch"])
+			sprinting = bool(cmd.get("sprint", false))
 		if player.health <= 0:
 			axes = Vector2.ZERO
 			crouch = 0.0
+			sprinting = false
 		if _open_container.has(id):
 			axes = Vector2.ZERO
-		player.simulate_authored_motion(delta, axes, camera_yaw, aim_yaw, lean, crouch, aim_pitch)
+			sprinting = false
+		player.simulate_authored_motion(delta, axes, camera_yaw, aim_yaw, lean, crouch, aim_pitch, sprinting)
 	_vis_accum += delta
 	if NetConfig.VISIBILITY_INTERVAL_SEC <= 0.0 or _vis_accum >= NetConfig.VISIBILITY_INTERVAL_SEC:
 		_vis_accum = 0.0
@@ -744,7 +821,8 @@ func _handle_input(
 	aim_yaw: float,
 	lean: float,
 	crouch: float = 0.0,
-	aim_pitch: float = 0.0
+	aim_pitch: float = 0.0,
+	sprint: float = 0.0
 ) -> void:
 	if sender <= 1 or not _players.has(sender):
 		_reject_input(sender, "sender")
@@ -752,7 +830,7 @@ func _handle_input(
 	if not _rate_ok(sender, "move", NetConfig.INPUT_RATE_PER_SEC):
 		_reject_input(sender, "rate")
 		return
-	var clean := InputGuard.sanitize_move(move_x, move_y, camera_yaw, aim_yaw, lean, crouch, aim_pitch)
+	var clean := InputGuard.sanitize_move(move_x, move_y, camera_yaw, aim_yaw, lean, crouch, aim_pitch, sprint)
 	if not bool(clean.get("ok", false)):
 		_reject_input(sender, str(clean.get("reason", "invalid")))
 		return
@@ -908,7 +986,7 @@ func _handle_harvest(
 			str(result.get("leftover", 0)),
 		]
 	)
-	_send_shot_event(sender, origin, end_point, bool(result.get("changed", false)), collider)
+	_send_shot_event(sender, origin, end_point, bool(result.get("changed", false)), collider, true)
 
 
 func _broadcast_harvest_state(result: Dictionary) -> void:
@@ -1061,7 +1139,7 @@ func _push_visibility(observer_id: int, target: PlayerController, visible: bool)
 		hide_player.rpc_id(observer_id, target.network_id)
 
 
-func _send_shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, collider: Object) -> void:
+func _send_shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, collider: Object, harvest: bool = false) -> void:
 	var struck := -1
 	if collider is PlayerController:
 		struck = (collider as PlayerController).network_id
@@ -1072,7 +1150,7 @@ func _send_shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged
 			continue
 		if struck > 1 and peer_id != shooter and not _is_visible(peer_id, struck):
 			continue
-		shot_event.rpc_id(peer_id, shooter, origin, end_point, damaged)
+		shot_event.rpc_id(peer_id, shooter, origin, end_point, damaged, harvest)
 
 
 func _spawn_authority(peer_id: int) -> void:
@@ -1080,6 +1158,10 @@ func _spawn_authority(peer_id: int) -> void:
 	var profile: Dictionary = {}
 	if WorldStore.valid_token(token):
 		profile = _profiles.get(token, {})
+	if not profile.is_empty() and int(profile.get("health", 100)) <= 0:
+		# Left while dead. The bag was already dropped where they fell, so come
+		# back as a fresh spawn instead of lying down at the old corpse.
+		profile = {}
 	var yaw := float(profile.get("yaw", 0.0)) if not profile.is_empty() else 0.0
 	var pos := WorldStore.restore_pose(profile)
 	if not NetConfig.finite_vector(pos):
@@ -1191,6 +1273,8 @@ func _make_player(peer_id: int, pos: Vector3, yaw: float, role: PlayerController
 func _release_player(peer_id: int) -> void:
 	var player: PlayerController = _players.get(peer_id) as PlayerController
 	_stash_profile(peer_id)
+	if _vitals != null:
+		_vitals.forget(peer_id)
 	_players.erase(peer_id)
 	_inventories.erase(peer_id)
 	var leftover: Dictionary = _cursors.get(peer_id, {"id": "", "qty": 0})
@@ -1264,6 +1348,127 @@ func _apply_network_health(kind: int, id: int, current: int) -> void:
 		var dummy := _dummy_node(id)
 		if dummy != null:
 			dummy.apply_authoritative_health(current)
+
+
+func _is_down(peer_id: int) -> bool:
+	var player := _players.get(peer_id) as PlayerController
+	return player != null and is_instance_valid(player) and player.health <= 0
+
+
+## Called by VitalsSystem once, the frame a pawn reaches zero health.
+## Everything the player carried lands on the ground around the body, the open
+## crate is released, and the owner is told how long the wait is.
+func server_handle_death(peer_id: int, respawn_in: float) -> void:
+	var player := _players.get(peer_id) as PlayerController
+	if player == null or not is_instance_valid(player):
+		return
+	deaths += 1
+	_open_container.erase(peer_id)
+	_close_remote(peer_id)
+	var stacks := _take_death_stacks(peer_id)
+	for index in stacks.size():
+		var stack: Dictionary = stacks[index]
+		_spawn_drop(str(stack["id"]), int(stack["qty"]), _death_drop_position(player, index))
+	last_death_drops = stacks.size()
+	_push_inventory(peer_id)
+	if multiplayer.get_peers().has(peer_id):
+		death_notice.rpc_id(peer_id, respawn_in)
+	_server_log("death peer=%d at=%s dropped=%d" % [peer_id, player.global_position, stacks.size()])
+
+
+## Empties the bag and the cursor and returns the stacks to drop. Items the
+## respawn loadout hands back (the debug map's free tools) are not dropped, or
+## each death would mint a spare. Items nobody can pick up would be lost on the
+## ground, so they are not dropped either.
+func _take_death_stacks(peer_id: int) -> Array:
+	var stacks: Array = []
+	var bag := _inventories.get(peer_id) as Inventory
+	var given := Inventory.new(bag.capacity if bag != null else NetConfig.INVENTORY_SLOTS)
+	given.grant_loadout(_session_map())
+	if bag != null:
+		for slot in bag.slots:
+			var item_id := str(slot.get("id", ""))
+			var qty := int(slot.get("qty", 0))
+			if item_id.is_empty() or qty <= 0:
+				continue
+			var definition := ItemCatalog.get_item(item_id)
+			if definition == null or not definition.can_pickup:
+				continue
+			if qty == 1 and given.count_item(item_id) > 0:
+				continue
+			stacks.append({"id": item_id, "qty": qty})
+		bag.resize(bag.capacity)
+	var cursor := _cursor(peer_id)
+	if int(cursor.get("qty", 0)) > 0 and not str(cursor.get("id", "")).is_empty():
+		stacks.append({"id": str(cursor["id"]), "qty": int(cursor["qty"])})
+	_cursors[peer_id] = {"id": "", "qty": 0}
+	return stacks
+
+
+## Spreads drops over a ring that widens with the count. A wall between the body
+## and the spot pulls the drop back in front of it, so nothing lands inside one.
+func _death_drop_position(player: PlayerController, index: int) -> Vector3:
+	var center := player.global_position
+	var angle := float(index) * 2.399963
+	var radius := 0.7 + 0.28 * sqrt(float(index))
+	var target := center + Vector3(cos(angle), 0.0, sin(angle)) * radius
+	var world := player.get_world_3d()
+	if world == null or world.direct_space_state == null:
+		return target
+	var from := center + Vector3(0.0, 0.6, 0.0)
+	var to := target + Vector3(0.0, 0.6, 0.0)
+	var query := PhysicsRayQueryParameters3D.create(from, to, PhysicsLayers.WORLD | PhysicsLayers.BUILDING)
+	query.exclude = [player.get_rid()]
+	var hit := world.direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return target
+	var point: Vector3 = hit["position"]
+	var back := Vector3(from.x - to.x, 0.0, from.z - to.z).normalized()
+	return Vector3(point.x, 0.15, point.z) + back * 0.3
+
+
+## Called by VitalsSystem when the wait is over. Health is restored by
+## PlayerController.revive, never by a health value, so no stale packet can do it.
+func server_respawn(peer_id: int) -> void:
+	var player := _players.get(peer_id) as PlayerController
+	var bag := _inventories.get(peer_id) as Inventory
+	if player == null or not is_instance_valid(player) or bag == null:
+		return
+	var pos := _respawn_point(peer_id)
+	_spawn_by_peer[peer_id] = pos
+	var yaw := 0.0
+	player.revive(pos, yaw)
+	_commands.erase(peer_id)
+	_command_time.erase(peer_id)
+	bag.grant_loadout(_session_map())
+	respawns += 1
+	_push_inventory(peer_id)
+	_refresh_visibility()
+	for peer_key in multiplayer.get_peers():
+		var observer := int(peer_key)
+		if observer == peer_id or _is_visible(observer, peer_id):
+			player_respawned.rpc_id(observer, peer_id, pos, yaw)
+	_server_log("respawn peer=%d at=%s" % [peer_id, pos])
+
+
+## The spawn pad farthest from every other living player, so nobody comes back
+## on top of the person (or, later, the enemy) that just killed them.
+func _respawn_point(peer_id: int) -> Vector3:
+	var others: Array[Vector3] = []
+	for key in _players.keys():
+		if int(key) == peer_id:
+			continue
+		var other := _players[key] as PlayerController
+		if other != null and is_instance_valid(other) and other.health > 0:
+			others.append(other.global_position)
+	var best := Vector3(0.0, 0.15, 8.0)
+	var best_gap := -1.0
+	for point in SpawnPoints.POINTS:
+		var gap := _min_distance(point, others) if not others.is_empty() else 1000.0
+		if gap > best_gap:
+			best_gap = gap
+			best = point
+	return best
 
 
 func _allocate_spawn(peer_id: int) -> Vector3:
@@ -1753,6 +1958,8 @@ func _begin_item(sender: int) -> String:
 		return "not_server"
 	if sender <= 1 or not _players.has(sender):
 		return "sender"
+	if _is_down(sender):
+		return _fail_item(sender, "dead")
 	if _item_lock:
 		return _fail_item(sender, "busy")
 	if not _rate_ok(sender, "item", NetConfig.ITEM_RATE_PER_SEC):
@@ -1827,7 +2034,7 @@ func authority_players() -> Dictionary:
 func hotbar_item(peer_id: int) -> String:
 	var bag := _inventories.get(peer_id) as Inventory
 	var player := _players.get(peer_id) as PlayerController
-	if bag == null or player == null:
+	if bag == null or player == null or player.health <= 0:
 		return ""
 	var index := player.hotbar_index
 	if index < 0 or index >= bag.capacity:
@@ -1890,7 +2097,7 @@ func _deployables() -> DeployableSystem:
 
 
 func _handle_toggle_door(sender: int, piece_id: int) -> void:
-	if sender <= 1 or not _players.has(sender):
+	if sender <= 1 or not _players.has(sender) or _is_down(sender):
 		return
 	var player := _players.get(sender) as Node3D
 	var system := _deployables()
@@ -2167,7 +2374,7 @@ func debug_click(peer_id: int, area: int, index: int, right: bool, shift: bool, 
 
 func _bot_move_seq_send() -> void:
 	_move_seq_out += 1
-	submit_input.rpc_id(1, _move_seq_out, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+	submit_input.rpc_id(1, _move_seq_out, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 
 func _remote_moved() -> bool:

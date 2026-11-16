@@ -8,12 +8,16 @@ const QUEUE_MAX := 6
 
 var station_kind := "furnace_scrap"
 
-var _hp := 0
 var _status := ""
 var _job: Dictionary = {}
 var _job_left := 0.0
 var _queue: Array = []
 var _mouth: MeshInstance3D
+## Clients never run jobs. The server sends the queue and the running job's
+## time once per change, and the client counts the timer down on its own clock.
+var _remote_rows: Array = []
+var _remote_total := 0.0
+var _remote_left := 0.0
 
 
 func _ready() -> void:
@@ -49,8 +53,10 @@ func output_index() -> int:
 
 
 func queue_snapshot() -> Array:
+	if not _authority():
+		return _remote_rows.duplicate(true)
 	var rows: Array = []
-	if not _job.is_empty() and bool(_job.get("from_bag", false)):
+	if not _job.is_empty():
 		rows.append({
 			"id": str(_job.get("output_id", "")),
 			"qty": int(_job.get("count", 1)),
@@ -63,6 +69,65 @@ func queue_snapshot() -> Array:
 			"active": false,
 		})
 	return rows
+
+
+## Running job progress, 0..1 (0 when idle). Drives the queue progress bar.
+func progress() -> float:
+	var total := 0.0
+	var left := 0.0
+	if _authority():
+		if _job.is_empty():
+			return 0.0
+		total = float(_job.get("seconds", 0.0))
+		left = _job_left
+	else:
+		if _remote_rows.is_empty():
+			return 0.0
+		total = _remote_total
+		left = _remote_left
+	if total <= 0.0:
+		return 1.0
+	return clampf(1.0 - left / total, 0.0, 1.0)
+
+
+## Client side: the server announced a new queue / running job.
+func apply_job(rows: Array, total: float, left: float) -> void:
+	_remote_rows = rows
+	_remote_total = total
+	_remote_left = left
+	_paint_remote_status()
+	_poke_viewers()
+
+
+func _tick_remote(delta: float) -> void:
+	if _remote_rows.is_empty():
+		return
+	_remote_left = maxf(_remote_left - delta, 0.0)
+	_paint_remote_status()
+
+
+func _paint_remote_status() -> void:
+	if _remote_rows.is_empty():
+		set_smelt_status("")
+		return
+	var item_id := str((_remote_rows[0] as Dictionary).get("id", ""))
+	var definition := ItemCatalog.get_item(item_id)
+	var label := item_id if definition == null else definition.display_name
+	set_smelt_status("%s %ds" % [label, ceili(_remote_left)])
+
+
+## Server side: one message when the queue or the running job changes.
+func _publish_job() -> void:
+	var host := get_parent()
+	if host == null or not host.has_method(&"publish_job") or not has_meta(&"deployable_id"):
+		return
+	host.call(&"publish_job", int(get_meta(&"deployable_id")), queue_snapshot(), float(_job.get("seconds", 0.0)), _job_left)
+
+
+func _advance() -> void:
+	_kick_queue()
+	if _job.is_empty():
+		_publish_job()
 
 
 ## Queue bag smelts. Output lands in the Out slot.
@@ -122,7 +187,10 @@ func smelt_from_bag(bag: Inventory, input_id: String, amount: int = 1) -> String
 		queued += 1
 	if queued <= 0:
 		return last_reason
+	var had_job := not _job.is_empty()
 	_kick_queue()
+	if had_job:
+		_publish_job()
 	_publish_slots()
 	_poke_viewers()
 	return ""
@@ -135,6 +203,7 @@ func _kick_queue() -> void:
 	_job_left = float(_job["seconds"])
 	_glow(true)
 	_push_status(_job_text())
+	_publish_job()
 
 
 func _reserved_output(output_id: String) -> int:
@@ -148,11 +217,6 @@ func _reserved_output(output_id: String) -> int:
 	return total
 
 
-func set_deployable_health(current: int, _maximum: int) -> void:
-	_hp = current
-	_paint_label()
-
-
 func set_smelt_status(text: String) -> void:
 	if text == _status:
 		return
@@ -160,13 +224,14 @@ func set_smelt_status(text: String) -> void:
 	## so the inventory UI is not rebuilt mid-click.
 	var busy_changed := (_status == "") != (text == "")
 	_status = text
-	_paint_label()
+	_apply_label()
 	if busy_changed:
 		_poke_viewers()
 
 
 func _process(delta: float) -> void:
 	if not _authority():
+		_tick_remote(delta)
 		return
 	if _job.is_empty():
 		_kick_queue()
@@ -178,7 +243,7 @@ func _process(delta: float) -> void:
 		_job = {}
 		_job_left = 0.0
 		_push_status("")
-		_kick_queue()
+		_advance()
 		return
 	_job_left -= delta
 	if _job_left <= 0.0:
@@ -210,6 +275,7 @@ func _try_start() -> void:
 	_job_left = float(planned["seconds"])
 	_glow(true)
 	_push_status(_job_text())
+	_publish_job()
 
 
 func _finish() -> void:
@@ -219,7 +285,7 @@ func _finish() -> void:
 	_glow(false)
 	if not _matches(job):
 		_push_status("")
-		_kick_queue()
+		_advance()
 		return
 	if not bool(job.get("from_bag", false)):
 		inventory.remove_from_slot(SmeltRules.INPUT, int(job["count"]))
@@ -234,7 +300,8 @@ func _finish() -> void:
 		inventory.slots[SmeltRules.OUTPUT] = slot
 	_push_status("")
 	_publish_slots()
-	_kick_queue()
+	_advance()
+	_poke_viewers()
 
 
 func _matches(job: Dictionary) -> bool:
@@ -273,11 +340,9 @@ func _job_text() -> String:
 	return "%s %ds" % [label, ceili(maxf(_job_left, 0.0))]
 
 
+## Local label only. Clients get the job via `_publish_job`, not per-frame text.
 func _push_status(text: String) -> void:
 	set_smelt_status(text)
-	var host := get_parent()
-	if host != null and host.has_method(&"publish_smelt") and has_meta(&"deployable_id"):
-		host.call(&"publish_smelt", int(get_meta(&"deployable_id")), text)
 
 
 func _publish_slots() -> void:
@@ -316,13 +381,8 @@ func _authority() -> bool:
 	return multiplayer.is_server()
 
 
-func _paint_label() -> void:
-	if _label == null:
-		return
-	var text := "%s  [F]\n%d HP" % [prompt, _hp]
-	if _status != "":
-		text += "\n" + _status
-	_label.text = text
+func _label_extra() -> String:
+	return _status
 
 
 func _glow(hot: bool) -> void:

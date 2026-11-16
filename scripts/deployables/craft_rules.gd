@@ -322,12 +322,12 @@ static func _warm() -> void:
 	_station("sawmill", "craft", "saw", 2, 8, 1.5, 1, 2, coal, 400, 0.84, "Sawmill", Vector2i(2, 2), Color(0.50, 0.34, 0.18), "Eight log at a time, half the coal.")
 	_station("kiln", "craft", "kiln", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Kiln", Vector2i(1, 1), Color(0.64, 0.32, 0.24), "Clay, stone, or limestone. One coal.")
 	_station("kiln_shed", "craft", "kiln", 2, 8, 2.5, 1, 2, coal, 500, 0.84, "Kiln Shed", Vector2i(2, 2), Color(0.52, 0.28, 0.22), "Also cement and concrete. Eight at a time.")
-	_station("workbench", "craft", "bench", 1, 1, 5.0, 1, 1, coal, 100, 1.428, "Workbench", Vector2i(2, 1), Color(0.52, 0.36, 0.20), "Scrap tools, early deployables, pistol, and building plan. One coal.")
+	_station("workbench", "craft", "bench", 1, 1, 5.0, 1, 1, coal, 100, 2.0, "Workbench", Vector2i(2, 1), Color(0.52, 0.36, 0.20), "Scrap tools, early deployables, pistol, and building plan. One coal.")
 
-	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 1.428, "Iron Workbench", Vector2i(2, 1), Color(0.58, 0.58, 0.62), "Iron tools, mid deployables, wiring, and metal beam.")
-	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 1.428, "Steel Workbench", Vector2i(2, 1), Color(0.40, 0.44, 0.50), "Steel tools, advanced stations, steel plate, pipe, and screw bolt.")
-	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 1.428, "Composite Workbench", Vector2i(2, 1), Color(0.42, 0.40, 0.48), "Composite tools, late stations, industrial motor, and composite panel.")
-	_station("machine_shop", "craft", "bench", 4, 12, 1.2, 1, 4, coal, 1200, 0.84, "Machine Shop", Vector2i(3, 3), Color(0.36, 0.38, 0.42), "The same bench jobs, twelve at a time.")
+	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 2.0, "Iron Workbench", Vector2i(2, 1), Color(0.58, 0.58, 0.62), "Iron tools, mid deployables, wiring, and metal beam.")
+	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 2.0, "Steel Workbench", Vector2i(2, 1), Color(0.40, 0.44, 0.50), "Steel tools, advanced stations, steel plate, pipe, and screw bolt.")
+	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 2.0, "Composite Workbench", Vector2i(2, 1), Color(0.42, 0.40, 0.48), "Composite tools, late stations, industrial motor, and composite panel.")
+	_station("machine_shop", "craft", "bench", 4, 12, 1.2, 1, 4, coal, 1200, 1.419, "Machine Shop", Vector2i(2, 3), Color(0.36, 0.38, 0.42), "The same bench jobs, twelve at a time.")
 	_station("chem_bench", "craft", "chem", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Chem Bench", Vector2i(1, 1), Color(0.42, 0.62, 0.36), "Gunpowder, plastic, rubber, and fuel.")
 	_station("refinery", "craft", "chem", 2, 8, 2.0, 1, 2, coal, 800, 0.84, "Refinery", Vector2i(3, 2), Color(0.32, 0.36, 0.34), "The chem bench, plus a drum of oil into fuel.")
 	_station("ammo_bench", "craft", "armory", 1, 2, 4.0, 1, 1, coal, 250, 0.84, "Ammo Bench", Vector2i(1, 1), Color(0.48, 0.42, 0.28), "Gunpowder and metal into rounds.")
@@ -350,7 +350,6 @@ static func _warm() -> void:
 		_out("bench", 1, "cloth", "", "medical_supplies", 2, 0, 1),
 		_out("bench", 1, "tire", "", "rubber", 1, 0, 4),
 		_out("bench", 1, "car_door", "", "steel_scrap", 1, 0, 4),
-		_out("bench", 1, "headlight", "", "glass", 1, 0, 2),
 		_out("bench", 1, "scrap_metal", "stick", "hatchet_scrap", 1, 1, 1),
 		_out("bench", 1, "scrap_metal", "stone", "pickaxe_scrap", 1, 1, 1),
 		_out("bench", 1, "scrap_metal", "log", "shovel_scrap", 1, 1, 1),
@@ -376,7 +375,6 @@ static func _warm() -> void:
 		_out("bench", 2, "iron_ingot", "copper_ingot", "metal_beam", 1, 1, 1),
 		_out("bench", 2, "mechanical_part", "", "mechanical_component", 1, 0, 1),
 		_out("bench", 2, "engine_block", "", "mechanical_part", 1, 0, 4),
-		_out("bench", 2, "radiator", "", "copper_ingot", 1, 0, 2),
 		_out("bench", 2, "appliance_motor", "", "wiring", 1, 0, 3),
 		_out("bench", 2, "iron_ingot", "stick", "hatchet_iron", 1, 1, 1),
 		_out("bench", 2, "iron_ingot", "stone", "pickaxe_iron", 1, 1, 1),

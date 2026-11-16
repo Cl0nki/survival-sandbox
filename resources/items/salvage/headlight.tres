@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "headlight"
 display_name = "Headlight"
-description = "Glass lens and reflector. Strip it for glass."
+description = "Glass lens and reflector pulled from a wreck."
 max_stack = 20
 weight = 0.35
 category = "harvest"

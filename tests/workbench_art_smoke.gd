@@ -44,8 +44,8 @@ func _run() -> int:
 	if DeployableCatalog.footprint("workbench") != Vector2i(2, 1):
 		push_error("workbench footprint is not 2x1")
 		return 1
-	if not is_equal_approx(DeployableCatalog.body_height("workbench"), 1.428):
-		push_error("workbench height is not 1.428")
+	if not is_equal_approx(DeployableCatalog.body_height("workbench"), 2.0):
+		push_error("workbench height is not 2.0")
 		return 1
 	print("WORKBENCH_ART_OK")
 	return 0

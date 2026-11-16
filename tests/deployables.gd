@@ -53,6 +53,12 @@ func _run() -> void:
 	_check(bool(turned["ok"]), "chest facing the other long side refused: %s" % turned["reason"])
 	var turned_center := deployables.center_of(int(turned["id"]))
 	_check(absf(turned_center.x - 9.0) < 0.01 and absf(turned_center.z - 0.5) < 0.01, "flipped chest left the middle: %s" % turned_center)
+	_check(_faces(deployables, int(along_x["id"]), Vector3(0, 0, 1)), "chest at 0° does not face +Z")
+	_check(_faces(deployables, int(along_z["id"]), Vector3(-1, 0, 0)), "chest at 90° does not face -X")
+	_check(_faces(deployables, int(turned["id"]), Vector3(0, 0, -1)), "chest at 180° does not face -Z")
+	var full_turn: Dictionary = deployables.try_place("chest", Vector2i(8, 4), 3, 0)
+	_check(bool(full_turn["ok"]), "chest at 270° refused: %s" % full_turn["reason"])
+	_check(_faces(deployables, int(full_turn["id"]), Vector3(1, 0, 0)), "chest at 270° does not face +X")
 
 	_check(bool(_place(building, "floor_1x1", Vector2i(12, 4))["ok"]), "floor for the dividing wall failed")
 	_check(bool(_place(building, "floor_1x1", Vector2i(13, 4))["ok"]), "second floor for the dividing wall failed")
@@ -121,6 +127,16 @@ func _run() -> void:
 	_check(tool.ghost_shown(), "chest ghost is hidden")
 	var status := deployables.get_node("DeployPreview/Status") as Label3D
 	_check(status != null and status.text.find("2x1") >= 0, "chest blueprint did not say 2x1: %s" % (status.text if status != null else "missing"))
+	_check(status != null and status.text.find("0°") >= 0, "chest blueprint did not show 0°: %s" % (status.text if status != null else "missing"))
+	for step in 4:
+		tool.preview_at("workbench", chest_aim, chest_from, step)
+		var art := deployables.get_node_or_null("DeployPreview/ArtPreview") as Node3D
+		var headings: Array[Vector3] = [Vector3(0, 0, 1), Vector3(-1, 0, 0), Vector3(0, 0, -1), Vector3(1, 0, 0)]
+		var expected := headings[step]
+		var model_faces := art != null and art.visible and art.global_transform.basis.z.normalized().dot(expected) > 0.99
+		_check(model_faces, "ghost model at step %d does not face %s" % [step, expected])
+		_check(deployables.get_node_or_null("DeployPreview/Ghost/Facing") == null, "ghost still has an arrow")
+		_check(deployables.get_node_or_null("DeployPreview/Ghost/Front") == null, "ghost still has a front plate")
 	var far: Dictionary = tool.preview_at("chest", chest_aim, Vector3(1.0, 0.0, 0.0), 0)
 	_check(not bool(far["ok"]) and str(far["reason"]) == "Too far", "far chest was %s" % far["reason"])
 	var spun: Dictionary = tool.preview_at("chest", Vector3(0.5, 0.0, 15.0), Vector3(0.5, 0.0, 12.0), 1)
@@ -150,6 +166,16 @@ func _run() -> void:
 	var door_at: Vector3 = (fitting as Node3D).global_position
 	_check(deployables.toggle_door(int(door_placed["id"]), door_at + Vector3(0.0, 0.0, 1.0)), "door did not open")
 	_check(bool(fitting.get("open")), "door stayed shut")
+	var door_label := fitting.get_node("NameLabel") as Label3D
+	_check(door_label != null and not door_label.visible, "door name shows before focus")
+	fitting.set_label_focus(true, false, false)
+	_check(door_label.visible and door_label.text.contains("Open") and not door_label.text.contains("HP") and not door_label.text.contains("[F]"), "open door label: %s" % door_label.text)
+	fitting.set_label_focus(true, true, false)
+	_check(door_label.text.contains("[F]") and not door_label.text.contains("HP"), "door reach hint: %s" % door_label.text)
+	fitting.set_label_focus(true, false, true)
+	_check(door_label.text.contains("100 HP") and not door_label.text.contains("[F]"), "door debug HP: %s" % door_label.text)
+	fitting.set_label_focus(false, false, false)
+	_check(not door_label.visible, "door name stays after focus left")
 	var open_tip: Vector3 = fitting.leaf_tip()
 	_check(open_tip.z > 0.4 and open_tip.x < 0.0, "door did not swing toward the player: %s" % open_tip)
 	_check(deployables.toggle_door(int(door_placed["id"]), door_at + Vector3(0.0, 0.0, 1.0)), "door did not close")
@@ -169,6 +195,16 @@ func _run() -> void:
 	var bench_body := deployables.piece_node(int(bench["id"]))
 	_check(bench_body.receive_damage(40, Vector3.ZERO), "workbench ignored the shot")
 	_check(deployables.health_of(int(bench["id"])) == 60, "workbench health did not drop to 60")
+	var bench_label := bench_body.get_node("NameLabel") as Label3D
+	_check(bench_label != null and not bench_label.visible, "workbench name shows before focus")
+	bench_body.set_label_focus(true, false, false)
+	_check(bench_label.visible and bench_label.text == "Workbench", "workbench name on focus: %s" % bench_label.text)
+	bench_body.set_label_focus(true, true, false)
+	_check(bench_label.text.contains("[F]") and not bench_label.text.contains("HP"), "workbench reach hint: %s" % bench_label.text)
+	bench_body.set_label_focus(true, true, true)
+	_check(bench_label.text.contains("60 HP"), "workbench debug HP: %s" % bench_label.text)
+	bench_body.set_label_focus(false, false, false)
+	_check(not bench_label.visible, "workbench name stays after focus left")
 	_check(bench_body.receive_damage(60, Vector3.ZERO), "workbench ignored the killing shot")
 	_check(not deployables.has_piece(int(bench["id"])), "workbench stayed at 0 HP")
 	_check(DeployableCatalog.max_health("chest") == 100, "chest max health is not 100")
@@ -178,6 +214,13 @@ func _run() -> void:
 		_check(DeployableCatalog.max_health(DeployableCatalog.window_id(tier)) == half, "window tier %d health" % tier)
 
 	stage.free()
+
+
+func _faces(deployables: DeployableSystem, piece_id: int, expected: Vector3) -> bool:
+	var node := deployables.piece_node(piece_id) as Node3D
+	if node == null or node.get_node_or_null("Facing") != null:
+		return false
+	return node.basis.z.normalized().dot(expected) > 0.99
 
 
 func _place(building: BuildingSystem, blueprint_id: String, anchor: Vector2i, rotation: int = 0, level: int = 0, axis: int = 0) -> Dictionary:

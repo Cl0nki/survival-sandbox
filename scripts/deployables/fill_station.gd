@@ -5,10 +5,12 @@ class_name FillStation
 
 var station_kind := "water_well"
 
-var _hp := 0
 var _status := ""
 var _job_id := ""
 var _job_left := 0.0
+## Client-only copy of the running timer (see apply_job).
+var _remote_running := false
+var _remote_left := 0.0
 
 
 func _ready() -> void:
@@ -37,33 +39,33 @@ func slot_hint() -> String:
 	return FillRules.hint(station_kind)
 
 
-func set_deployable_health(current: int, _maximum: int) -> void:
-	_hp = current
-	_paint_label()
-
-
 func set_fill_status(text: String) -> void:
 	if text == _status:
 		return
 	_status = text
-	_paint_label()
+	_apply_label()
 	_poke_viewers()
 
 
 func _process(delta: float) -> void:
 	if not _authority():
+		_tick_remote(delta)
 		return
 	var loaded := _loaded_id()
 	var full := FillRules.filled_id(station_kind, loaded)
 	if full == "":
+		var was_running := _job_id != ""
 		_job_id = ""
 		_job_left = 0.0
 		if _status != "":
 			_push_status("")
+		if was_running:
+			_publish_job()
 		return
 	if _job_id != loaded:
 		_job_id = loaded
 		_job_left = FillRules.seconds(station_kind)
+		_publish_job()
 	_job_left -= delta
 	if _job_left <= 0.0:
 		_finish(full)
@@ -71,9 +73,39 @@ func _process(delta: float) -> void:
 	_push_status("Filling %ds" % ceili(_job_left))
 
 
+## Client side: the server announced a job start or end. The timer runs locally.
+func apply_job(rows: Array, _total: float, left: float) -> void:
+	_remote_running = not rows.is_empty()
+	_remote_left = left
+	_paint_remote_status()
+
+
+func _tick_remote(delta: float) -> void:
+	if not _remote_running:
+		return
+	_remote_left = maxf(_remote_left - delta, 0.0)
+	_paint_remote_status()
+
+
+func _paint_remote_status() -> void:
+	set_fill_status("Filling %ds" % ceili(_remote_left) if _remote_running else "")
+
+
+## Server side: one message when a fill starts or ends.
+func _publish_job() -> void:
+	var host := get_parent()
+	if host == null or not host.has_method(&"publish_job") or not has_meta(&"deployable_id"):
+		return
+	var rows: Array = []
+	if _job_id != "":
+		rows.append({"id": _job_id, "qty": 1, "active": true})
+	host.call(&"publish_job", int(get_meta(&"deployable_id")), rows, FillRules.seconds(station_kind), _job_left)
+
+
 func _finish(full_id: String) -> void:
 	_job_id = ""
 	_job_left = 0.0
+	_publish_job()
 	if inventory == null:
 		_push_status("")
 		return
@@ -99,11 +131,9 @@ func _loaded_id() -> String:
 	return item_id
 
 
+## Local label only. Clients get the job via `_publish_job`, not per-frame text.
 func _push_status(text: String) -> void:
 	set_fill_status(text)
-	var host := get_parent()
-	if host != null and host.has_method(&"publish_smelt") and has_meta(&"deployable_id"):
-		host.call(&"publish_smelt", int(get_meta(&"deployable_id")), text)
 
 
 func _publish_slots() -> void:
@@ -142,13 +172,8 @@ func _authority() -> bool:
 	return multiplayer.is_server()
 
 
-func _paint_label() -> void:
-	if _label == null:
-		return
-	var text := "%s  [F]\n%d HP" % [prompt, _hp]
-	if _status != "":
-		text += "\n" + _status
-	_label.text = text
+func _label_extra() -> String:
+	return _status
 
 
 func _dress() -> void:

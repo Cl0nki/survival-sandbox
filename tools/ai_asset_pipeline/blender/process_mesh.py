@@ -62,10 +62,17 @@ def _combined_bounds():
 
 
 def _fit_target_size(size) -> bool:
-    """Uniform-scale visual meshes into size [x,y,z], pivot at bottom center on y=0."""
+    """Uniform-scale into game size [width, height, depth], bottom on the ground.
+
+    Blender is Z-up. Height is Blender Z and depth is Blender Y. The mesh keeps
+    its proportions and stays inside the box instead of being stretched to fill it.
+    """
     if not size or len(size) != 3:
         return False
-    target = [max(float(axis), 0.01) for axis in size]
+    width = max(float(size[0]), 0.01)
+    height = max(float(size[1]), 0.01)
+    depth = max(float(size[2]), 0.01)
+    target = [width, depth, height]
     bounds = _combined_bounds()
     if bounds is None:
         return False
@@ -73,10 +80,10 @@ def _fit_target_size(size) -> bool:
     current = [max(high[axis] - low[axis], 0.001) for axis in range(3)]
     factor = min(target[axis] / current[axis] for axis in range(3))
     center_x = (low[0] + high[0]) * 0.5
-    center_z = (low[2] + high[2]) * 0.5
+    center_y = (low[1] + high[1]) * 0.5
     Vector = __import__("mathutils").Vector
     Matrix = __import__("mathutils").Matrix
-    offset = Matrix.Translation(Vector((-center_x, -low[1], -center_z)))
+    offset = Matrix.Translation(Vector((-center_x, -center_y, -low[2])))
     scale = Matrix.Scale(factor, 4)
     for obj in _mesh_objects():
         if obj.name.endswith("-colonly") or obj.name.endswith("-col"):

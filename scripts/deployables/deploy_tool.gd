@@ -2,9 +2,9 @@ extends Node
 class_name DeployTool
 
 ## Hotbar deployables. Selecting one shows its footprint ghost. Left click
-## places it when the aim point and the piece are within 5 m. R rotates a
-## cell piece. A chest ghost is the 2x1 with the box in the middle. A door
-## or window bars ghost sits in the opening under the cursor.
+## places it when the aim point and the piece are within 5 m. R and Shift+R
+## turn a cell piece through a full circle, 90° at a time. The ghost shows the
+## item model on local +Z. A door or window bars ghost sits in the opening.
 
 const VALID := Color(0.30, 0.95, 0.45, 0.35)
 const INVALID := Color(1.0, 0.25, 0.20, 0.38)
@@ -18,7 +18,8 @@ var rotation_steps := 0
 var equipped := false
 
 var _ghost: MeshInstance3D
-var _lip: MeshInstance3D
+var _art_root: Node3D
+var _art_kind := ""
 var _lines: MeshInstance3D
 var _line_mesh := ImmediateMesh.new()
 var _label: Label3D
@@ -43,10 +44,9 @@ func setup(system: DeployableSystem, grid_host: BuildingSystem, owner_player: Pl
 	_ghost.name = "Ghost"
 	_ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	preview.add_child(_ghost)
-	_lip = MeshInstance3D.new()
-	_lip.name = "Front"
-	_lip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_ghost.add_child(_lip)
+	_art_root = Node3D.new()
+	_art_root.name = "ArtPreview"
+	preview.add_child(_art_root)
 	_lines = MeshInstance3D.new()
 	_lines.name = "Footprint"
 	_lines.mesh = _line_mesh
@@ -278,19 +278,7 @@ func _show(plan: Dictionary) -> void:
 		_ghost.visible = true
 		_draw_aabb(Transform3D(basis, _ghost.position), AABB(body * -0.5, body), line_color)
 		_draw_cells(plan.get("cells", []), float(plan.get("support_y", center.y)) + 0.04, line_color)
-		if kind == "chest":
-			var lip := BoxMesh.new()
-			lip.size = Vector3(body.x * 0.72, body.y * 0.22, 0.04)
-			_lip.mesh = lip
-			_lip.position = Vector3(0.0, body.y * 0.42 - body.y * 0.5, body.z * 0.5)
-			var lip_mat := StandardMaterial3D.new()
-			lip_mat.albedo_color = Color(0.28, 0.18, 0.1, 0.9)
-			lip_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			lip_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-			_lip.set_surface_override_material(0, lip_mat)
-			_lip.visible = true
-		else:
-			_lip.visible = false
+		_sync_art(kind, body, basis, center)
 		_label.position = _ghost.position + Vector3(0.0, body.y * 0.5 + 0.35, 0.0)
 	elif plan.has("local") and (plan["local"] as AABB).size.length_squared() > 0.0 and int((plan.get("edge", Vector4i.ZERO) as Vector4i).w) >= 0:
 		var local: AABB = plan["local"]
@@ -302,19 +290,20 @@ func _show(plan: Dictionary) -> void:
 		_ghost.mesh = box
 		_ghost.material_override = _valid_mat if ok else _invalid_mat
 		_ghost.visible = true
-		_lip.visible = false
+		_hide_art()
 		_draw_aabb(xform, local, line_color)
 		_label.position = _ghost.position + Vector3(0.0, local.size.y * 0.5 + 0.25, 0.0)
 	else:
 		_ghost.visible = false
-		_lip.visible = false
+		_hide_art()
 		_label.position = plan.get("center", Vector3.ZERO) + Vector3(0.0, 0.4, 0.0)
 	if _drawing:
 		_line_mesh.surface_end()
 	var footprint: Vector2i = DeployableCatalog.footprint(kind)
 	var title := DeployableCatalog.display_name(kind)
 	if footprint != Vector2i.ZERO:
-		title = "%s  %dx%d" % [title, footprint.x, footprint.y]
+		var facing := posmod(int(plan.get("steps", 0)), 4) * 90
+		title = "%s  %dx%d  %d°" % [title, footprint.x, footprint.y, facing]
 	var reason := str(plan.get("reason", ""))
 	_label.text = title if reason == "" else "%s\n%s" % [title, reason]
 	_label.modulate = Color(0.75, 1.0, 0.8) if ok else Color(1.0, 0.55, 0.45)
@@ -359,13 +348,31 @@ func _segment(a: Vector3, b: Vector3, color: Color) -> void:
 	_line_mesh.surface_add_vertex(b)
 
 
+func _hide_art() -> void:
+	if _art_root != null:
+		_art_root.visible = false
+
+
+func _sync_art(kind: String, body: Vector3, basis: Basis, ground: Vector3) -> void:
+	if _art_root == null:
+		return
+	if _art_kind != kind:
+		_art_kind = kind
+		for child in _art_root.get_children():
+			_art_root.remove_child(child)
+			child.free()
+		DeployableArt.attach(_art_root, kind, body)
+	_art_root.basis = basis
+	_art_root.position = ground
+	_art_root.visible = DeployableArt.has_art(kind)
+
+
 func _hide() -> void:
 	_shown = false
 	_signature = ""
 	if _ghost != null:
 		_ghost.visible = false
-	if _lip != null:
-		_lip.visible = false
+	_hide_art()
 	if _label != null:
 		_label.visible = false
 	if _lines != null:

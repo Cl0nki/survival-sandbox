@@ -47,7 +47,7 @@ def normalize_texture_resolution(value) -> str:
     return aliases[text]
 
 
-def image_to_3d_payload(image_png: bytes, polycount: int, texture_resolution: str, character: bool, ai_model: str) -> dict:
+def image_to_3d_payload(image_png: bytes, polycount: int, texture_resolution: str, character: bool, ai_model: str, auto_size: bool = False) -> dict:
     encoded = base64.b64encode(image_png).decode("ascii")
     payload = {
         "image_url": f"data:image/png;base64,{encoded}",
@@ -62,6 +62,10 @@ def image_to_3d_payload(image_png: bytes, polycount: int, texture_resolution: st
     }
     if character:
         payload["pose_mode"] = "a-pose"
+    elif auto_size:
+        # Meshy estimates a real-world height from the picture and scales the mesh to it.
+        payload["auto_size"] = True
+        payload["origin_at"] = "bottom"
     return payload
 
 
@@ -318,11 +322,11 @@ class MeshyProvider:
         payload = request("GET", url, self._headers(), timeout=60).json()
         return payload
 
-    def image_to_3d(self, image_path: Path, polycount: int, texture_resolution: str, character: bool, progress=None) -> dict:
+    def image_to_3d(self, image_path: Path, polycount: int, texture_resolution: str, character: bool, progress=None, auto_size: bool = False) -> dict:
         png = Path(image_path).read_bytes()
         if len(png) > 20 * 1024 * 1024:
             raise ProviderError("Concept image is over Meshy's 20 MB image limit.")
-        payload = image_to_3d_payload(png, polycount, texture_resolution, character, self.ai_model)
+        payload = image_to_3d_payload(png, polycount, texture_resolution, character, self.ai_model, auto_size=auto_size)
         task_id = self._create(IMAGE_TO_3D, payload)
         task = self._poll(f"{IMAGE_TO_3D}/{task_id}", progress)
         return {"task": task, "model": self.ai_model, "parameters": _public_parameters(payload)}

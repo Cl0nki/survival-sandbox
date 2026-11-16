@@ -25,7 +25,7 @@ from processors.icons import procedural_icon
 from processors.maps import derive_maps, procedural_maps, save_maps, seam_score, tiled_preview
 from processors.skeleton_normalize import load_skeleton_profile, normalize_glb_skeleton
 from processors.validate import MANUAL_RIG_STEPS, validate_mesh, validate_texture
-from prompts.builder import build_prompts
+from prompts.builder import FIREARM_TARGET_SIZE, GENERIC_PICKUP_SIZE, build_prompts, is_firearm
 from providers.http_client import download
 from providers.meshy import MeshyProvider, glb_url
 from providers.registry import meshy_from, openai_from, threed_from
@@ -167,6 +167,18 @@ def normalize_request(settings: Settings, payload: dict) -> dict:
         if provider not in {"openai", "manual"} and mesh_provider != "meshy_text":
             raise PipelineError("Mesh jobs need an image provider, or meshy_text for Meshy text-to-3D.")
     quality = str(payload.get("quality") or settings.defaults["openai_quality"])
+    firearm = is_firearm(
+        name,
+        str(payload.get("prompt") or ""),
+        str(payload.get("subject_override") or ""),
+        icon_category=str(payload.get("icon_category") or ""),
+    )
+    # Gun pictures stay on the high setting so a side-view firearm actually comes back.
+    if firearm:
+        quality = "high"
+    target_size = _target_size(payload.get("target_size"))
+    if firearm and kind != "texture" and _is_generic_pickup_size(target_size):
+        target_size = list(FIREARM_TARGET_SIZE)
     customization = payload.get("customization") if kind in CHARACTER_LIKE_KINDS and humanoid else {}
     if customization is None:
         customization = {}
@@ -213,7 +225,8 @@ def normalize_request(settings: Settings, payload: dict) -> dict:
         "implementation": implementation,
         "godot_folder": godot_folder,
         "procedural_piece": preset.get("procedural_piece"),
-        "target_size": _target_size(payload.get("target_size")),
+        "target_size": target_size,
+        "firearm": firearm,
     }
 
 
@@ -284,6 +297,129 @@ def reject_asset(store: AssetStore, asset_id: str, reason: str) -> dict:
     asset["history"].append(_snapshot(asset, "rejected"))
     store.save_asset(asset)
     return asset
+
+
+def rotate_asset_images(settings: Settings, store: AssetStore, asset_id: str, degrees: int) -> dict:
+    """Rotate approved images clockwise by 90/180/270 and rewrite library + game files."""
+    turn = int(degrees) % 360
+    if turn not in {90, 180, 270}:
+        raise PipelineError("Save a 90, 180, or 270 degree rotation.")
+    asset = store.get_asset(asset_id)
+    if asset.get("approval_status") != "approved":
+        raise PipelineError("Only approved images can be rotated. Keep the picture first.")
+    folder = store.asset_dir(asset_id)
+    op = {
+        90: Image.Transpose.ROTATE_270,
+        180: Image.Transpose.ROTATE_180,
+        270: Image.Transpose.ROTATE_90,
+    }[turn]
+    albedo = folder / "original" / "albedo.png"
+    if not albedo.is_file():
+        albedo = folder / "processed" / "albedo.png"
+    if albedo.is_file():
+        with Image.open(albedo) as image:
+            image.load()
+            rotated_albedo = image.transpose(op)
+        origins = asset.get("maps_origin") or {}
+        derived = any(value == "derived_from_albedo" for value in origins.values())
+        roughness = 0.8
+        metallic = 0.0
+        params = asset.get("generation_parameters") or {}
+        if isinstance(params.get("roughness"), (int, float)):
+            roughness = float(params["roughness"])
+        if isinstance(params.get("metallic"), (int, float)):
+            metallic = float(params["metallic"])
+        if derived or asset.get("category") == "item_icon":
+            mode = "RGBA" if asset.get("category") == "item_icon" else "RGB"
+            maps = derive_maps(rotated_albedo.convert(mode), roughness, metallic)
+            if asset.get("category") == "item_icon":
+                maps["albedo"] = rotated_albedo.convert("RGBA")
+        else:
+            maps = {"albedo": rotated_albedo.convert(rotated_albedo.mode)}
+            for name in ("normal", "roughness", "ao", "metallic", "height"):
+                for kind in ("original", "processed"):
+                    path = folder / kind / f"{name}.png"
+                    if path.is_file():
+                        with Image.open(path) as image:
+                            image.load()
+                            maps[name] = image.transpose(op)
+                        break
+        original_paths = save_maps(maps, folder / "original")
+        processed_paths = save_maps(maps, folder / "processed")
+        if asset.get("category") == "item_icon":
+            preview = maps["albedo"].copy()
+            preview_path = folder / "preview" / "icon.png"
+        else:
+            preview = tiled_preview(maps["albedo"].convert("RGB"))
+            preview_path = folder / "preview" / "tiled.png"
+        preview.save(preview_path, format="PNG")
+        asset["original_files"] = [_relative(folder, Path(path)) for path in original_paths.values()]
+        asset["processed_files"] = [_relative(folder, Path(path)) for path in processed_paths.values()]
+        asset["processed_files"].append(_relative(folder, preview_path))
+        asset.setdefault("generation_parameters", {})["seam_score"] = round(seam_score(maps["albedo"]), 3)
+    else:
+        paths = _image_files_for_asset(folder, asset)
+        if not paths:
+            raise PipelineError("This review has no image file to rotate.")
+        for path in paths:
+            _transpose_image_file(path, op)
+    if asset.get("kind") == "texture":
+        published = publish_asset(
+            settings.project_root,
+            asset,
+            store.root,
+            acknowledge=True,
+            force=True,
+            confirm_approved=True,
+        )
+        asset["production_files"] = published["files"]
+    asset["history"].append(_snapshot(asset, f"rotated_{turn}"))
+    store.save_asset(asset)
+    store.append_log(f"rotated {asset_id} {turn}deg {asset.get('asset_name', '')}")
+    return asset
+
+
+def _image_files_for_asset(folder: Path, asset: dict) -> list[Path]:
+    names = list(asset.get("original_files") or []) + list(asset.get("processed_files") or [])
+    paths = []
+    seen = set()
+    for relative in names:
+        if not isinstance(relative, str):
+            continue
+        if not relative.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+            continue
+        path = (folder / relative).resolve()
+        root = folder.resolve()
+        if root not in path.parents and path != root:
+            continue
+        if not path.is_file() or path in seen:
+            continue
+        seen.add(path)
+        paths.append(path)
+    for kind in ("original", "preview"):
+        directory = folder / kind
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.iterdir()):
+            if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"} and path.is_file() and path not in seen:
+                seen.add(path)
+                paths.append(path)
+    return paths
+
+
+def _transpose_image_file(path: Path, op) -> None:
+    with Image.open(path) as image:
+        image.load()
+        converted = image.transpose(op)
+        suffix = path.suffix.lower()
+        temporary = path.with_suffix(path.suffix + ".tmp")
+        if suffix in {".jpg", ".jpeg"}:
+            converted.convert("RGB").save(temporary, format="JPEG", quality=95)
+        elif suffix == ".webp":
+            converted.save(temporary, format="WEBP", quality=95)
+        else:
+            converted.save(temporary, format="PNG")
+    temporary.replace(path)
 
 
 def reprocess_mesh(settings: Settings, store: AssetStore, asset_id: str, source: Path) -> dict:
@@ -746,6 +882,7 @@ def _run_mesh_provider(settings, store, job, asset, request, prompts, concept: P
                     settings.defaults["meshy_texture_resolution"],
                     bool(request.get("humanoid")),
                     lambda message: store.asset_log(asset["asset_id"], message),
+                    auto_size=_meshy_auto_size(request),
                 )
                 _store_meshy_download(store, job, asset, folder, result, gen_task["task_id"], "image_to_3d")
                 return {"textured": True, "provider": "meshy", "generation_task_id": gen_task["task_id"]}
@@ -1277,14 +1414,49 @@ def _prompts(settings: Settings, request: dict) -> dict:
         prompt_kind = "prop"
     elif prompt_kind == "enemy":
         prompt_kind = "character" if request.get("humanoid") else "prop"
-    return build_prompts(
+    prompts = build_prompts(
         settings.style(),
         preset,
         request["prompt"],
         prompt_kind,
         request.get("customization"),
         settings.style_reference().is_file(),
+        firearm=bool(request.get("firearm")) or is_firearm(
+            request.get("name", ""),
+            request.get("prompt", ""),
+            request.get("subject_override", ""),
+            icon_category=request.get("icon_category", ""),
+        ),
     )
+    return _with_real_size(prompts, request)
+
+
+def _meshy_auto_size(request: dict) -> bool:
+    """Deployables ask Meshy to scale the mesh to a real-world height."""
+    return request.get("kind") == "deployable" and not bool(request.get("humanoid"))
+
+
+def _size_clause(size) -> str:
+    if not size or len(size) != 3:
+        return ""
+    return (
+        f"Real size {float(size[0]):.2f} m wide, {float(size[1]):.2f} m tall, "
+        f"{float(size[2]):.2f} m deep. Keep those proportions."
+    )
+
+
+def _with_real_size(prompts: dict, request: dict) -> dict:
+    clause = "" if request.get("humanoid") else _size_clause(request.get("target_size"))
+    if not clause:
+        return prompts
+    updated = dict(prompts)
+    updated["prompt"] = f"{clause} {prompts['prompt']}"
+    updated["provider_prompt"] = f"{clause} {prompts['provider_prompt']}"
+    compact = f"{clause} {prompts['compact_prompt']}"
+    sent = compact if len(compact) <= 800 else compact[:797].rsplit(" ", 1)[0]
+    updated["compact_prompt"] = sent
+    updated["prompt_truncated"] = sent != compact
+    return updated
 
 
 def _palette_colors(style: dict, names: list[str]) -> list[str]:
@@ -1327,6 +1499,12 @@ def _reference_pngs(paths: list[str]) -> list[tuple[str, bytes]]:
             raise PipelineError(f"{source.name} is not a readable image.") from exc
         images.append((f"{source.stem}.png", buffer.getvalue()))
     return images
+
+
+def _is_generic_pickup_size(size: list[float] | None) -> bool:
+    if not size:
+        return True
+    return all(abs(float(size[index]) - GENERIC_PICKUP_SIZE[index]) < 0.001 for index in range(3))
 
 
 def _target_size(value) -> list[float] | None:

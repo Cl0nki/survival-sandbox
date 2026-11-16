@@ -4,7 +4,19 @@ class_name ShotVisual
 ## LOCAL-ONLY tracer and impact flash. Presentation, not a hit result.
 ## Milestone 2 spawns this from a server-confirmed shot, not from the local query.
 
-static func spawn(parent: Node, start: Vector3, end_point: Vector3, damaged: bool) -> void:
+const BLAST := Color(1.0, 0.4, 0.08)
+const REPAIR := Color(0.2, 0.95, 0.38)
+const UPGRADE := Color(0.3, 0.62, 1.0)
+
+
+static func spawn(
+	parent: Node,
+	start: Vector3,
+	end_point: Vector3,
+	damaged: bool,
+	tint: Color = Color(0, 0, 0, 0),
+	life: float = 0.1
+) -> void:
 	if parent == null:
 		return
 	var length := start.distance_to(end_point)
@@ -22,10 +34,11 @@ static func spawn(parent: Node, start: Vector3, end_point: Vector3, damaged: boo
 		up = Vector3.RIGHT
 	root.look_at(end_point, up)
 
+	var custom := tint.a > 0.001
 	var beam := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(0.03, 0.03, length)
-	box.material = _unshaded(Color(1.0, 0.55, 0.22) if damaged else Color(0.82, 0.9, 1.0))
+	box.material = _unshaded(tint if custom else (Color(1.0, 0.55, 0.22) if damaged else Color(0.82, 0.9, 1.0)))
 	beam.mesh = box
 	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(beam)
@@ -34,13 +47,13 @@ static func spawn(parent: Node, start: Vector3, end_point: Vector3, damaged: boo
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.09
 	sphere.height = 0.18
-	sphere.material = _unshaded(Color(1.0, 0.28, 0.16) if damaged else Color(1.0, 0.95, 0.75))
+	sphere.material = _unshaded(tint if custom else (Color(1.0, 0.28, 0.16) if damaged else Color(1.0, 0.95, 0.75)))
 	impact.mesh = sphere
 	impact.position = Vector3(0.0, 0.0, -length * 0.5)
 	impact.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(impact)
 
-	var timer := parent.get_tree().create_timer(0.1)
+	var timer := parent.get_tree().create_timer(maxf(life, 0.05))
 	timer.timeout.connect(root.queue_free)
 
 

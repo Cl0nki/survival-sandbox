@@ -1,0 +1,147 @@
+{
+  "asset_id": "9d7f501e9481",
+  "asset_name": "workbench_steel",
+  "category": "from_icon",
+  "kind": "deployable",
+  "workshop_category": "deployables",
+  "tags": [],
+  "created_at": "2026-11-15T20:57:15+00:00",
+  "provider": "meshy",
+  "model": "latest",
+  "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Steel Workbench with good new tools. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Steel Workbench with good new tools. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+    "prompt_truncated": true,
+    "godot_folder": "deployables",
+    "polycount": 6000,
+    "customization": {},
+    "variation": 1,
+    "image_provider": "manual",
+    "workshop_category": "deployables",
+    "humanoid": false,
+    "auto_rig": false,
+    "auto_animate": false,
+    "optimization_profile": "deployable",
+    "expect_collision": true,
+    "provider_parameters": {
+      "ai_model": "latest",
+      "enable_pbr": true,
+      "should_remesh": true,
+      "should_texture": true,
+      "save_pre_remeshed_model": true,
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "texture_resolution": "2k"
+    },
+    "provider_task_id": "01a1e0ff-ffa1-75f6-9027-2a29e55c345c",
+    "generation_task_id": "4d7000fda676",
+    "optimization": {
+      "profile": "deployable",
+      "target_polycount": 6000,
+      "lod_ratios": [
+        0.5,
+        0.25
+      ],
+      "add_collision": true,
+      "target_size": [
+        1.81,
+        1.428,
+        0.81
+      ]
+    }
+  },
+  "original_files": [
+    "original/concept.png",
+    "original/model.glb",
+    "original/pre_remeshed.glb",
+    "preview/thumbnail.png"
+  ],
+  "processed_files": [
+    "processed/workbench_steel.glb",
+    "processed/lod1.glb",
+    "processed/lod2.glb"
+  ],
+  "polygon_count": 5659,
+  "dimensions": {
+    "min": [
+      -0.5254266858100891,
+      -0.4049999713897705,
+      -0.5246797800064087
+    ],
+    "max": [
+      0.5254266262054443,
+      0.4050000011920929,
+      0.26233989000320435
+    ],
+    "size": [
+      1.0508533120155334,
+      0.8099999725818634,
+      0.787019670009613
+    ]
+  },
+  "texture_resolution": null,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-15T20:57:15+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Steel Workbench with good new tools. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-15T20:59:12+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Steel Workbench with good new tools. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/workbench_steel.glb",
+        "processed/lod1.glb",
+        "processed/lod2.glb"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "18078644f761",
+  "production_files": [
+    "assets/deployables/workbench_steel.glb",
+    "assets/deployables/workbench_steel.tscn",
+    "assets/deployables/workbench_steel_lod1.glb",
+    "assets/deployables/workbench_steel_lod2.glb"
+  ],
+  "manual_steps": [],
+  "maps_origin": {},
+  "modular": null
+}

@@ -1,14 +1,19 @@
 extends StaticBody3D
 class_name Workbench
 
+const _READOUT := preload("res://scripts/deployables/deployable_readout.gd")
+
 ## Solid bench. It has no crafting use yet. body_size is the full box, set
 ## before the node enters the tree. X is the long axis.
 
 var display_name := "Workbench"
-var body_size := Vector3(1.81, 1.428, 0.81)
+var body_size := Vector3(1.81, 2.0, 0.81)
 var art_id := "workbench"
 
 var _label: Label3D
+var _hp := 0
+var _show_name := false
+var _show_hp := false
 
 
 func _ready() -> void:
@@ -50,20 +55,38 @@ func _build_visual() -> void:
 	shape.position = Vector3(0.0, height * 0.5, 0.0)
 	add_child(shape)
 	var label := Label3D.new()
+	label.name = "NameLabel"
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.position = Vector3(0.0, height + 0.28, 0.0)
 	label.pixel_size = 0.005
 	label.font_size = 32
 	label.outline_size = 6
-	label.text = display_name
+	label.visible = false
 	add_child(label)
 	_label = label
 
 
+## `show_name` is hover, standing close, or F1. `show_hp` is F1 only.
+func set_label_focus(show_name: bool, _in_reach: bool = false, show_hp: bool = false) -> void:
+	if show_name == _show_name and show_hp == _show_hp:
+		return
+	_show_name = show_name
+	_show_hp = show_hp
+	_apply_label()
+
+
 func set_deployable_health(current: int, _maximum: int) -> void:
+	_hp = current
+	_apply_label()
+
+
+func _apply_label() -> void:
 	if _label == null:
 		return
-	_label.text = "%s\n%d HP" % [display_name, current]
+	_label.visible = _show_name
+	if not _label.visible:
+		return
+	_label.text = _READOUT.text(display_name, _hp, _show_hp, false)
 
 
 func receive_damage(amount: int, _point: Vector3) -> bool:

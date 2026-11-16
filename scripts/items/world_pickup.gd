@@ -1,17 +1,20 @@
 extends Node3D
 class_name WorldPickup
 
-const _Icons = preload("res://scripts/items/item_icons.gd")
-
 ## World stack. Only the authority mutates quantity. Clients apply loot_state.
+##
+## The body is the item's own mesh (HeldToolArt, res://assets/props/<id>.glb).
+## Without one it is an ItemPlaceholder. There is no 2D icon in the world.
+## The name label stays hidden until the local player hovers the stack with
+## the cursor or stands within reach (set_focus).
 
 @export var pickup_id := ""
 @export var item_id := ""
 @export var quantity := 1
 
 var _label: Label3D
-var _mesh: MeshInstance3D
-var _icon: Sprite3D
+var _focused := false
+var _in_reach := false
 
 
 func _ready() -> void:
@@ -41,47 +44,50 @@ func apply_network_quantity(next_quantity: int) -> void:
 	refresh()
 
 
+## Local presentation only. `focused` is hover or the nearest stack in reach.
+## `in_reach` adds the pick up hint.
+func set_focus(focused: bool, in_reach: bool = false) -> void:
+	if focused == _focused and in_reach == _in_reach:
+		return
+	_focused = focused
+	_in_reach = in_reach
+	_apply_label()
+
+
+func is_focused() -> bool:
+	return _focused
+
+
 func refresh() -> void:
 	visible = quantity > 0
+	_apply_label()
+
+
+func _apply_label() -> void:
 	if _label == null:
 		return
+	_label.visible = _focused and quantity > 0
+	if not _label.visible:
+		return
 	var definition := ItemCatalog.get_item(item_id)
-	var label := item_id if definition == null else definition.display_name
-	_label.text = "%s x%d" % [label, quantity]
-	if _mesh != null and definition != null:
-		var material := _mesh.get_surface_override_material(0) as StandardMaterial3D
-		if material != null:
-			material.albedo_color = definition.swatch
-	if _icon != null:
-		_icon.texture = _Icons.texture_for(definition)
-		var pixels := 48
-		if _icon.texture != null:
-			pixels = maxi(_icon.texture.get_width(), 1)
-		_icon.pixel_size = 0.384 / float(pixels)
+	var title := item_id if definition == null else definition.display_name
+	var text := "%s x%d" % [title, quantity]
+	if _in_reach:
+		text += "\n[F] Pick up"
+	_label.text = text
 
 
 func _build_visual() -> void:
-	_mesh = MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(0.38, 0.28, 0.38)
-	_mesh.mesh = box
-	_mesh.position = Vector3(0.0, 0.2, 0.0)
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.75, 0.72, 0.55, 1)
-	_mesh.set_surface_override_material(0, material)
-	add_child(_mesh)
-	_icon = Sprite3D.new()
-	_icon.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_icon.shaded = false
-	_icon.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
-	_icon.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
-	_icon.pixel_size = 0.008
-	_icon.position = Vector3(0.0, 0.48, 0.0)
-	add_child(_icon)
+	# The label sits at the top of the stack, above the model or placeholder.
 	_label = Label3D.new()
+	_label.name = "NameLabel"
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_label.position = Vector3(0.0, 0.7, 0.0)
+	_label.position = Vector3(0.0, 0.5, 0.0)
 	_label.pixel_size = 0.005
 	_label.font_size = 28
 	_label.outline_size = 6
+	_label.visible = false
 	add_child(_label)
+	if HeldToolArt.mount(self, item_id, HeldToolArt.Pose.GROUND):
+		return
+	add_child(ItemPlaceholder.build(ItemCatalog.get_item(item_id)))

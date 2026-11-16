@@ -1,4 +1,4 @@
-const state = { bootstrap: null, assets: [], jobs: [], selected: null, detail: null, production: null, costs: null, yaw: 0.6, pitch: 0.4, zoom: 1.4, mesh: null, libraryFiltersReady: false };
+const state = { bootstrap: null, assets: [], jobs: [], selected: null, detail: null, production: null, costs: null, yaw: 0.6, pitch: 0.4, zoom: 1.4, mesh: null, libraryFiltersReady: false, imageRotation: 0 };
 
 const $ = (id) => document.getElementById(id);
 
@@ -368,7 +368,9 @@ async function selectAsset(id, options) {
   $("preview-status").className = asset.processing_status === "failed" || asset.approval_status === "rejected" ? "bad" : "ok";
   const image = thumb(asset);
   $("preview-image").hidden = !image;
-  if (image) $("preview-image").src = image;
+  if (image) $("preview-image").src = `${image}${image.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  resetImageRotation();
+  syncRotateControls(Boolean(image) && asset.approval_status === "approved");
   const glb = (asset.processed_files || []).find((file) => file.endsWith(".glb") && !file.includes("lod"));
   state.mesh = null;
   $("preview-3d").hidden = !glb;
@@ -472,6 +474,7 @@ async function removeAsset(asset) {
         $("preview-edit").value = "";
         $("preview-edit-image").disabled = true;
         $("preview-json").textContent = "";
+        syncRotateControls(false);
       }
     }
   } catch (error) {
@@ -884,6 +887,13 @@ function renderIcons() {
   });
 }
 
+function isFirearm(item) {
+  const category = item.item_category || item.category || "";
+  if (category === "weapon") return true;
+  const blob = `${item.id || ""} ${item.display_name || ""} ${item.image_description || ""}`.toLowerCase().replaceAll("_", " ");
+  return ["gun", "pistol", "rifle", "revolver", "shotgun", "firearm", "sidearm", "carbine", "blaster", "build tool"].some((word) => blob.includes(word));
+}
+
 function iconRequest(item, extra) {
   const visual = (item.image_description || "").trim();
   return {
@@ -898,7 +908,7 @@ function iconRequest(item, extra) {
     swatch: item.swatch,
     resolution: 512,
     variations: 1,
-    quality: "medium",
+    quality: isFirearm(item) ? "high" : "medium",
     ...extra,
   };
 }
@@ -1074,6 +1084,35 @@ function clearReviewPicture() {
   $("preview-json").textContent = "";
   $("preview-edit").value = "";
   $("preview-edit-image").disabled = true;
+  resetImageRotation();
+  syncRotateControls(false);
+}
+
+function resetImageRotation() {
+  state.imageRotation = 0;
+  applyImageRotation();
+}
+
+function applyImageRotation() {
+  const image = $("preview-image");
+  if (image) image.style.transform = state.imageRotation ? `rotate(${state.imageRotation}deg)` : "";
+  const save = $("preview-save-rotation");
+  if (save) save.disabled = !state.imageRotation || !state.selected || state.selected.approval_status !== "approved";
+  const label = $("preview-rotation-label");
+  if (label) {
+    label.textContent = state.imageRotation
+      ? `${state.imageRotation}° clockwise — save to update the approved game files`
+      : "";
+  }
+  if (!$("preview-3d").hidden && !state.mesh && Number($("tile-repeat").value) > 1) drawTiles();
+}
+
+function syncRotateControls(show) {
+  const controls = $("preview-rotate-controls");
+  if (!controls) return;
+  controls.hidden = !show;
+  if (!show) resetImageRotation();
+  else applyImageRotation();
 }
 
 function requestForCopy(kind, record, extra) {
@@ -1117,7 +1156,7 @@ async function openCopy(kind, record) {
       $("preview-prompt").value = preview.prompt || "";
       state.promptTouched = false;
       $("preview-hint").textContent = kind === "ingame"
-        ? "Generate sends the inventory icon to Meshy. Deployables are scaled to the footprint on the card. World props are scaled to the size on the card."
+        ? "Generate sends the inventory icon to Meshy. Meshy sizes the mesh to a real height, then it is fitted inside the footprint without stretching. World props are scaled to the size on the card."
         : "Generate uses this prompt and any example images. Edit image changes the picture shown here.";
     }
   } catch (error) {
@@ -1491,9 +1530,16 @@ function drawTiles() {
     context.filter = `brightness(${light})`;
     const cellW = canvas.width / repeats;
     const cellH = canvas.height / repeats;
+    const turn = ((state.imageRotation || 0) % 360) * Math.PI / 180;
     for (let y = 0; y < repeats; y += 1) {
       for (let x = 0; x < repeats; x += 1) {
-        context.drawImage(image, x * cellW, y * cellH, cellW, cellH);
+        const cx = x * cellW + cellW / 2;
+        const cy = y * cellH + cellH / 2;
+        context.save();
+        context.translate(cx, cy);
+        context.rotate(turn);
+        context.drawImage(image, -cellW / 2, -cellH / 2, cellW, cellH);
+        context.restore();
       }
     }
     context.filter = "none";
@@ -1950,6 +1996,50 @@ $("preview-edit-image").addEventListener("click", async () => {
     button.disabled = false;
   }
 });
+
+if ($("preview-rotate")) {
+  $("preview-rotate").addEventListener("click", () => {
+    if (!state.selected || $("preview-image").hidden) return;
+    if (state.selected.approval_status !== "approved") {
+      $("preview-hint").textContent = "Only approved images can be rotated. Keep the picture first.";
+      return;
+    }
+    state.imageRotation = (state.imageRotation + 90) % 360;
+    applyImageRotation();
+  });
+}
+
+if ($("preview-save-rotation")) {
+  $("preview-save-rotation").addEventListener("click", async () => {
+    const asset = state.selected;
+    const degrees = state.imageRotation;
+    if (!asset || !degrees) return;
+    if (asset.approval_status !== "approved") {
+      $("preview-hint").textContent = "Only approved images can be rotated. Keep the picture first.";
+      return;
+    }
+    const button = $("preview-save-rotation");
+    const rotateButton = $("preview-rotate");
+    button.disabled = true;
+    if (rotateButton) rotateButton.disabled = true;
+    try {
+      await api(`/api/assets/${asset.asset_id}/rotate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ degrees }),
+      });
+      $("preview-hint").textContent = `Saved ${degrees}° rotation for ${asset.asset_name} and updated the game files.`;
+      $("status-line").textContent = `Rotated ${asset.asset_name} by ${degrees}°.`;
+      await selectAsset(asset.asset_id, { keepPrompt: true });
+      await refresh();
+    } catch (error) {
+      $("preview-hint").textContent = error.message;
+      applyImageRotation();
+    } finally {
+      if (rotateButton) rotateButton.disabled = false;
+    }
+  });
+}
 
 $("approve").addEventListener("click", async () => {
   if (!state.selected) return;

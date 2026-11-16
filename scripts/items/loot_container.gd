@@ -1,6 +1,8 @@
 extends StaticBody3D
 class_name LootContainer
 
+const _READOUT := preload("res://scripts/deployables/deployable_readout.gd")
+
 ## Storage crate. Contents live on the server copy. Clients clear theirs at boot
 ## and only receive a snapshot while the server says they have it open.
 ## The box matches the mesh, so the body stops on it and a standing shot
@@ -13,6 +15,12 @@ class_name LootContainer
 
 var inventory: Inventory
 var _label: Label3D
+## Placed pieces hide the name until hover, proximity, or F1. Yard crates stay labeled.
+var _placed := false
+var _hp := 0
+var _show_name := false
+var _in_reach := false
+var _show_hp := false
 ## When set before the node enters the tree, the box uses this size instead of
 ## the small yard crate. Y is the height. The mesh sits on the node origin.
 var body_size := Vector3.ZERO
@@ -32,6 +40,7 @@ func _ready() -> void:
 	collision_mask = 0
 	if display_name.is_empty():
 		display_name = prompt
+	_placed = get_parent() is DeployableSystem
 	if inventory == null:
 		inventory = Inventory.new(slot_count)
 	_build_visual()
@@ -61,26 +70,84 @@ func _build_visual() -> void:
 		material.albedo_color = box_color
 		mesh.set_surface_override_material(0, material)
 		add_child(mesh)
+	var collision_size := size
+	var collision_pos := Vector3(0.0, size.y * 0.5, 0.0)
+	var label_y := size.y
+	if art_id == "machine_shop":
+		var fitted := _collision_inside_mesh()
+		if not fitted.is_empty():
+			collision_size = fitted["size"]
+			collision_pos = fitted["position"]
+			label_y = float(fitted["top"])
 	var shape := CollisionShape3D.new()
 	var hull := BoxShape3D.new()
-	hull.size = size
+	hull.size = collision_size
 	shape.shape = hull
-	shape.position = Vector3(0.0, size.y * 0.5, 0.0)
+	shape.position = collision_pos
 	add_child(shape)
 	_label = Label3D.new()
+	_label.name = "NameLabel"
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_label.position = Vector3(0.0, size.y + 0.33, 0.0)
+	_label.position = Vector3(0.0, label_y + 0.33, 0.0)
 	_label.pixel_size = 0.005
 	_label.font_size = 32
 	_label.outline_size = 6
 	_label.text = "%s  [F]" % prompt
+	_label.visible = not _placed
 	add_child(_label)
 
 
-func set_deployable_health(current: int, _maximum: int) -> void:
-	if _label == null:
+## The machine shop pad is wider than the lathe. The hitbox stays inside the mesh.
+func _collision_inside_mesh() -> Dictionary:
+	var art := get_node_or_null("WorldArt") as Node3D
+	if art == null:
+		return {}
+	var bounds := DeployableArt._visual_aabb(art, Transform3D.IDENTITY)
+	if bounds.size.x <= 0.0 or bounds.size.y <= 0.0 or bounds.size.z <= 0.0:
+		return {}
+	var side := 0.04
+	var shrunk := Vector3(
+		maxf(bounds.size.x - side * 2.0, 0.2),
+		maxf(bounds.size.y - side, 0.2),
+		maxf(bounds.size.z - side * 2.0, 0.2)
+	)
+	var center := bounds.get_center()
+	return {
+		"size": shrunk,
+		"position": Vector3(center.x, bounds.position.y + shrunk.y * 0.5, center.z),
+		"top": bounds.position.y + bounds.size.y,
+	}
+
+
+## `show_name` is hover, standing close, or F1. `show_hp` is F1 only.
+func set_label_focus(show_name: bool, in_reach: bool = false, show_hp: bool = false) -> void:
+	if not _placed:
 		return
-	_label.text = "%s  [F]\n%d HP" % [prompt, current]
+	if show_name == _show_name and in_reach == _in_reach and show_hp == _show_hp:
+		return
+	_show_name = show_name
+	_in_reach = in_reach
+	_show_hp = show_hp
+	_apply_label()
+
+
+func set_deployable_health(current: int, _maximum: int) -> void:
+	_placed = true
+	_hp = current
+	_apply_label()
+
+
+func _label_extra() -> String:
+	return ""
+
+
+func _apply_label() -> void:
+	if _label == null or not _placed:
+		return
+	_label.visible = _show_name
+	if not _label.visible:
+		return
+	_label.text = _READOUT.text(prompt, _hp, _show_hp, _in_reach, _label_extra())
 
 
 func receive_damage(amount: int, _point: Vector3) -> bool:

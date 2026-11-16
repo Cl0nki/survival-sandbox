@@ -18,6 +18,7 @@ from generators.orchestrator import (
     preview_prompt,
     reject_asset,
     reprocess_mesh,
+    rotate_asset_images,
     stage_item_icon,
 )
 from generators.style_image import (
@@ -29,6 +30,8 @@ from generators.style_image import (
     remove_style_screenshot,
     screenshot_file,
 )
+from godot.codex_edit import apply_tier_moves, create_item, update_item
+from godot.codex_index import publish_codex
 from godot.descriptions import load_descriptions, save_item_copy, save_surface_copy
 from godot.item_index import load_items
 from godot.surface_index import load_grounds, load_surfaces, load_vegetation
@@ -135,6 +138,14 @@ def make_handler(app: App):
                     self._file(STATIC / "app.js")
                 elif path == "/app.css":
                     self._file(STATIC / "app.css")
+                elif path == "/codex":
+                    self._file(STATIC / "codex.html")
+                elif path == "/codex.css":
+                    self._file(STATIC / "codex.css")
+                elif path == "/codex.js":
+                    self._file(STATIC / "codex.js")
+                elif path == "/api/codex":
+                    self._send(200, publish_codex(app.settings.project_root))
                 elif path == "/api/bootstrap":
                     self._send(200, app.bootstrap())
                 elif path == "/api/jobs":
@@ -207,6 +218,30 @@ def make_handler(app: App):
                 if path == "/api/style/candidate/discard":
                     self._send(200, discard_style_candidate(app.settings))
                     return
+                if path == "/api/codex/tier":
+                    body = self._read_json()
+                    moves = body.get("moves")
+                    if not isinstance(moves, list):
+                        moves = [body]
+                    notes = apply_tier_moves(app.settings.project_root, moves)
+                    document = publish_codex(app.settings.project_root)
+                    document["message"] = "; ".join(dict.fromkeys(notes))
+                    self._send(200, document)
+                    return
+                if path == "/api/codex/items":
+                    created = create_item(app.settings.project_root, self._read_json())
+                    document = publish_codex(app.settings.project_root)
+                    document["message"] = f"Created {created['display_name']}."
+                    document["created"] = created["id"]
+                    self._send(201, document)
+                    return
+                if path == "/api/codex/items/update":
+                    item_id = update_item(app.settings.project_root, self._read_json())
+                    document = publish_codex(app.settings.project_root)
+                    document["message"] = "Saved."
+                    document["created"] = item_id
+                    self._send(200, document)
+                    return
                 if path == "/api/copy":
                     self._send(200, self._save_copy(self._read_json()))
                     return
@@ -257,6 +292,14 @@ def make_handler(app: App):
                         return
                     if parts[3] == "delete":
                         self._send(200, discard_asset(app.store, parts[2]))
+                        return
+                    if parts[3] == "rotate":
+                        degrees = body.get("degrees", 90)
+                        try:
+                            degrees = int(degrees)
+                        except (TypeError, ValueError) as exc:
+                            raise PipelineError("Rotation degrees must be a number.") from exc
+                        self._send(200, rotate_asset_images(app.settings, app.store, parts[2], degrees))
                         return
                 if len(parts) == 4 and parts[0] == "api" and parts[1] == "assets" and parts[3] == "reprocess":
                     payload = self._upload()

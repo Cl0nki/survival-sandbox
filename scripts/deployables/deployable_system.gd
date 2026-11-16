@@ -711,26 +711,24 @@ func _watch(node: Node) -> void:
 		net.watch_container(crate)
 
 
-func publish_smelt(piece_id: int, text: String) -> void:
+## A station's queue and running job. Sent only when it changes (job start,
+## end, or queue edit). Clients run the countdown themselves in between.
+func publish_job(piece_id: int, rows: Array, total: float, left: float) -> void:
 	if not local_authority():
 		return
 	var peer := multiplayer.multiplayer_peer
 	if peer == null or multiplayer.get_peers().is_empty():
 		return
-	sync_smelt_label.rpc(piece_id, text)
+	sync_job.rpc(piece_id, rows, total, left)
 
 
 @rpc("authority", "reliable")
-func sync_smelt_label(piece_id: int, text: String) -> void:
+func sync_job(piece_id: int, rows: Array, total: float, left: float) -> void:
 	if local_authority():
 		return
 	var node := piece_node(piece_id)
-	if node is Smelter:
-		(node as Smelter).set_smelt_status(text)
-	elif node is Crafter:
-		(node as Crafter).set_craft_status(text)
-	elif node is FillStation:
-		(node as FillStation).set_fill_status(text)
+	if node != null and node.has_method(&"apply_job"):
+		node.call(&"apply_job", rows, total, left)
 
 
 ## The character solver stalls when a new solid contains the capsule center.

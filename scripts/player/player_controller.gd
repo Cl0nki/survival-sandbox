@@ -9,13 +9,23 @@ class_name PlayerController
 
 enum NetRole { LOCAL, SERVER, OWNER, PUPPET }
 
-const MODEL_SCALE := 1.08
-const CHEST_HEIGHT := 1.296
-const CROUCH_CHEST_HEIGHT := 0.6696
-const BODY_RADIUS := 0.378
-const STAND_HEIGHT := 1.944
-const CROUCH_HEIGHT := 1.134
+## Authored mesh is 1.80 m. Keep this at 1 so the capsule and the model match.
+const MODEL_SCALE := 1.0
+const CHEST_HEIGHT := 1.2
+const CROUCH_CHEST_HEIGHT := 0.62
+const BODY_RADIUS := 0.35
+const STAND_HEIGHT := 1.8
+## Height of the model axis above the floor when a downed body lies on its back.
+const DOWN_LIFT := 0.18
+const CROUCH_HEIGHT := 1.05
 const CROUCH_SPEED_SCALE := 0.55
+## Walk clip matches 1.25 m/s. Default pace is that clip at 1.3x, the old Shift walk.
+const WALK_AUTHORED := 1.25
+const WALK_PLAYBACK := 1.3
+## Shift run. Pro jog feet cover about this much ground per second.
+const RUN_SPEED := 3.05
+const RUN_STRAFE_SPEED := 2.12
+const CROUCH_SPEED := WALK_AUTHORED * CROUCH_SPEED_SCALE
 ## Bones overwritten by pistol aim / shoot on top of locomotion.
 const UPPER_BODY_FILTER: Array[String] = [
 	"Spine", "Chest", "UpperChest", "Neck", "Head",
@@ -33,6 +43,8 @@ const UPPER_BODY_FILTER: Array[String] = [
 	"RightLittleProximal", "RightLittleIntermediate", "RightLittleDistal",
 ]
 ## Exponential rate for stand/crouch. Higher is snappier. About 0.4 s to settle.
+## Screen distance from the cursor to a ground stack that counts as hovering it.
+const PICKUP_HOVER_RADIUS_PX := 44.0
 const STANCE_BLEND_SPEED := 8.0
 const LEAN_DISTANCE := 0.45
 const LEAN_MARGIN := 0.12
@@ -41,8 +53,8 @@ const LEAN_BLEND_SPEED := 8.0
 const AIM_HOLD_SEC := 1.6
 const DRAW_HOLD_SEC := 0.9
 const AIM_BLEND_SPEED := 6.0
-## Quarter of the original 5.0 pace so Quaternius Walk matches movement.
-const WALK_SPEED := 1.25
+## Default stand pace. The Walk clip is played at WALK_PLAYBACK so the feet match.
+const WALK_SPEED := WALK_AUTHORED * WALK_PLAYBACK
 const ACCELERATION := 28.0
 const GRAVITY := 24.0
 ## Gun mesh pose in RightHand bone space. Bone +Y runs along the fingers.
@@ -76,9 +88,20 @@ var authoritative_velocity := Vector3.ZERO
 
 var _lean_offset := 0.0
 var _weapon_in_hand := false
+var _tool_grip: Node3D
+var _mounted_tool_id := ""
 var _aim_ready := 0.0
 var _aim_hold := 0.0
+## True from the click until the harvest OneShot has finished. A second click
+## must not FIRE again: that seeks the swing back to frame 0.
+var _harvest_swing_lock := false
+var _harvest_swing_live := false
+var _harvest_swing_wait := 0.0
 var _crouch := 0.0
+var _sprinting := false
+## 1 when the wish direction is forward or back, 0 when it is a pure strafe.
+var _sprint_align := 1.0
+var _run_blend := 0.0
 var _aim_pitch := 0.0
 var _owner_crouch := 0.0
 var _owner_pitch := 0.0
@@ -92,7 +115,6 @@ var _last_snapshot := Vector3.ZERO
 var _down := false
 var _body_material: StandardMaterial3D
 var _body_tint := Color(0.2, 0.42, 0.78, 1)
-var _nameplate: Label3D
 var inventory: Inventory
 var container_view: Inventory
 var container_view_id := ""
@@ -105,6 +127,13 @@ var _tech_ui: TechTreeUI
 signal inventory_changed
 signal container_changed
 signal item_notice(text: String)
+## Health reached zero on this body, server or client.
+signal downed
+## revive() ran: the body is alive again at a new place.
+signal revived
+
+## Seconds until respawn, as last told by the server. Only the owning client sets it.
+var respawn_eta := 0.0
 
 
 func configure_net(role: NetRole, id: int) -> void:
@@ -164,6 +193,8 @@ func _ready() -> void:
 		# Aim rays hit this capsule. Movement masks stay empty so puppets do not push.
 		collision_layer = PhysicsLayers.PLAYER
 		collision_mask = 0
+	if _aim_marker != null:
+		_aim_marker.visible = false
 	if not wants_local_camera():
 		_drop_local_presentation()
 	if net_role != NetRole.LOCAL:
@@ -188,6 +219,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
+	_poll_harvest_swing(delta)
 	_update_upper_blend(delta)
 	if net_role != NetRole.OWNER and net_role != NetRole.PUPPET:
 		return
@@ -231,9 +263,9 @@ func _run_local_frame(delta: float) -> void:
 	if not inventory_open:
 		set_aim_pitch(asin(clampf(direction.y, -1.0, 1.0)))
 		direction = direction_toward_aim(aim)
-		_show_aim_marker(aim, aim_info["normal"])
-	elif _aim_marker != null:
-		_aim_marker.visible = false
+		_present_aim_marker(aim, aim_info["normal"], false)
+	else:
+		_present_aim_marker(aim, aim_info["normal"], true)
 	_try_interact()
 	if inventory_open:
 		return
@@ -267,21 +299,21 @@ func _run_owner_frame(_delta: float) -> void:
 	var inventory_open := _inventory_open()
 	var aim_info := _cursor_aim()
 	var aim: Vector3 = aim_info["point"]
-	if inventory_open:
-		_aim_marker.visible = false
-	else:
-		_show_aim_marker(aim, aim_info["normal"])
+	_present_aim_marker(aim, aim_info["normal"], inventory_open)
 	var input_2d := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
 	if container_view != null or inventory_open:
 		input_2d = Vector2.ZERO
 	var lean := 0.0 if inventory_open else Input.get_action_strength(&"lean_right") - Input.get_action_strength(&"lean_left")
 	var crouch := 0.0 if inventory_open else Input.get_action_strength(&"crouch")
+	var sprinting := _read_sprint(inventory_open or container_view != null, crouch)
+	_sprinting = sprinting
+	_set_sprint_align(wish_direction(input_2d, _camera.get_yaw()))
 	var aim_yaw := get_facing_yaw() if inventory_open else _yaw_from_aim(aim)
 	var direction := direction_toward_aim(aim)
 	var pitch := _aim_pitch if inventory_open else asin(clampf(direction.y, -1.0, 1.0))
 	_owner_crouch = clampf(crouch, 0.0, 1.0)
 	_owner_pitch = clampf(pitch, -InputGuard.MAX_AIM_PITCH, InputGuard.MAX_AIM_PITCH)
-	_session.call("send_owner_input", input_2d, _camera.get_yaw(), aim_yaw, lean, _owner_crouch, _owner_pitch)
+	_session.call("send_owner_input", input_2d, _camera.get_yaw(), aim_yaw, lean, _owner_crouch, _owner_pitch, sprinting)
 	_try_interact()
 	if inventory_open:
 		return
@@ -524,6 +556,11 @@ func _setup_inventory_ui() -> void:
 	_tech_ui = TechTreeUI.new()
 	add_child(_tech_ui)
 	_tech_ui.bind_player(self)
+	if net_role == NetRole.OWNER:
+		var vitals_hud := VitalsHud.new()
+		vitals_hud.name = "VitalsHud"
+		add_child(vitals_hud)
+		vitals_hud.bind_player(self)
 	if net_role == NetRole.LOCAL:
 		## Survival starts with the hut workbench already placed. DeployTool stays
 		## so crafted stations can still be planted later.
@@ -579,7 +616,92 @@ func current_camera() -> Camera3D:
 	return _camera.get_camera()
 
 
+## Names on ground stacks show only for the stack under the cursor and for the
+## nearest one in reach, the same one F would pick up. Deployables use the
+## same rule, and F1 adds the name plus HP on every placed piece.
+func _update_pickup_focus() -> void:
+	var near := _nearest_loot() as WorldPickup
+	var hovered: WorldPickup = null
+	var camera := current_camera()
+	if camera != null and not _pointer_over_ui():
+		var mouse := get_viewport().get_mouse_position()
+		var best := PICKUP_HOVER_RADIUS_PX
+		for node in get_tree().get_nodes_in_group(&"loot_pickup"):
+			var pickup := node as WorldPickup
+			if pickup == null or not pickup.visible or pickup.quantity <= 0:
+				continue
+			var point := pickup.global_position + Vector3(0.0, 0.15, 0.0)
+			if camera.is_position_behind(point):
+				continue
+			var distance := camera.unproject_position(point).distance_to(mouse)
+			if distance <= best:
+				hovered = pickup
+				best = distance
+	for node in get_tree().get_nodes_in_group(&"loot_pickup"):
+		var pickup := node as WorldPickup
+		if pickup != null:
+			pickup.set_focus(pickup == hovered or pickup == near, pickup == near)
+	_update_deployable_labels()
+
+
+func _update_deployable_labels() -> void:
+	var debug := DebugFlags.enabled()
+	var hovered := _hovered_deployable()
+	var prompt := _deployable_prompt_target()
+	for node in get_tree().get_nodes_in_group(&"deployable"):
+		if not node.has_method(&"set_label_focus"):
+			continue
+		var body := node as Node3D
+		if body == null:
+			continue
+		var close := _flat_distance(body.global_position) <= NetConfig.INTERACT_RANGE
+		node.call(&"set_label_focus", debug or node == hovered or close, node == prompt, debug)
+
+
+func _hovered_deployable() -> Node:
+	var camera := current_camera()
+	if camera == null or _pointer_over_ui():
+		return null
+	var hovered := _as_deployable(_cursor_aim().get("collider"))
+	if hovered != null:
+		return hovered
+	var mouse := get_viewport().get_mouse_position()
+	var best: Node = null
+	var best_px := PICKUP_HOVER_RADIUS_PX
+	for node in get_tree().get_nodes_in_group(&"deployable"):
+		var body := node as Node3D
+		if body == null or not body.visible:
+			continue
+		var point := body.global_position + Vector3(0.0, 0.9, 0.0)
+		if camera.is_position_behind(point):
+			continue
+		var distance := camera.unproject_position(point).distance_to(mouse)
+		if distance <= best_px:
+			best = body
+			best_px = distance
+	return best
+
+
+func _as_deployable(collider: Variant) -> Node:
+	var node := collider as Node
+	while node != null:
+		if node.is_in_group(&"deployable"):
+			return node
+		node = node.get_parent()
+	return null
+
+
+## The piece F would use. Pickups win when they are closer, so a chest behind
+## a stack does not show the use hint.
+func _deployable_prompt_target() -> Node:
+	var target := _nearest_loot()
+	if target != null and target.is_in_group(&"deployable"):
+		return target
+	return null
+
+
 func _try_interact() -> void:
+	_update_pickup_focus()
 	if not Input.is_action_just_pressed(&"interact"):
 		return
 	var target := _nearest_loot()
@@ -757,7 +879,9 @@ func _try_network_blast() -> void:
 	var building := nodes[0] as BuildingSystem
 	if building == null or building.relay == null:
 		return
-	building.relay.request_blast(_cursor_aim()["point"])
+	var aim: Vector3 = _cursor_aim()["point"]
+	show_debug_beam(aim, ShotVisual.BLAST)
+	building.relay.request_blast(aim)
 
 
 func _try_local_blast() -> void:
@@ -768,6 +892,7 @@ func _try_local_blast() -> void:
 	if system == null:
 		return
 	var aim: Vector3 = _cursor_aim()["point"]
+	show_debug_beam(aim, ShotVisual.BLAST)
 	var result: Dictionary = system.authority.apply_explosion(aim, system.config.blast_radius, system.config.blast_damage)
 	var hits: Array = result.get("hits", [])
 	if hits.is_empty():
@@ -837,7 +962,13 @@ func _try_local_harvest() -> void:
 	_request_harvest_anim()
 	_weapon.last_feedback = str(result.get("notice", "harvest"))
 	var end_point: Vector3 = result.get("point", origin)
-	ShotVisual.spawn(_visual_parent(), origin, end_point, bool(result.get("changed", false)))
+	if bool(result.get("changed", false)):
+		var definition := ItemCatalog.get_item(held_item_id())
+		var kind := "" if definition == null else definition.harvest_kind
+		var normal: Vector3 = result.get("normal", Vector3.UP)
+		HitBurst.spawn(_visual_parent(), end_point, -normal, HitBurst.color_for(kind))
+	if DebugFlags.enabled():
+		ShotVisual.spawn(_visual_parent(), origin, end_point, bool(result.get("changed", false)))
 	var leftovers: Array = result.get("leftovers", [])
 	if leftovers.is_empty() and int(result.get("leftover", 0)) > 0:
 		leftovers = [[str(result.get("item_id", "")), int(result.get("leftover", 0))]]
@@ -863,6 +994,10 @@ func _spawn_local_pickup(item_id: String, quantity: int) -> void:
 	var forward := -Basis(Vector3.UP, get_facing_yaw()).z
 	pickup.global_position = global_position + forward * 0.9
 	pickup.global_position.y = 0.15
+
+
+func show_debug_beam(end_point: Vector3, tint: Color) -> void:
+	ShotVisual.spawn(_visual_parent(), shot_origin(), end_point, false, tint, 0.25)
 
 
 func _visual_parent() -> Node:
@@ -911,6 +1046,7 @@ func set_weapon_drawn(drawn: bool) -> void:
 
 
 func refresh_weapon_visual() -> void:
+	_refresh_held_tool()
 	if net_role == NetRole.PUPPET:
 		return
 	set_weapon_drawn(holds_debug_weapon() or holds_pistol() or holds_blast_gun())
@@ -936,11 +1072,26 @@ func body_height() -> float:
 
 
 func eye_height() -> float:
-	return lerpf(1.566, 0.8424, _crouch)
+	return lerpf(1.45, 0.78, _crouch)
 
 
 func current_speed() -> float:
-	return lerpf(WALK_SPEED, WALK_SPEED * CROUCH_SPEED_SCALE, _crouch)
+	var stand := WALK_SPEED
+	if _sprinting:
+		stand = lerpf(RUN_STRAFE_SPEED, RUN_SPEED, _sprint_align)
+	return lerpf(stand, CROUCH_SPEED, _crouch)
+
+
+func _set_sprint_align(direction: Vector3) -> void:
+	if direction.length_squared() < 0.0001:
+		_sprint_align = 1.0
+		return
+	var local := Basis(Vector3.UP, get_facing_yaw()).inverse() * direction
+	var planar := Vector2(local.x, -local.z)
+	if planar.length_squared() < 0.0001:
+		_sprint_align = 1.0
+		return
+	_sprint_align = absf(planar.normalized().y)
 
 
 func get_facing_yaw() -> float:
@@ -1003,14 +1154,17 @@ func simulate_authored_motion(
 	aim_yaw: float,
 	lean_axis: float,
 	crouch_amount: float = 0.0,
-	aim_pitch: float = 0.0
+	aim_pitch: float = 0.0,
+	sprinting: bool = false
 ) -> void:
 	rotation = Vector3.ZERO
 	apply_facing_yaw(aim_yaw)
 	set_aim_pitch(aim_pitch)
 	apply_stance(crouch_amount, delta)
-	var speed := current_speed()
+	_sprinting = sprinting and _crouch < 0.5
 	var direction := wish_direction(input_2d, camera_yaw)
+	_set_sprint_align(direction)
+	var speed := current_speed()
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 	horizontal = horizontal.move_toward(direction * speed, ACCELERATION * delta)
 	var planar := Vector2(horizontal.x, horizontal.z)
@@ -1050,14 +1204,59 @@ func apply_authoritative_health(current: int) -> void:
 	if current >= health:
 		return
 	health = current
+	var was_down := _down
 	_down = health == 0
-	_refresh_nameplate()
+	_apply_down_pose()
+	if _down and not was_down:
+		if net_role == NetRole.OWNER:
+			close_inventory()
+			close_tech_tree()
+		downed.emit()
 	if _body_material == null:
 		return
 	if _down:
 		_body_material.albedo_color = Color(0.16, 0.15, 0.15, 1)
 		return
 	_flash_body()
+
+
+func is_down() -> bool:
+	return _down
+
+
+## The one way back to life. apply_authoritative_health never raises health,
+## so a stale snapshot cannot heal anyone. The server calls this directly on its
+## own pawn; clients call it when the server sends player_respawned.
+func revive(pos: Vector3, yaw: float) -> void:
+	health = max_health
+	_down = false
+	respawn_eta = 0.0
+	velocity = Vector3.ZERO
+	authoritative_velocity = Vector3.ZERO
+	_crouch = 0.0
+	_owner_crouch = 0.0
+	_aim_pitch = 0.0
+	_owner_pitch = 0.0
+	_sprinting = false
+	global_position = pos
+	apply_facing_yaw(yaw)
+	_apply_down_pose()
+	set_lean_visual(0.0)
+	_motion.clear()
+	seed_motion(pos, yaw)
+	mark_authoritative_pose()
+	if _body_material != null:
+		_body_material.albedo_color = _body_tint
+	revived.emit()
+
+
+## The character model comes from a glTF and ignores the capsule material, so a
+## downed player is laid on their back instead of only being tinted.
+func _apply_down_pose() -> void:
+	if _character_model == null:
+		return
+	_character_model.rotation.x = deg_to_rad(-90.0) if _down else 0.0
+	set_lean_visual(_lean_offset)
 
 
 func clamped_lean_offset(desired: float) -> float:
@@ -1152,14 +1351,13 @@ func set_lean_visual(offset: float) -> void:
 		_lean_pivot.force_update_transform()
 	if _character_model != null:
 		# Keep feet on the ground while LeanPivot sits at capsule center.
-		_character_model.position.y = -height * 0.5
+		# A downed model lies flat, so its axis sits one body radius up.
+		_character_model.position.y = -height * 0.5 + (DOWN_LIFT if _down else 0.0)
 	if _camera != null:
 		var lean_shift := Vector3.ZERO
 		if _visual_root != null:
 			lean_shift = _visual_root.transform.basis.x * offset
 		_camera.position = Vector3(lean_shift.x, -0.45 * _crouch, lean_shift.z)
-	if _nameplate != null:
-		_nameplate.position.y = height + 0.35
 	_apply_weapon_pitch()
 	_update_locomotion_anim()
 
@@ -1218,7 +1416,9 @@ func _move(delta: float) -> void:
 	var blocked := container_view != null or _inventory_open()
 	if blocked:
 		input_2d = Vector2.ZERO
+	_sprinting = _read_sprint(blocked, Input.get_action_strength(&"crouch"))
 	var direction := wish_direction(input_2d, _camera.get_yaw())
+	_set_sprint_align(direction)
 	var speed := current_speed()
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 	horizontal = horizontal.move_toward(direction * speed, ACCELERATION * delta)
@@ -1229,6 +1429,12 @@ func _move(delta: float) -> void:
 	else:
 		velocity.y -= GRAVITY * delta
 	move_and_slide()
+
+
+func _read_sprint(blocked: bool, crouch_amount: float) -> bool:
+	if blocked or crouch_amount > 0.5:
+		return false
+	return Input.is_action_pressed(&"sprint")
 
 
 func _update_stance(delta: float) -> void:
@@ -1263,7 +1469,7 @@ func _note_owner_gap(time_sec: float, pos: Vector3) -> void:
 	if _has_authoritative_pose:
 		var dt := maxf(time_sec - _last_pose_time, 1.0 / 60.0)
 		var gap := Vector2(_last_snapshot.x - pos.x, _last_snapshot.z - pos.z).length()
-		var allowance := WALK_SPEED * dt + 0.6
+		var allowance := RUN_SPEED * dt + 0.6
 		if gap > allowance:
 			correction_count += 1
 			print("[client] server correction peer=%d gap=%.2f" % [network_id, gap])
@@ -1293,24 +1499,6 @@ func _setup_network_presentation() -> void:
 			_body_tint = _color_for(network_id)
 			_body_material.albedo_color = _body_tint
 			mesh.set_surface_override_material(0, _body_material)
-	_nameplate = Label3D.new()
-	_nameplate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_nameplate.position = Vector3(0.0, 2.15, 0.0)
-	_nameplate.pixel_size = 0.008
-	_nameplate.font_size = 48
-	_nameplate.outline_size = 8
-	_nameplate.outline_modulate = Color(0.0, 0.0, 0.0, 1.0)
-	add_child(_nameplate)
-	_refresh_nameplate()
-
-
-func _refresh_nameplate() -> void:
-	if _nameplate == null:
-		return
-	if _down:
-		_nameplate.text = "P%d\nDOWN" % network_id
-	else:
-		_nameplate.text = "P%d\n%d HP" % [network_id, health]
 
 
 func _flash_body() -> void:
@@ -1424,7 +1612,34 @@ func _attach_weapon_to_hand() -> void:
 	_weapon_mesh.get_parent().remove_child(_weapon_mesh)
 	attach.add_child(_weapon_mesh)
 	_weapon_mesh.transform = Transform3D(Basis.from_euler(HAND_WEAPON_TILT), HAND_WEAPON_OFFSET)
+	var grip := Node3D.new()
+	grip.name = "ToolGrip"
+	attach.add_child(grip)
+	_tool_grip = grip
 	_weapon_in_hand = true
+
+
+## Right-hand socket for res://assets/equipment/<id>.glb. The gun box stays
+## on its own tilt. The tool grip uses the bone as-is: +Y along the fingers.
+func _refresh_held_tool() -> void:
+	var grip := _ensure_tool_grip()
+	if grip == null:
+		return
+	var item_id := held_item_id()
+	if item_id == _mounted_tool_id:
+		return
+	var shown := HeldToolArt.mount(grip, item_id)
+	grip.visible = shown
+	_mounted_tool_id = item_id
+
+
+func _ensure_tool_grip() -> Node3D:
+	if _tool_grip != null and is_instance_valid(_tool_grip):
+		return _tool_grip
+	_attach_weapon_to_hand()
+	if _tool_grip != null and is_instance_valid(_tool_grip):
+		return _tool_grip
+	return null
 
 
 func _configure_upper_body_filters() -> void:
@@ -1453,9 +1668,8 @@ func _update_locomotion_anim() -> void:
 	if net_role == NetRole.OWNER or net_role == NetRole.PUPPET:
 		source = authoritative_velocity
 	# Facing stays on aim. Blend X/Y is velocity in that facing frame so
-	# strafe and back keep their own clips. Lean clips only cover forward
-	# walk; strafe stays on the direction blend. LeanPivot still shifts
-	# the camera and the mesh.
+	# strafe and back keep their own clips. Lean clips are off for now;
+	# LeanPivot still shifts the camera and the mesh.
 	var local := Basis(Vector3.UP, get_facing_yaw()).inverse() * source
 	var planar := Vector2(local.x, -local.z)
 	var speed := planar.length()
@@ -1463,11 +1677,20 @@ func _update_locomotion_anim() -> void:
 	var max_speed := maxf(current_speed(), 0.01)
 	if speed >= 0.08:
 		blend = planar / speed * clampf(speed / max_speed, 0.0, 1.0)
-	var lean_ratio := 0.0 if is_zero_approx(LEAN_DISTANCE) else clampf(_lean_offset / LEAN_DISTANCE, -1.0, 1.0)
-	var forward := clampf(blend.y, 0.0, 1.0)
+	var running := _sprinting and _crouch < 0.5 and speed >= 0.2
+	if net_role == NetRole.PUPPET:
+		running = _crouch < 0.5 and speed > WALK_SPEED * 1.25
+	var dt := maxf(get_physics_process_delta_time(), 1.0 / 60.0)
+	_run_blend = move_toward(_run_blend, 1.0 if running else 0.0, 8.0 * dt)
+	var cycle := 1.0
+	if speed > WALK_AUTHORED * 1.02:
+		cycle = clampf(speed / WALK_AUTHORED, 1.0, WALK_PLAYBACK)
+	_anim_tree.set("parameters/stand_speed/scale", cycle)
 	_anim_tree.set("parameters/stand_loco/blend_position", blend)
-	_anim_tree.set("parameters/stand_lean/blend_position", lean_ratio)
-	_anim_tree.set("parameters/stand_body/blend_amount", absf(lean_ratio) * forward * (1.0 - _crouch))
+	_anim_tree.set("parameters/run_loco/blend_position", blend)
+	_anim_tree.set("parameters/gait/blend_amount", _run_blend)
+	_anim_tree.set("parameters/stand_lean/blend_position", 0.0)
+	_anim_tree.set("parameters/stand_body/blend_amount", 0.0)
 	_anim_tree.set("parameters/crouch_loco/blend_position", blend)
 	_anim_tree.set("parameters/stance/blend_amount", _crouch)
 
@@ -1515,8 +1738,30 @@ func _harvest_clip_name() -> StringName:
 			return &"Mining"
 
 
+func _poll_harvest_swing(delta: float) -> void:
+	if not _harvest_swing_lock or _anim_tree == null:
+		return
+	if bool(_anim_tree.get("parameters/harvest/active")):
+		_harvest_swing_live = true
+		_harvest_swing_wait = 0.0
+		return
+	# The tree has played it and then cleared it. The next click may start a new swing.
+	if _harvest_swing_live:
+		_harvest_swing_lock = false
+		_harvest_swing_live = false
+		return
+	# FIRE was sent, but the OneShot never became active.
+	_harvest_swing_wait += delta
+	if _harvest_swing_wait > 0.25:
+		_harvest_swing_lock = false
+		_harvest_swing_wait = 0.0
+
+
 func _request_harvest_anim() -> void:
 	if _anim_tree == null or _anim_tree.tree_root == null:
+		return
+	_poll_harvest_swing(0.0)
+	if _harvest_swing_lock or bool(_anim_tree.get("parameters/harvest/active")):
 		return
 	var tree := _anim_tree.tree_root as AnimationNodeBlendTree
 	if tree == null:
@@ -1524,7 +1769,28 @@ func _request_harvest_anim() -> void:
 	var clip := tree.get_node(&"harvest_clip") as AnimationNodeAnimation
 	if clip != null:
 		clip.animation = _harvest_clip_name()
+	_harvest_swing_lock = true
+	_harvest_swing_live = false
+	_harvest_swing_wait = 0.0
 	_anim_tree.set("parameters/harvest/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+
+
+func _present_aim_marker(aim: Vector3, normal: Vector3, inventory_open: bool) -> void:
+	if _aim_marker == null:
+		return
+	if inventory_open or not DebugFlags.enabled():
+		_aim_marker.visible = false
+		return
+	var point := aim
+	if holds_harvest_tool():
+		var origin := shot_origin()
+		var direction := direction_toward_aim(aim)
+		var cap := HarvestSwing.reach_point(global_position, origin, direction)
+		if origin.distance_squared_to(aim) > origin.distance_squared_to(cap):
+			point = cap
+			normal = Vector3.UP
+	_aim_marker.visible = true
+	_show_aim_marker(point, normal)
 
 
 func _show_aim_marker(point: Vector3, normal: Vector3) -> void:

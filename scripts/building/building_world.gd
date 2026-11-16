@@ -115,6 +115,7 @@ func _on_changed(change: Dictionary) -> void:
 	touched.erase(0)
 	for component_id in touched.keys():
 		_refresh_mask(int(component_id))
+	_refresh_posts_after_edges_left(change)
 
 
 func _spawn(component_id: int) -> void:
@@ -343,12 +344,32 @@ func _refresh_joint_posts(component: BuildComponent) -> void:
 		return
 	var key: Vector4i = component.key
 	for vertex in GridSystem.edge_vertices(key):
-		var post := state.get_component(state.post_at(GridSystem.post_key(vertex, key.z)))
-		if post == null:
+		_refresh_post_at(vertex, key.z)
+
+
+## A destroyed wall takes its wear with it. Columns that another wall still
+## holds should stop looking damaged once that wall is gone.
+func _refresh_posts_after_edges_left(change: Dictionary) -> void:
+	for record in change.get("gone", []):
+		if record is not Dictionary:
 			continue
-		var node := node_for(post.id)
-		if node != null:
-			_apply_appearance(post, node)
+		if not BuildTypes.is_edge_kind(int(record.get("kind", -1))):
+			continue
+		var key: Variant = record.get("key")
+		if key is not Vector4i:
+			continue
+		var edge: Vector4i = key
+		for vertex in GridSystem.edge_vertices(edge):
+			_refresh_post_at(vertex, edge.z)
+
+
+func _refresh_post_at(vertex: Vector2i, level: int) -> void:
+	var post := state.get_component(state.post_at(GridSystem.post_key(vertex, level)))
+	if post == null:
+		return
+	var node := node_for(post.id)
+	if node != null:
+		_apply_appearance(post, node)
 
 
 func _apply_tint(mesh: MeshInstance3D, component: BuildComponent) -> void:
@@ -360,9 +381,7 @@ func _apply_tint(mesh: MeshInstance3D, component: BuildComponent) -> void:
 	if material == null:
 		material = BuildingTier.make_material(tier, component.kind)
 		mesh.set_surface_override_material(0, material)
-	var ratio := 1.0
-	if component.max_health > 0 and not state.is_joint_post(component):
-		ratio = float(component.health) / float(component.max_health)
+	var ratio := state.display_ratio(component)
 	BuildingTier.style_material(material, tier, ratio, component.kind)
 	var piece := mesh.get_parent() as Node3D
 	if piece != null:

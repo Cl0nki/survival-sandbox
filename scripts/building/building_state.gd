@@ -244,6 +244,21 @@ func display_tier(component: BuildComponent) -> int:
 	return best if best > 0 else component.tier
 
 
+## How worn this piece looks. A column has no health of its own, so it wears
+## with the most damaged wall, doorway, or window that still ends on it.
+func display_ratio(component: BuildComponent) -> float:
+	if component == null or component.max_health <= 0:
+		return 1.0
+	if not is_joint_post(component):
+		return clampf(float(component.health) / float(component.max_health), 0.0, 1.0)
+	var worst := 1.0
+	for edge in edges_at_post(component):
+		if edge.max_health <= 0:
+			continue
+		worst = minf(worst, clampf(float(edge.health) / float(edge.max_health), 0.0, 1.0))
+	return worst
+
+
 func weakest_edge_at_post(post: BuildComponent) -> BuildComponent:
 	var best: BuildComponent = null
 	for edge in edges_at_post(post):

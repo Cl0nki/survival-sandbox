@@ -1,0 +1,151 @@
+{
+  "asset_id": "feaaeff87fd7",
+  "asset_name": "tree_birch",
+  "category": "tree",
+  "kind": "prop",
+  "workshop_category": "",
+  "tags": [],
+  "created_at": "2026-11-15T19:59:16+00:00",
+  "provider": "meshy",
+  "model": "latest",
+  "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Birch Tree. with brich leafes. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Birch Tree. with brich leafes. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+    "prompt_truncated": true,
+    "godot_folder": "environment",
+    "polycount": 6500,
+    "customization": {},
+    "variation": 1,
+    "image_provider": "openai",
+    "workshop_category": "",
+    "humanoid": false,
+    "auto_rig": false,
+    "auto_animate": false,
+    "optimization_profile": "prop",
+    "expect_collision": true,
+    "image_model": "gpt-image-2.5-flare",
+    "image_parameters": {
+      "model": "gpt-image-2.5-flare",
+      "size": "1024x1024",
+      "n": 1,
+      "quality": "medium",
+      "output_format": "png"
+    },
+    "provider_parameters": {
+      "ai_model": "latest",
+      "enable_pbr": true,
+      "should_remesh": true,
+      "should_texture": true,
+      "save_pre_remeshed_model": true,
+      "target_polycount": 6500,
+      "target_formats": [
+        "glb"
+      ],
+      "texture_resolution": "2k"
+    },
+    "provider_task_id": "01a1e0cb-16a6-75e1-a43f-92b7bbbe3deb",
+    "generation_task_id": "640cabe6b3aa",
+    "optimization": {
+      "profile": "prop",
+      "target_polycount": 6500,
+      "lod_ratios": [
+        0.5,
+        0.25
+      ],
+      "add_collision": true,
+      "target_size": null
+    }
+  },
+  "original_files": [
+    "original/concept.png",
+    "original/model.glb",
+    "original/pre_remeshed.glb",
+    "preview/thumbnail.png"
+  ],
+  "processed_files": [
+    "processed/tree_birch.glb",
+    "processed/lod1.glb",
+    "processed/lod2.glb"
+  ],
+  "polygon_count": 6413,
+  "dimensions": {
+    "min": [
+      -0.4418260157108307,
+      -0.9517220854759216,
+      -0.3111180067062378
+    ],
+    "max": [
+      0.4403190016746521,
+      0.9493545293807983,
+      0.3051000237464905
+    ],
+    "size": [
+      0.8821450173854828,
+      1.90107661485672,
+      0.6162180304527283
+    ]
+  },
+  "texture_resolution": null,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-15T19:59:16+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Birch Tree. with brich leafes. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-15T20:01:32+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Birch Tree. with brich leafes. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/tree_birch.glb",
+        "processed/lod1.glb",
+        "processed/lod2.glb"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "48e3629c286f",
+  "production_files": [
+    "assets/environment/tree_birch.glb",
+    "assets/environment/tree_birch.tscn",
+    "assets/environment/tree_birch_lod1.glb",
+    "assets/environment/tree_birch_lod2.glb"
+  ],
+  "manual_steps": [],
+  "maps_origin": {},
+  "modular": null
+}

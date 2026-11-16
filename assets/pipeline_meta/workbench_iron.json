@@ -1,0 +1,147 @@
+{
+  "asset_id": "342735bb12d2",
+  "asset_name": "workbench_iron",
+  "category": "from_icon",
+  "kind": "deployable",
+  "workshop_category": "deployables",
+  "tags": [],
+  "created_at": "2026-11-15T20:55:48+00:00",
+  "provider": "meshy",
+  "model": "latest",
+  "prompt": "Iron Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "Iron Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "prompt_truncated": false,
+    "godot_folder": "deployables",
+    "polycount": 6000,
+    "customization": {},
+    "variation": 1,
+    "image_provider": "manual",
+    "workshop_category": "deployables",
+    "humanoid": false,
+    "auto_rig": false,
+    "auto_animate": false,
+    "optimization_profile": "deployable",
+    "expect_collision": true,
+    "provider_parameters": {
+      "ai_model": "latest",
+      "enable_pbr": true,
+      "should_remesh": true,
+      "should_texture": true,
+      "save_pre_remeshed_model": true,
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "texture_resolution": "2k"
+    },
+    "provider_task_id": "01a1e0fe-ac52-713f-abf0-84156f77f7f8",
+    "generation_task_id": "b76c41849d50",
+    "optimization": {
+      "profile": "deployable",
+      "target_polycount": 6000,
+      "lod_ratios": [
+        0.5,
+        0.25
+      ],
+      "add_collision": true,
+      "target_size": [
+        1.81,
+        1.428,
+        0.81
+      ]
+    }
+  },
+  "original_files": [
+    "original/concept.png",
+    "original/model.glb",
+    "original/pre_remeshed.glb",
+    "preview/thumbnail.png"
+  ],
+  "processed_files": [
+    "processed/workbench_iron.glb",
+    "processed/lod1.glb",
+    "processed/lod2.glb"
+  ],
+  "polygon_count": 5453,
+  "dimensions": {
+    "min": [
+      -0.4672476351261139,
+      -0.4050000011920929,
+      -0.3477381467819214
+    ],
+    "max": [
+      0.4672476053237915,
+      0.4050000011920929,
+      0.1738690733909607
+    ],
+    "size": [
+      0.9344952404499054,
+      0.8100000023841858,
+      0.5216072201728821
+    ]
+  },
+  "texture_resolution": null,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-15T20:55:48+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "",
+      "prompt": "Iron Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-15T20:57:15+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "Iron Workbench. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/workbench_iron.glb",
+        "processed/lod1.glb",
+        "processed/lod2.glb"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "a2a3566066cc",
+  "production_files": [
+    "assets/deployables/workbench_iron.glb",
+    "assets/deployables/workbench_iron.tscn",
+    "assets/deployables/workbench_iron_lod1.glb",
+    "assets/deployables/workbench_iron_lod2.glb"
+  ],
+  "manual_steps": [],
+  "maps_origin": {},
+  "modular": null
+}

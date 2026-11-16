@@ -3,20 +3,29 @@ class_name InventoryUI
 
 const _Icons = preload("res://scripts/items/item_icons.gd")
 const _CraftingMenu = preload("res://scripts/ui/crafting_menu.gd")
+const _UiStyle = preload("res://scripts/ui/ui_style.gd")
 const SLOT_SIZE := 96
 const NAME_DELAY_MSEC := 1000
+## Open screen and HUD hotbar shrink to fit small windows (never grow past 1:1).
+const SCREEN_MARGIN := 20.0
+const MIN_UI_SCALE := 0.35
 
 ## Minecraft-style inventory. Clicks are requests. The picture updates only
 ## after the server confirms the slots and the cursor stack.
 
 var _player: PlayerController
 var _screen: Control
+var _backdrop: TextureRect
+var _theme: Theme
 var _hud: Control
+var _hud_box: VBoxContainer
+var _ui_scale := 1.0
 var _box_panel: PanelContainer
 var _box_title: Label
 var _box_hint: Label
 var _box_grid: GridContainer
 var _craft_menu: PanelContainer
+var _progress_station: LootContainer
 var _storage_grid: GridContainer
 var _hotbar_grid: GridContainer
 var _hud_grid: GridContainer
@@ -63,14 +72,22 @@ func close() -> void:
 
 func _ready() -> void:
 	layer = 30
-	var center := CenterContainer.new()
+	_theme = _UiStyle.build_theme()
+	## Dim vignette behind the open menu (sits under everything else).
+	_backdrop = _UiStyle.make_backdrop()
+	add_child(_backdrop)
+	## Plain Control, not a CenterContainer: containers reset their children's
+	## scale, so `_update_scale` places and scales `_screen` by hand.
+	var center := Control.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
 	_screen = VBoxContainer.new()
 	_screen.visible = false
-	_screen.add_theme_constant_override(&"separation", 8)
+	_screen.theme = _theme
+	_screen.add_theme_constant_override(&"separation", 16)
 	center.add_child(_screen)
+	_screen.visibility_changed.connect(_on_screen_visibility)
 	_craft_menu = _CraftingMenu.new()
 	_craft_menu.craft_pressed.connect(_on_station_craft)
 	_screen.add_child(_craft_menu)
@@ -78,13 +95,17 @@ func _ready() -> void:
 	_box_panel.visible = false
 	_screen.add_child(_box_panel)
 	var box_column := VBoxContainer.new()
+	box_column.add_theme_constant_override(&"separation", 8)
 	_box_panel.add_child(box_column)
 	_box_title = Label.new()
 	_box_title.text = "Crate"
+	_UiStyle.title(_box_title)
 	box_column.add_child(_box_title)
 	_box_hint = Label.new()
 	_box_hint.visible = false
+	_box_hint.add_theme_color_override(&"font_color", _UiStyle.TEXT_DIM)
 	box_column.add_child(_box_hint)
+	box_column.add_child(HSeparator.new())
 	_box_grid = GridContainer.new()
 	_box_grid.columns = 9
 	_box_grid.add_theme_constant_override(&"h_separation", 4)
@@ -93,39 +114,45 @@ func _ready() -> void:
 	var bag_panel := PanelContainer.new()
 	_screen.add_child(bag_panel)
 	var column := VBoxContainer.new()
+	column.add_theme_constant_override(&"separation", 8)
 	bag_panel.add_child(column)
 	var title := Label.new()
 	title.text = "Inventory"
+	_UiStyle.title(title)
 	column.add_child(title)
 	_notice = Label.new()
 	_notice.visible = false
+	_notice.add_theme_color_override(&"font_color", _UiStyle.ACCENT)
 	column.add_child(_notice)
+	column.add_child(HSeparator.new())
 	_storage_grid = GridContainer.new()
 	_storage_grid.columns = 9
 	_storage_grid.add_theme_constant_override(&"h_separation", 4)
 	_storage_grid.add_theme_constant_override(&"v_separation", 4)
 	column.add_child(_storage_grid)
+	column.add_child(HSeparator.new())
 	_hotbar_grid = GridContainer.new()
 	_hotbar_grid.columns = 9
 	_hotbar_grid.add_theme_constant_override(&"h_separation", 4)
 	_hotbar_grid.add_theme_constant_override(&"v_separation", 4)
 	column.add_child(_hotbar_grid)
-	_hud = CenterContainer.new()
+	_hud = Control.new()
 	_hud.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_hud.offset_top = -160
 	_hud.offset_bottom = -16
 	_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud.theme = _theme
 	add_child(_hud)
-	var hud_box := VBoxContainer.new()
-	_hud.add_child(hud_box)
+	_hud_box = VBoxContainer.new()
+	_hud.add_child(_hud_box)
 	_hud_notice = Label.new()
 	_hud_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hud_box.add_child(_hud_notice)
+	_hud_box.add_child(_hud_notice)
 	_hud_grid = GridContainer.new()
 	_hud_grid.columns = 9
 	_hud_grid.add_theme_constant_override(&"h_separation", 4)
 	_hud_grid.add_theme_constant_override(&"v_separation", 4)
-	hud_box.add_child(_hud_grid)
+	_hud_box.add_child(_hud_grid)
 	_cursor_icon = TextureRect.new()
 	_cursor_icon.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	_cursor_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -143,10 +170,61 @@ func _ready() -> void:
 	_name_tip.visible = false
 	_name_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_name_tip.z_index = 40
+	_name_tip.theme = _theme
+	_name_tip.add_theme_stylebox_override(&"panel", _UiStyle.tooltip_style())
 	add_child(_name_tip)
 	_name_label = Label.new()
 	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_name_tip.add_child(_name_label)
+	## Re-fit whenever the window or the content size changes.
+	get_viewport().size_changed.connect(_update_scale)
+	_screen.minimum_size_changed.connect(_update_scale)
+	_screen.resized.connect(_update_scale)
+	_hud_box.minimum_size_changed.connect(_update_scale)
+	_hud.resized.connect(_update_scale)
+	_update_scale.call_deferred()
+
+
+## Shrinks the open screen (and the hotbar) so they fit the window with a margin,
+## and keeps them centered. Scaling the control keeps the layout intact, so
+## clicks still hit the right slots.
+func _update_scale() -> void:
+	if _screen == null or _hud_box == null or not is_inside_tree():
+		return
+	var view := get_viewport().get_visible_rect().size
+	var avail := view - Vector2(SCREEN_MARGIN, SCREEN_MARGIN) * 2.0
+	_screen.reset_size()
+	var need := _screen.size
+	_ui_scale = _fit(need, avail)
+	_screen.scale = Vector2(_ui_scale, _ui_scale)
+	_screen.pivot_offset = need * 0.5
+	_screen.position = ((view - need) * 0.5).floor()
+	_hud_box.reset_size()
+	var hud_need := _hud_box.size
+	var hud_scale := _fit(hud_need, Vector2(avail.x, INF))
+	_hud_box.scale = Vector2(hud_scale, hud_scale)
+	_hud_box.pivot_offset = Vector2(hud_need.x * 0.5, hud_need.y)
+	_hud_box.position = Vector2(floorf((_hud.size.x - hud_need.x) * 0.5), _hud.size.y - hud_need.y)
+
+
+static func _fit(need: Vector2, avail: Vector2) -> float:
+	if need.x <= 1.0 or need.y <= 1.0:
+		return 1.0
+	return clampf(minf(avail.x / need.x, avail.y / need.y), MIN_UI_SCALE, 1.0)
+
+
+func _on_screen_visibility() -> void:
+	if _backdrop == null or _screen == null:
+		return
+	_backdrop.visible = _screen.visible
+	if not _screen.visible or not is_inside_tree():
+		return
+	## Quick fade-in for the dim and the panels.
+	_backdrop.modulate.a = 0.0
+	_screen.modulate.a = 0.0
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(_backdrop, "modulate:a", 1.0, 0.18)
+	tween.tween_property(_screen, "modulate:a", 1.0, 0.12)
 
 
 func _process(_delta: float) -> void:
@@ -157,13 +235,19 @@ func _process(_delta: float) -> void:
 	_cursor_qty.visible = held and _player.cursor_qty > 1
 	if held:
 		var mouse := get_viewport().get_mouse_position()
+		## The dragged stack matches the (possibly shrunk) slot size.
+		var s := _ui_scale if _screen.visible else 1.0
+		_cursor_icon.scale = Vector2(s, s)
 		_cursor_icon.global_position = mouse + Vector2(12, 12)
 		_cursor_icon.texture = _Icons.texture_for(ItemCatalog.get_item(_player.cursor_item_id))
 		if _cursor_qty.visible:
 			_cursor_qty.text = str(_player.cursor_qty)
 			_cursor_qty.size = Vector2(48, 22)
-			_cursor_qty.global_position = _cursor_icon.global_position + Vector2(SLOT_SIZE - 48, SLOT_SIZE - 22)
+			_cursor_qty.scale = Vector2(s, s)
+			_cursor_qty.global_position = _cursor_icon.global_position + Vector2(SLOT_SIZE - 48, SLOT_SIZE - 22) * s
 	_update_name_tip()
+	if _screen.visible and _progress_station != null and is_instance_valid(_progress_station):
+		_craft_menu.set_progress(float(_progress_station.call(&"progress")))
 
 
 func _input(event: InputEvent) -> void:
@@ -277,6 +361,7 @@ func _refresh() -> void:
 	if station_ui:
 		_show_station_menu(station as LootContainer, bag)
 	else:
+		_progress_station = null
 		_craft_menu.clear()
 		if crate != null:
 			for index in crate.capacity:
@@ -311,6 +396,7 @@ func _show_station_menu(station: LootContainer, bag: Inventory) -> void:
 		mode = "smelt"
 		action = "Smelt"
 	_craft_menu.show_station(mode, kind, station.prompt, bag, status, queue, action)
+	_progress_station = station if station.has_method(&"progress") else null
 	var host: Control = _craft_menu.output_host()
 	_clear_host(host)
 	_add_slot(host, SlotOps.AREA_CONTAINER, out_index, false, true)
@@ -439,17 +525,7 @@ func _add_slot(grid: Control, area: int, index: int, hotbar: bool, interactive: 
 
 
 func _active_border() -> Panel:
-	var frame := Panel.new()
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
-	frame.z_index = 3
-	var style := StyleBoxFlat.new()
-	style.draw_center = false
-	style.bg_color = Color(0, 0, 0, 0)
-	style.border_color = Color(1, 1, 1, 0.95)
-	style.set_border_width_all(2)
-	frame.add_theme_stylebox_override(&"panel", style)
-	return frame
+	return _UiStyle.selection_frame()
 
 
 func _count_label() -> Label:
@@ -549,7 +625,9 @@ func _cancel_paint() -> void:
 
 func _slot_at(at: Vector2) -> Dictionary:
 	for i in _buttons.size():
-		if _buttons[i].get_global_rect().has_point(at):
+		## get_global_rect ignores scale, so measure through the full transform.
+		var button := _buttons[i]
+		if (button.get_global_transform() * Rect2(Vector2.ZERO, button.size)).has_point(at):
 			return {"area": _areas[i], "index": _indices[i]}
 	return {}
 

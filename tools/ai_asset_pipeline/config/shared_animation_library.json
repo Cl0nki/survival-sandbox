@@ -18,7 +18,7 @@
     "walk_r": "Walk_R",
     "crouch_idle": "Crouch_Idle",
     "crouch_walk": "Crouch_Fwd",
-    "run": "Walk",
+    "run": "Run_Fwd",
     "mining": "Mining",
     "tree_chopping": "TreeChopping"
   },

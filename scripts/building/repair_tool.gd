@@ -34,6 +34,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _repair_aimed() -> void:
+	if player != null and player.held_item_id() == "repair_tool":
+		player.show_debug_beam(_beam_end(), ShotVisual.REPAIR)
 	var component_id := _ray_component()
 	if component_id == 0:
 		_notify("No piece to repair")
@@ -85,16 +87,25 @@ func _clear_local_wallet() -> void:
 	system.authority.wallet_spend = Callable()
 
 
-func _ray_component() -> int:
-	if player == null:
-		return 0
+func _beam_end() -> Vector3:
+	var hit := _building_hit()
+	if not hit.is_empty():
+		return hit["position"]
+	if player != null:
+		return player.get_aim_point()
+	return Vector3.ZERO
+
+
+func _building_hit() -> Dictionary:
+	if player == null or system == null or system.world == null:
+		return {}
 	var camera := player.current_camera()
 	var world := player.get_world_3d()
 	if camera == null or world == null or world.direct_space_state == null:
-		return 0
+		return {}
 	var mouse := player.get_viewport().get_mouse_position()
 	var origin := camera.project_ray_origin(mouse)
-	var hit := AimProjector.first_solid(
+	return AimProjector.first_solid(
 		world.direct_space_state,
 		origin,
 		origin + camera.project_ray_normal(mouse) * 80.0,
@@ -102,6 +113,10 @@ func _ray_component() -> int:
 		[],
 		Callable(system.world, &"collider_is_hidden")
 	)
+
+
+func _ray_component() -> int:
+	var hit := _building_hit()
 	if hit.is_empty():
 		return 0
 	var collider: Object = hit.get("collider")

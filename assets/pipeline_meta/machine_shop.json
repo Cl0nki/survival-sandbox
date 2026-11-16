@@ -1,0 +1,147 @@
+{
+  "asset_id": "98404327e392",
+  "asset_name": "machine_shop",
+  "category": "from_icon",
+  "kind": "deployable",
+  "workshop_category": "deployables",
+  "tags": [],
+  "created_at": "2026-11-15T22:59:03+00:00",
+  "provider": "meshy",
+  "model": "latest",
+  "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Machine Shop.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Machine Shop.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+    "prompt_truncated": true,
+    "godot_folder": "deployables",
+    "polycount": 6000,
+    "customization": {},
+    "variation": 1,
+    "image_provider": "manual",
+    "workshop_category": "deployables",
+    "humanoid": false,
+    "auto_rig": false,
+    "auto_animate": false,
+    "optimization_profile": "deployable",
+    "expect_collision": true,
+    "provider_parameters": {
+      "ai_model": "latest",
+      "enable_pbr": true,
+      "should_remesh": true,
+      "should_texture": true,
+      "save_pre_remeshed_model": true,
+      "target_polycount": 6000,
+      "target_formats": [
+        "glb"
+      ],
+      "texture_resolution": "2k"
+    },
+    "provider_task_id": "01a1e16f-83b4-71f5-b8a1-8e60d475a0ad",
+    "generation_task_id": "42147d6495ff",
+    "optimization": {
+      "profile": "deployable",
+      "target_polycount": 6000,
+      "lod_ratios": [
+        0.5,
+        0.25
+      ],
+      "add_collision": true,
+      "target_size": [
+        0.828,
+        1.29,
+        2.172
+      ]
+    }
+  },
+  "original_files": [
+    "original/concept.png",
+    "original/model.glb",
+    "original/pre_remeshed.glb",
+    "preview/thumbnail.png"
+  ],
+  "processed_files": [
+    "processed/machine_shop.glb",
+    "processed/lod1.glb",
+    "processed/lod2.glb"
+  ],
+  "polygon_count": 5760,
+  "dimensions": {
+    "min": [
+      -1.1014423370361328,
+      -0.6538634896278381,
+      -0.8400000333786011
+    ],
+    "max": [
+      1.1014423370361328,
+      0.6538634300231934,
+      0.42000001668930054
+    ],
+    "size": [
+      2.2028846740722656,
+      1.3077269196510315,
+      1.2600000500679016
+    ]
+  },
+  "texture_resolution": null,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-15T22:59:03+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Machine Shop.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-15T23:00:22+00:00",
+      "version": 1,
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Machine Shop.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
+      ],
+      "processed_files": [
+        "processed/machine_shop.glb",
+        "processed/lod1.glb",
+        "processed/lod2.glb"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "5e73dd23831b",
+  "production_files": [
+    "assets/deployables/machine_shop.glb",
+    "assets/deployables/machine_shop.tscn",
+    "assets/deployables/machine_shop_lod1.glb",
+    "assets/deployables/machine_shop_lod2.glb"
+  ],
+  "manual_steps": [],
+  "maps_origin": {},
+  "modular": null
+}

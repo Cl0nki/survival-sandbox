@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex</title>
+  <link rel="stylesheet" href="/codex.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <p class="eyebrow">Survival Sandbox</p>
+      <h1>Codex</h1>
+    </div>
+    <label class="search">
+      <span class="sr">Search</span>
+      <input id="search" type="search" placeholder="Search items, stations, biomes" autocomplete="off">
+    </label>
+    <div class="header-actions">
+      <a class="ghost" href="/">Workshop</a>
+      <button id="new-item" type="button">New item</button>
+    </div>
+  </header>
+  <div class="filters" id="filters"></div>
+  <p id="status" class="status" role="status"></p>
+  <div class="shell" id="shell">
+    <div class="board" id="board"></div>
+    <aside id="drawer" class="drawer" hidden></aside>
+  </div>
+  <script src="/codex.js"></script>
+</body>
+</html>

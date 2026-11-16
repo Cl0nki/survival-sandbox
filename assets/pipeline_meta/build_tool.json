@@ -1,64 +1,102 @@
 {
-  "asset_id": "82f125b4b4f0",
+  "asset_id": "7877345dc67a",
   "asset_name": "build_tool",
-  "category": "item_icon",
-  "kind": "texture",
-  "created_at": "2026-11-01T23:28:43+00:00",
-  "provider": "openai",
-  "model": "gpt-image-2.5-flare",
-  "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Build Tool. Select a blueprint, aim, and click to build. Right click cancels. Side view. Guns point to the right.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Palette: dark slate #354451, blue gray #536575, olive green #596B3D, muted forest #78864C, sand #B4A071, rust orange #B66B49, concrete gray #89929D. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show every object from the side, in profile. Guns always point to the right. The area outside the object is empty alpha. No numbers. Generate the square at 1024 pixels so it stays sharp at that size. This is not a seamless texture. Match the project's style reference image: stylized shapes, muted military colors, and painted material breakup. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, barrel pointing left, solid background, backdrop.",
-  "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, barrel pointing left, solid background, backdrop",
+  "category": "world_pickup",
+  "kind": "prop",
+  "workshop_category": "",
+  "tags": [],
+  "created_at": "2026-11-04T21:19:49+00:00",
+  "provider": "meshy",
+  "model": "latest",
+  "prompt": "Build Tool. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+  "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
   "seed": null,
   "seed_supported": false,
   "generation_parameters": {
-    "sent_prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Build Tool. Select a blueprint, aim, and click to build. Right click cancels. Side view. Guns point to the right.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Palette: dark slate #354451, blue gray #536575, olive green #596B3D, muted forest #78864C, sand #B4A071, rust orange #B66B49, concrete gray #89929D. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show every object from the side, in profile. Guns always point to the right. The area outside the object is empty alpha. No numbers. Generate the square at 1024 pixels so it stays sharp at that size. This is not a seamless texture. Match the project's style reference image: stylized shapes, muted military colors, and painted material breakup. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, barrel pointing left, solid background, backdrop.",
-    "godot_folder": "icons",
-    "roughness": 0.7,
-    "metallic": 0.0,
+    "sent_prompt": "Build Tool. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+    "prompt_truncated": false,
+    "godot_folder": "props",
+    "polycount": 3000,
+    "customization": {},
     "variation": 1,
-    "quality": "medium",
+    "image_provider": "manual",
+    "workshop_category": "",
+    "humanoid": false,
+    "auto_rig": false,
+    "auto_animate": false,
+    "optimization_profile": "prop",
+    "expect_collision": true,
     "provider_parameters": {
-      "model": "gpt-image-2.5-flare",
-      "size": "1024x1024",
-      "n": 1,
-      "quality": "medium",
-      "output_format": "png",
-      "background": "transparent"
+      "ai_model": "latest",
+      "enable_pbr": true,
+      "should_remesh": true,
+      "should_texture": true,
+      "save_pre_remeshed_model": true,
+      "target_polycount": 3000,
+      "target_formats": [
+        "glb"
+      ],
+      "texture_resolution": "2k"
     },
-    "provider_resolution": "1024x1024",
-    "seam_score": 16.21
+    "provider_task_id": "01a1a86e-bded-718b-b88a-bba359054a55",
+    "generation_task_id": "b143a8465724",
+    "optimization": {
+      "profile": "prop",
+      "target_polycount": 3000,
+      "lod_ratios": [
+        0.5,
+        0.25
+      ],
+      "add_collision": true,
+      "target_size": [
+        0.38,
+        0.28,
+        0.38
+      ]
+    }
   },
   "original_files": [
-    "original/albedo.png",
-    "original/normal.png",
-    "original/roughness.png",
-    "original/ao.png",
-    "original/metallic.png",
-    "original/height.png"
+    "original/concept.png",
+    "original/model.glb",
+    "original/pre_remeshed.glb",
+    "preview/thumbnail.png"
   ],
   "processed_files": [
-    "processed/albedo.png",
-    "processed/normal.png",
-    "processed/roughness.png",
-    "processed/ao.png",
-    "processed/metallic.png",
-    "processed/height.png",
-    "preview/icon.png"
+    "processed/build_tool.glb",
+    "processed/lod1.glb",
+    "processed/lod2.glb"
   ],
-  "polygon_count": null,
-  "texture_resolution": 1024,
+  "polygon_count": 3012,
+  "dimensions": {
+    "min": [
+      -0.1900000125169754,
+      -0.13545234501361847,
+      -0.07111462205648422
+    ],
+    "max": [
+      0.1899999976158142,
+      0.13545234501361847,
+      0.03555731102824211
+    ],
+    "size": [
+      0.3800000101327896,
+      0.27090469002723694,
+      0.10667193308472633
+    ]
+  },
+  "texture_resolution": null,
   "processing_status": "ready_for_review",
   "approval_status": "approved",
   "version": 1,
   "history": [
     {
       "event": "created",
-      "at": "2026-11-01T23:28:43+00:00",
+      "at": "2026-11-04T21:19:49+00:00",
       "version": 1,
-      "provider": "openai",
+      "provider": "meshy",
       "model": "",
-      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Build Tool. Select a blueprint, aim, and click to build. Right click cancels. Side view. Guns point to the right.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Palette: dark slate #354451, blue gray #536575, olive green #596B3D, muted forest #78864C, sand #B4A071, rust orange #B66B49, concrete gray #89929D. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show every object from the side, in profile. Guns always point to the right. The area outside the object is empty alpha. No numbers. Generate the square at 1024 pixels so it stays sharp at that size. This is not a seamless texture. Match the project's style reference image: stylized shapes, muted military colors, and painted material breakup. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, barrel pointing left, solid background, backdrop.",
-      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, barrel pointing left, solid background, backdrop",
+      "prompt": "Build Tool. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "generating",
       "approval_status": "pending",
@@ -67,31 +105,25 @@
     },
     {
       "event": "processed",
-      "at": "2026-11-01T23:29:00+00:00",
+      "at": "2026-11-04T21:21:25+00:00",
       "version": 1,
-      "provider": "openai",
-      "model": "gpt-image-2.5-flare",
-      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Build Tool. Select a blueprint, aim, and click to build. Right click cancels. Side view. Guns point to the right.. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Palette: dark slate #354451, blue gray #536575, olive green #596B3D, muted forest #78864C, sand #B4A071, rust orange #B66B49, concrete gray #89929D. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show every object from the side, in profile. Guns always point to the right. The area outside the object is empty alpha. No numbers. Generate the square at 1024 pixels so it stays sharp at that size. This is not a seamless texture. Match the project's style reference image: stylized shapes, muted military colors, and painted material breakup. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, barrel pointing left, solid background, backdrop.",
-      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, barrel pointing left, solid background, backdrop",
+      "provider": "meshy",
+      "model": "latest",
+      "prompt": "Build Tool. Art direction: Stylized low-poly tactical survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival and tactical military aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. One game prop centered in frame, three-quarter view, full object visible, neutral flat background, no ground plane, no cast text. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border.",
+      "negative_prompt": "photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border",
       "seed": null,
       "processing_status": "ready_for_review",
       "approval_status": "pending",
       "original_files": [
-        "original/albedo.png",
-        "original/normal.png",
-        "original/roughness.png",
-        "original/ao.png",
-        "original/metallic.png",
-        "original/height.png"
+        "original/concept.png",
+        "original/model.glb",
+        "original/pre_remeshed.glb",
+        "preview/thumbnail.png"
       ],
       "processed_files": [
-        "processed/albedo.png",
-        "processed/normal.png",
-        "processed/roughness.png",
-        "processed/ao.png",
-        "processed/metallic.png",
-        "processed/height.png",
-        "preview/icon.png"
+        "processed/build_tool.glb",
+        "processed/lod1.glb",
+        "processed/lod2.glb"
       ]
     }
   ],
@@ -102,25 +134,14 @@
   },
   "errors": [],
   "warnings": [],
-  "job_id": "a2337a342b15",
+  "job_id": "d3689a4d480e",
   "production_files": [
-    "assets/icons/build_tool/albedo.png",
-    "assets/icons/build_tool/normal.png",
-    "assets/icons/build_tool/roughness.png",
-    "assets/icons/build_tool/ao.png",
-    "assets/icons/build_tool/metallic.png",
-    "assets/icons/build_tool/height.png",
-    "assets/materials/build_tool.tres",
-    "assets/icons/build_tool.png"
+    "assets/props/build_tool.glb",
+    "assets/props/build_tool.tscn",
+    "assets/props/build_tool_lod1.glb",
+    "assets/props/build_tool_lod2.glb"
   ],
   "manual_steps": [],
-  "maps_origin": {
-    "albedo": "openai",
-    "normal": "derived_from_albedo",
-    "roughness": "derived_from_albedo",
-    "ao": "derived_from_albedo",
-    "metallic": "derived_from_albedo",
-    "height": "derived_from_albedo"
-  },
+  "maps_origin": {},
   "modular": null
 }

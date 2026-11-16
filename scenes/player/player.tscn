@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3]
+[gd_scene load_steps=52 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/camera/orbit_camera.gd" id="2_camera"]
@@ -6,8 +6,8 @@
 [ext_resource type="PackedScene" path="res://assets/characters/Shared/Quaternius/AnimationLibrary_Godot_Pro.glb" id="4_mannequin"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
-radius = 0.378
-height = 1.944
+radius = 0.35
+height = 1.8
 
 [sub_resource type="BoxMesh" id="BoxMesh_weapon"]
 size = Vector3(0.05, 0.12, 0.26)
@@ -57,6 +57,59 @@ min_space = Vector2(-1, -1)
 max_space = Vector2(1, 1)
 snap = Vector2(0.01, 0.01)
 blend_mode = 0
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_idle"]
+animation = &"Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_fwd"]
+animation = &"Run_Fwd"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_bwd"]
+animation = &"Run_Bwd"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_l"]
+animation = &"Run_L"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_r"]
+animation = &"Run_R"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_fwd_l"]
+animation = &"Run_Fwd_L"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_fwd_r"]
+animation = &"Run_Fwd_R"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_bwd_l"]
+animation = &"Run_Bwd_L"
+
+[sub_resource type="AnimationNodeAnimation" id="anim_run_bwd_r"]
+animation = &"Run_Bwd_R"
+
+[sub_resource type="AnimationNodeBlendSpace2D" id="blend_run"]
+blend_point_0/node = SubResource("anim_run_idle")
+blend_point_0/pos = Vector2(0, 0)
+blend_point_1/node = SubResource("anim_run_fwd")
+blend_point_1/pos = Vector2(0, 1)
+blend_point_2/node = SubResource("anim_run_bwd")
+blend_point_2/pos = Vector2(0, -1)
+blend_point_3/node = SubResource("anim_run_l")
+blend_point_3/pos = Vector2(-1, 0)
+blend_point_4/node = SubResource("anim_run_r")
+blend_point_4/pos = Vector2(1, 0)
+blend_point_5/node = SubResource("anim_run_fwd_l")
+blend_point_5/pos = Vector2(-0.707, 0.707)
+blend_point_6/node = SubResource("anim_run_fwd_r")
+blend_point_6/pos = Vector2(0.707, 0.707)
+blend_point_7/node = SubResource("anim_run_bwd_l")
+blend_point_7/pos = Vector2(-0.707, -0.707)
+blend_point_8/node = SubResource("anim_run_bwd_r")
+blend_point_8/pos = Vector2(0.707, -0.707)
+min_space = Vector2(-1, -1)
+max_space = Vector2(1, 1)
+snap = Vector2(0.01, 0.01)
+blend_mode = 0
+
+[sub_resource type="AnimationNodeBlend2" id="blend_gait"]
 
 [sub_resource type="AnimationNodeAnimation" id="anim_walk_lean_l"]
 animation = &"Walk_LeanL"
@@ -168,16 +221,25 @@ filter_enabled = true
 fadein_time = 0.04
 fadeout_time = 0.15
 autorestart = false
+break_loop_at_end = true
+
+[sub_resource type="AnimationNodeTimeScale" id="scale_stand"]
 
 [sub_resource type="AnimationNodeBlendTree" id="tree_root"]
 graph_offset = Vector2(-160, -80)
 nodes/output/position = Vector2(920, 100)
 nodes/stand_loco/node = SubResource("blend_stand")
 nodes/stand_loco/position = Vector2(20, 20)
+nodes/stand_speed/node = SubResource("scale_stand")
+nodes/stand_speed/position = Vector2(120, 20)
+nodes/run_loco/node = SubResource("blend_run")
+nodes/run_loco/position = Vector2(20, 100)
+nodes/gait/node = SubResource("blend_gait")
+nodes/gait/position = Vector2(200, 60)
 nodes/stand_lean/node = SubResource("blend_stand_lean")
 nodes/stand_lean/position = Vector2(20, -100)
 nodes/stand_body/node = SubResource("blend_stand_body")
-nodes/stand_body/position = Vector2(220, 20)
+nodes/stand_body/position = Vector2(280, 20)
 nodes/crouch_loco/node = SubResource("blend_crouch")
 nodes/crouch_loco/position = Vector2(20, 180)
 nodes/stance/node = SubResource("blend_stance")
@@ -194,7 +256,7 @@ nodes/harvest_clip/node = SubResource("anim_harvest")
 nodes/harvest_clip/position = Vector2(640, 280)
 nodes/harvest/node = SubResource("oneshot_harvest")
 nodes/harvest/position = Vector2(800, 100)
-node_connections = [&"stand_body", 0, &"stand_loco", &"stand_body", 1, &"stand_lean", &"stance", 0, &"stand_body", &"stance", 1, &"crouch_loco", &"upper", 0, &"stance", &"upper", 1, &"aim", &"shoot", 0, &"upper", &"shoot", 1, &"shoot_clip", &"harvest", 0, &"shoot", &"harvest", 1, &"harvest_clip", &"output", 0, &"harvest"]
+node_connections = [&"stand_speed", 0, &"stand_loco", &"gait", 0, &"stand_speed", &"gait", 1, &"run_loco", &"stand_body", 0, &"gait", &"stand_body", 1, &"stand_lean", &"stance", 0, &"stand_body", &"stance", 1, &"crouch_loco", &"upper", 0, &"stance", &"upper", 1, &"aim", &"shoot", 0, &"upper", &"shoot", 1, &"shoot_clip", &"harvest", 0, &"shoot", &"harvest", 1, &"harvest_clip", &"output", 0, &"harvest"]
 
 [node name="Player" type="CharacterBody3D" groups=["player"]]
 collision_layer = 2
@@ -243,6 +305,9 @@ tree_root = SubResource("tree_root")
 anim_player = NodePath("../VisualRoot/LeanPivot/CharacterModel/AnimationPlayer")
 active = true
 parameters/stand_loco/blend_position = Vector2(0, 0)
+parameters/stand_speed/scale = 1.0
+parameters/run_loco/blend_position = Vector2(0, 0)
+parameters/gait/blend_amount = 0.0
 parameters/stand_lean/blend_position = 0.0
 parameters/stand_body/blend_amount = 0.0
 parameters/crouch_loco/blend_position = Vector2(0, 0)

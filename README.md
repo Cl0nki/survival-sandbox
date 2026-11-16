@@ -56,7 +56,9 @@ Authoritative simulation check:
 
 A passing run prints `MILESTONE2_NET_OK`. The launch flags, manual checklist, and limitations are in [docs/milestone-2.md](docs/milestone-2.md).
 
-Line-of-sight filtering is [docs/milestone-3.md](docs/milestone-3.md). Inventories, pickups, and crates are [docs/milestone-4.md](docs/milestone-4.md). World save and reconnect are [docs/milestone-7.md](docs/milestone-7.md).
+Line-of-sight filtering is [docs/milestone-3.md](docs/milestone-3.md). Inventories, pickups, and crates are [docs/milestone-4.md](docs/milestone-4.md). World save and reconnect are [docs/milestone-7.md](docs/milestone-7.md). Death, drops, and respawn, plus the scope freeze for the vertical slice, are [docs/milestone-8.md](docs/milestone-8.md).
+
+Run every headless test at once with `tools\run_tests.ps1`.
 
 ## Building
 
