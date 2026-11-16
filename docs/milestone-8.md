@@ -8,6 +8,8 @@ Until the slice plays end to end, add no new items, recipes, tech tiers, or depl
 
 Order of work: death loop (this milestone), enemy v1, `use_item` and stamina, hunger, clothing, polish.
 
+> Superseded by [roadmap.md](roadmap.md). The order is now: M9 hog, M10 swarmers and nest, M11 eat/drink/heal, M12 stamina and combat, M13 shelter, M14 polish and gate. Clothing moved to Alpha, because it needs temperature to matter. The freeze itself still holds.
+
 ## Run the checks
 
 ```powershell

@@ -2,8 +2,8 @@
 
 ## Current phase
 
-**Phase 4 — Multiplayer, Replication, and Performance: complete, waiting for approval.**
-Phases 1, 2, and 3 remain in place. There is no later building phase in the original plan.
+**Phase 4 — Multiplayer, Replication, and Performance: complete and approved (2026-11-17).**
+Phases 1, 2, and 3 remain in place. There is no later building phase in the original plan. The building system is closed as a milestone; further changes are tracked as backlog items in [docs/roadmap.md](docs/roadmap.md).
 
 ## Phase 2
 

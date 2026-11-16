@@ -2,9 +2,11 @@
   "version": 1,
   "events": {
     "footstep": {
-      "files": [],
+      "files": [
+        "res://assets/audio/sfx/footstep/38874__swuing__footstep-grass.wav"
+      ],
       "positional": true,
-      "volume_db": -6.0,
+      "volume_db": -7.0,
       "pitch_min": 0.92,
       "pitch_max": 1.08,
       "cooldown": 0.0,

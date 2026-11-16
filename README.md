@@ -4,6 +4,8 @@ Local playable prototype of a 3D top-down survival sandbox, plus a dedicated aut
 
 Built for Godot **4.7.2 stable**.
 
+**What is next:** [docs/roadmap.md](docs/roadmap.md) has the plan to the vertical slice (M10 to M14), then the full game, plus the bug and debt backlog.
+
 ## Play
 
 Import `project.godot` in the Godot 4.7 project manager and press F5, or run:

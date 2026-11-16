@@ -57,4 +57,4 @@ The placeholder art can be rendered with `tests/creature_capture.gd` (needs a wi
 - Hogs are not hurt by other hogs, do not path around obstacles (they walk straight, and give up a stuck wander goal), and do not attack buildings.
 - Local (offline) play has no `GameNet`, so no hogs there.
 - Melee harvest tools do not hit creatures; only the pistol does.
-- Next: swarmers and the nest (2b). The base class, replication, and spawner are meant to be reused as they are.
+- Next: swarmers and the nest (2b), now M10 in [roadmap.md](roadmap.md). The base class, replication, and spawner are meant to be reused as they are.
