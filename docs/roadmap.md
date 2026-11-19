@@ -58,9 +58,9 @@ All of these must hold on a build exported from this repo, not only in the edito
 
 Server-side creature base, replication, hog state machine, loot, spawner.
 
-## M10 — Swarmers and the nest (enemy v1, part b)
+## M10 — NEXUS HOUND SECURITY (enemy v1, part b)
 
-The first threat that comes to you. The base class, replication, and spawner from M9 are reused unchanged. If they cannot be, that is the bug to fix first.
+The first threat that comes to you. It is the first NEXUS robot in the game (see [nexus-industries.md](nexus-industries.md)). The base class, replication, and spawner from M9 are reused unchanged. If they cannot be, that is the bug to fix first.
 
 ### Step 0 — Single-player is an in-process server
 
@@ -76,13 +76,19 @@ The first threat that comes to you. The base class, replication, and spawner fro
 
 ### Rest of M10
 
-- **Swarmer.** Small, fast, weak, always in groups of 3 to 6. Hunts by sight, then by last-known position. Breaks off when hurt badly. This is the pressure creature the hog is not.
-- **Nest.** A static spawner in the wasteland and city biomes. It releases a wave when a player gets near or makes noise, then rests. Destroying it (it has health and takes any damage the creature base accepts) ends that wave source until the server's next reset. Gives the map a goal.
-- **Pathing.** Hogs walk straight and give up on obstacles. Swarmers cannot. Add a navigation mesh bake for the static map and use `NavigationAgent3D` from `Creature`, with a straight-line fallback near the player. Buildings are dynamic, so this is the hard part. Decision needed: rebake chunks on building change, or let creatures treat player buildings as breakable walls (see M13).
+- **NEXUS HOUND SECURITY.** The armed variant of the HOUND quadruped (NEXUS SECURITY, tier 3). Fast and lightly armoured, in patrol groups of 3 to 6. This is the pressure creature the hog is not.
+  - **Job.** It patrols a route and investigates noise, as the doc requires of every robot. It does not stand and wait. An intruder is anyone who interferes with NEXUS property or production, so the player is a target, not prey.
+  - **Behaviour.** Hunts by sight, then by last-known position. Breaks off and returns to its patrol route when hurt badly. Groups share what they see.
+  - **No spawner.** Patrol groups are placed once when the server boots, on authored routes. There is no nest, no wave, and no respawn timer. A destroyed unit stays destroyed until the next server reset, so killing a patrol is a real decision. (The hog is different: it still respawns after 60 s.)
+  - **Threat level.** Medium. Dangerous in a group, weak alone.
+  - **Loot.** Drops follow its construction: existing `circuit_board`, `industrial_motor`, and `mechanical_component`. No new items (scope freeze).
+  - **Data, not code.** It is a `Creature` kind configured by a resource, so HOUND (unarmed, investigates only) and WASP can be added later as data without new AI code.
+  - **Look.** Quadruped silhouette, angular panels, visible joints, small NEXUS marking. It reads from the isometric camera and cannot be mistaken for the hog.
+- **Pathing.** Hogs walk straight and give up on obstacles. NEXUS robots cannot. Add a navigation mesh bake for the static map and use `NavigationAgent3D` from `Creature`, with a straight-line fallback near the player. Buildings are dynamic, so this is the hard part. Decision needed: rebake chunks on building change, or let creatures treat player buildings as breakable walls (see M13).
 - **Noise.** Sound is client-side playback only (`SfxManager.play_at`), so the server has no noise events yet. Add a small server call, `EnemySystem.make_noise(position, radius)`, and call it from shots, crafting, and building. A shot then wakes creatures within a radius. This is the first real reason to choose the quiet option.
-- **Tests.** `milestone10_swarm`: group spawn, chase, lose-target, nest trigger, nest destruction, replication, and a 6-creature tick budget.
+- **Tests.** `milestone10_nexus`: patrol group placement (and no respawn), route following, noise investigation, chase, lose-target, return to route, replication, and a 6-creature tick budget.
 
-Exit: two players can be chased by a pack, fight it from a doorway, and the nest gives a reason to leave the base.
+Exit: two players can sneak past a patrol or draw it with noise, be chased by it, and fight it from a doorway.
 
 ## M11 — Eat, drink, heal
 
@@ -103,11 +109,11 @@ Exit: a player can be in trouble, fix it with something they made, and know why 
 Combat is a pistol and a hog today. Make it feel like a fight.
 
 - **Stamina.** Sprinting, melee swings, and harvesting drain it. Server-owned, replicated with the player snapshot so the HUD is accurate. This is what makes "you cannot outrun it (sprint is 3 m/s)" a decision.
-- **Melee.** Harvest tools do not hit creatures today. Let axes, pickaxes, and the crowbar damage creatures through the same `receive_damage` entry, with a reach and a swing time. Gives a no-ammo answer to swarmers.
+- **Melee.** Harvest tools do not hit creatures today. Let axes, pickaxes, and the crowbar damage creatures through the same `receive_damage` entry, with a reach and a swing time. Gives a no-ammo answer to NEXUS HOUND SECURITY.
 - **Knockback and hit reaction.** The player gets shoved by a gore. Creatures flinch. The server applies it, the client presents it.
 - **Ammo as a decision.** `ammo_9mm` is already spent per shot. Add a magazine and a reload time so firing is a rhythm. Decide in this milestone whether ammo is craftable early (the ammo bench exists) or loot-only.
 - **Bleeding.** Some creature hits cause a bleed that stops with the M11 bandage use. Cheap, readable, creates a reason to carry medical supplies.
-- **Weapon variety, with what exists.** The pistol, the blast gun, and the debug weapon are the only guns. Pick one melee and one ranged option from existing items and tune them. No new weapons.
+- **Weapon variety: done, tune it.** Twelve more guns (two or more per ammunition type, including shotguns) and a sword are in. Stats live in each item's `weapon_*` fields, read through `WeaponSpec`, and `tools/gen_weapons.py` writes them. What is left here is balance, a magazine and reload, and a per-gun shot sound.
 - **Hit feedback.** Damage numbers are off. Use a short hit marker, a creature flash, and sound.
 - **Tests.** `milestone12_combat`: stamina drain and recovery, melee on creature, knockback respects walls, reload, bleed and its cure.
 
@@ -115,20 +121,20 @@ Combat is a pistol and a hog today. Make it feel like a fight.
 
 A base is only a decision if something threatens it.
 
-- **Creatures vs buildings.** Swarmers claw at the weakest reachable piece. Damage goes through the existing `damage_catalog` so wood, brick, and concrete mean something. The structural solver already collapses the rest, so a pack that breaks one load-bearing wall can bring a roof down. Test that this reads as fair, not random.
-- **Night.** A day and night cycle (server clock, replicated as one number). Nests spawn more at night. Visibility and the cutaway shader dim. This one clock is also what weather and temperature later hang on.
+- **Creatures vs buildings.** NEXUS HOUND SECURITY units breach the weakest reachable piece to get at an intruder. Damage goes through the existing `damage_catalog` so wood, brick, and concrete mean something. The structural solver already collapses the rest, so a pack that breaks one load-bearing wall can bring a roof down. Test that this reads as fair, not random.
+- **Night.** A day and night cycle (server clock, replicated as one number). Patrols do not multiply at night; darkness changes what players and robots can see. Visibility and the cutaway shader dim. This one clock is also what weather and temperature later hang on.
 - **Safe-ish zones.** A lit, enclosed room (walls, a door, a fire) counts as shelter: creatures lose interest after a while. Define "enclosed" with the building graph, which already knows rooms and openings.
 - **Costs.** Building cost is charged when the held item is `building_plan`, and `require_resources` is off by default in the config ([BUILDING_SYSTEM_STATUS](../BUILDING_SYSTEM_STATUS.md) says the wallet is not connected, which is out of date). Decide the survival map's rule and set it. A shelter that costs nothing is not a decision.
 - **Dismantle and collapse.** Dismantling a wall does not collapse the floor above. Decide: keep it (a player-safe tool), or make dismantle go through the same path as damage.
-- **Tests.** `milestone13_siege`: a creature damages a wall, a support breaks, the structure collapses, shelter rule, night spawn rate.
+- **Tests.** `milestone13_siege`: a creature damages a wall, a support breaks, the structure collapses, shelter rule, night visibility.
 
 ## M14 — Slice polish and the gate
 
 No new mechanics.
 
 - **Onboarding.** A short, skippable objective line at the top of the HUD: gather wood, craft a hatchet, cook, build a room. Reads game state, so it never lies. This is what G1 measures.
-- **Art pass on what the player stares at.** Hog, swarmer, nest, player, pistol, and 10 most-used items through `tools/ai_asset_pipeline`. The hog is boxes today.
-- **Sound.** Sound slots exist and the footstep folder has no files. Fill: footsteps, shots, hurt, eat, craft, creature calls, ambient wind. Ranges are already per-slot.
+- **Art pass on what the player stares at.** Hog, NEXUS HOUND SECURITY, player, pistol, and 10 most-used items through `tools/ai_asset_pipeline`. The hog is boxes today.
+- **Sound.** Footsteps (per ground type), shots, bullet impacts and hog calls have placeholder files. Still empty: hurt, craft_start, craft_done. Not yet slots: eat, footsteps on building floors, ambient wind. Ranges are already per-slot.
 - **Pickup cleanup.** Dropped items never despawn. Add a timer for ground drops (not for placed containers) so a long server does not fill up.
 - **Refactor.** Move player movement, interaction, and weapon handling out of `player_controller.gd`. Move death, respawn, and profile code out of `game_net.gd`. Behaviour must not change; the 25 tests are the guard.
 - **Soak and export.** A scripted 20-minute run with 2 clients, one death, one reconnect. A Windows export of server and client from `export_presets.cfg`.
@@ -156,10 +162,12 @@ The slice is a sandbox yard. Alpha makes it a place with time, weather, and a re
 - Loot tables per point of interest instead of the fixed layout in `loot_layout.gd` (which a modified client can read today).
 
 ### A3. Threat ladder
-- **Brute.** Slow, tough, breaks walls. Counter: kite, stagger with a blast, or use height.
-- **Spitter.** Ranged, hits through windows. This is the use of glass windows taking full bullet damage.
-- **Stalker.** Night-only, avoids light and groups, goes for lone players. Makes the shelter rule real.
-- **Warden.** A boss at a point of interest, guarding a keycard or a blueprint.
+The enemies are NEXUS robots, taken from the doc's roster (see [nexus-industries.md](nexus-industries.md)), not invented monsters. Each keeps its job and loot from the doc.
+- **EXCAVATOR** (tier 5, mining prototype). Slow, huge, destroys obstacles and structures as part of its work. Counter: kite, stagger with a blast, or use height.
+- **SENTINEL** (tier 3). Patrols restricted areas, warns, then shoots. Ranged, hits through windows. This is the use of glass windows taking full bullet damage.
+- **WASP** (tier 2). Small inspection drone. It detects movement and marks lone players for nearby security units. Low durability. Makes the shelter rule real, because a lit, enclosed room hides you from it.
+- **OVERSEER** (tier 5). Coordinates nearby units at a point of interest and guards a keycard or a blueprint. The doc says it is not a conventional boss, so it is a hard target that makes the others smarter, not a health bar.
+- **Facility security state.** Each NEXUS point of interest tracks its own state, 0 (normal) to 4 (lockdown), as the doc defines. Escalation makes existing robots react (HOUND investigates, SENTINEL warns, doors close) and a facility can calm down again.
 - Pathing upgrades: group tactics, flanking, doors.
 
 ### A4. Progression
@@ -183,13 +191,13 @@ Creative features, chosen to reuse what the game already has.
 | **Repairable car.** The map has broken cars and salvage parts (engine block, radiator, headlight, tires). Gather them, build a working car. | Salvage items exist, the pad and wreck art exist. Gives the scavenging a visible payoff and the map a travel speed. |
 | **Power.** Copper, wiring, batteries, and electronics exist. Add generators, lights, and wire. Lights make safe-ish zones stronger and nights bearable. | Items already in the catalog; only the system is missing. |
 | **Farming and husbandry.** Corn, potato, and mushroom exist. Plant them. Tame or pen hogs for meat and leather. | The hog is already a server creature with a state machine. A tame state is one more state. |
-| **Traps.** Spike, noise-maker, and blast traps. Hogs and swarmers walk straight and are predictable, so traps pay off. | Uses `receive_damage`, noise events, and the blast system. |
+| **Traps.** Spike, noise-maker, and blast traps. Hogs walk straight and NEXUS patrols follow routes and last-known positions, so both are predictable, so traps pay off. | Uses `receive_damage`, noise events, and the blast system. |
 | **Turrets.** A pistol on a deployable that takes ammo from a nearby crate. | Deployable system, crate system, and `HitscanWeapon` exist. |
 | **Noise and smell.** Cooking and shooting attract creatures. A lit window shows from outside. | The noise call comes from M10. LoS already knows what can see what. |
 | **Corpse run.** A death leaves a marker on the map and a tombstone bag instead of a scatter of drops. Items you recover appear in your journal. | Replaces the scattered drops decided in M8. A tidy bag is already listed there as a later step. |
 | **Radio events.** Timed airdrops and distress calls that pull players into the same danger zone. | Events are timers plus spawns; the server tick already has both. |
 | **Trader.** A fixed NPC that swaps surplus for things not found on the map. | Gives junk items a use and soaks excess scrap. |
-| **Bunker with keycard.** A locked point of interest with the best loot, opened by a card from the Warden. | The door system already opens and closes; add a key check. |
+| **Bunker with keycard.** A locked point of interest with the best loot, opened by a card guarded by the OVERSEER. | The door system already opens and closes; add a key check. |
 | **Fishing.** Raw fish and cooked fish are already in the cooking rules. | Item pair exists. |
 | **Lock and codes** for doors, with a claim flag on a base. | Needed before raiding means anything. |
 

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "marshal_pistol"
+display_name = "Marshal Heavy Pistol"
+description = "Slow, heavy-hitting sidearm. Fires .45 ACP."
+max_stack = 1
+weight = 1.4
+category = "weapon"
+can_pickup = true
+can_store = true
+swatch = Color(0.5, 0.46, 0.38, 1)
+weapon_kind = "firearm"
+weapon_slot = "sidearm"
+ammo_id = "ammo_45acp"
+weapon_damage = 52
+weapon_range = 42.0
+weapon_cooldown = 0.55
+weapon_pellets = 1
+weapon_spread_deg = 0.5
+weapon_automatic = false
+weapon_length = 0.3

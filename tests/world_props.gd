@@ -50,6 +50,11 @@ func _run() -> int:
 		return _fail("a crate cannot be damaged")
 	if WorldPropCatalog.kind_of("loot_crate") != WorldPropCatalog.KIND_CRATE:
 		return _fail("loot_crate kind")
+	for nexus_id in ["nexus_shipping_container", "nexus_supply_chest", "nexus_parts_chest", "nexus_security_lockbox"]:
+		if WorldPropCatalog.kind_of(nexus_id) != WorldPropCatalog.KIND_CRATE:
+			return _fail("%s should be a crate" % nexus_id)
+		if WorldPropCatalog.max_health(nexus_id) != 0:
+			return _fail("%s cannot be damaged" % nexus_id)
 	if WorldPropCatalog.known("nope") or WorldPropCatalog.body_size("nope") != Vector3.ZERO:
 		return _fail("unknown id must stay unknown")
 	if not WorldPropArt.path_for("").is_empty() or not WorldPropArt.path_for("nope").is_empty():

@@ -69,7 +69,7 @@ Same as Milestone 1. Each window controls only its own character. The mouse is t
 | Shoot | Left mouse button |
 | Zoom | Mouse wheel |
 | Orbit | Middle mouse, or Z/Y and C |
-| Lean | Q and E |
+| Lean | X and V (Q cycles weapons) |
 | Crouch | Hold Ctrl. Lowers the server hitbox and the muzzle. |
 | Inventory | Tab opens it. Escape or Tab closes it. |
 

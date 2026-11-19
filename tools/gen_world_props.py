@@ -44,6 +44,12 @@ PROPS = [
     ("drum_stack", "Drum Stack", "resource", "drum_stack", (1.1, 1.5, 1.0), (0.55, 0.30, 0.18), "Rusty metal drums."),
     ("appliance_pile", "Dead Appliances", "resource", "appliance_pile", (1.5, 1.55, 1.0), (0.78, 0.78, 0.76), "A fridge, a washer and a microwave."),
     ("loot_crate", "Loot Crate", "crate", "", (1.15, 0.72, 0.8), (0.42, 0.30, 0.18), "A wooden storage crate with a lid."),
+    # NEXUS storage. Contents come from the NEXUS_* tables in scripts/items/loot_layout.gd.
+    # Swatches are placeholders until the NEXUS palette is decided.
+    ("nexus_shipping_container", "NEXUS Shipping Container", "crate", "", (6.06, 2.6, 2.44), (0.36, 0.40, 0.44), "A 20-foot NEXUS LOGISTICS cargo container, still sealed and waiting for a MULE that never came. Packed with freight."),
+    ("nexus_supply_chest", "NEXUS Supply Chest", "crate", "", (1.2, 0.7, 0.8), (0.40, 0.44, 0.46), "A stackable NEXUS LOGISTICS transit case. Holds batteries, electronics, and general stock."),
+    ("nexus_parts_chest", "NEXUS Parts Chest", "crate", "", (0.9, 1.0, 0.6), (0.46, 0.44, 0.38), "A NEXUS CONSTRUCTION maintenance chest. Spare mechanical parts and fasteners for field repairs."),
+    ("nexus_security_lockbox", "NEXUS Security Lockbox", "crate", "", (0.8, 0.6, 0.6), (0.30, 0.34, 0.30), "An armored NEXUS SECURITY lockbox. Access-controlled, though nobody is left to check credentials."),
 ]
 
 

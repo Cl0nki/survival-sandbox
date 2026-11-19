@@ -53,6 +53,10 @@ const LEAN_BLEND_SPEED := 8.0
 const AIM_HOLD_SEC := 1.6
 const DRAW_HOLD_SEC := 0.9
 const AIM_BLEND_SPEED := 6.0
+## Max body turn rate toward the cursor, radians per second. Without this the
+## character snaps to wherever the cursor points and spins like a top when the
+## cursor sweeps past the feet or the camera orbits under a still cursor.
+const TURN_SPEED := 7.0
 ## Default stand pace. The Walk clip is played at WALK_PLAYBACK so the feet match.
 const WALK_SPEED := WALK_AUTHORED * WALK_PLAYBACK
 const ACCELERATION := 28.0
@@ -63,6 +67,8 @@ const HAND_WEAPON_OFFSET := Vector3(0.0, 0.1, 0.0)
 const WEAPON_ANCHOR := Vector3(0.22, 0.3, -0.35)
 const MUZZLE_REST := Vector3(0.22, 0.3, -0.75)
 const WEAPON_REST := Vector3(0.22, 0.3, -0.45)
+## Held blade stand-in, for a sword seen on another player.
+const BLADE_LENGTH := 0.9
 ## Footsteps. Metres of ground between footfalls, and the speed that counts as running.
 ## Measured from where the body is drawn, so one rule covers the local player,
 ## the owning client and every other player's puppet.
@@ -75,6 +81,9 @@ const STEP_TELEPORT_SPEED := 14.0
 const STEP_WINDOW_SEC := 0.1
 const STEP_CROUCH_GAIN_DB := -9.0
 const STEP_RUN_GAIN_DB := 2.0
+## Speed also shifts the pitch: sneaking is dull and slow, running is quick and sharp.
+const STEP_CROUCH_PITCH := 0.88
+const STEP_RUN_PITCH := 1.1
 ## A health drop this soon after the body appears is the server telling us the
 ## state it already has, not a new hit.
 const HURT_QUIET_MSEC := 1000
@@ -103,6 +112,10 @@ var authoritative_velocity := Vector3.ZERO
 
 var _lean_offset := 0.0
 var _weapon_in_hand := false
+## Last shape given to the held placeholder, so it can be redone after the
+## mesh moves onto the hand bone.
+var _shape_length := 0.0
+var _shape_blade := false
 var _tool_grip: Node3D
 var _mounted_tool_id := ""
 var _aim_ready := 0.0
@@ -120,12 +133,16 @@ var _run_blend := 0.0
 var _aim_pitch := 0.0
 var _owner_crouch := 0.0
 var _owner_pitch := 0.0
+var _owner_aim_yaw := 0.0
+var _owner_aim_yaw_ready := false
 var _body_shape: CapsuleShape3D
 var _session: Node
 var _born_msec := 0
 var _step_prev := Vector3.ZERO
 var _step_primed := false
 var _step_travel := 0.0
+## What the ground was at the last footfall (GroundSurface names), &"" before any.
+var last_step_surface: StringName = &""
 var _step_window_dist := 0.0
 var _step_window_time := 0.0
 var _reports_input := true
@@ -141,7 +158,10 @@ var container_view: Inventory
 var container_view_id := ""
 var cursor_item_id := ""
 var cursor_qty := 0
+## The slot in hand. A hotbar slot, or one of the weapon slots after the bag.
 var hotbar_index := 0
+## The hotbar slot to go back to when Q cycles past the last weapon.
+var _hotbar_return := 0
 var _item_ui: InventoryUI
 var _tech_ui: TechTreeUI
 
@@ -291,12 +311,18 @@ func _update_footsteps(delta: float) -> void:
 	_step_travel = fmod(_step_travel, stride)
 	var crouching := _crouch > 0.5
 	var gain := 0.0
+	var pitch := 1.0
 	if crouching:
 		gain = STEP_CROUCH_GAIN_DB
+		pitch = STEP_CROUCH_PITCH
 	elif running:
 		gain = STEP_RUN_GAIN_DB
+		pitch = STEP_RUN_PITCH
+	last_step_surface = GroundSurface.at(here)
 	footstep_taken.emit(running, crouching)
-	Sfx.play_at(&"footstep", here, is_controlled_locally(), gain)
+	# The sound of the ground underfoot, or the plain footstep when that ground has none.
+	var event := Sfx.first_with_sound([GroundSurface.footstep_event(last_step_surface), GroundSurface.FALLBACK_EVENT])
+	Sfx.play_at(event, here, is_controlled_locally(), gain, pitch)
 
 
 func blocks_camera_input() -> bool:
@@ -323,7 +349,7 @@ func _run_local_frame(delta: float) -> void:
 	var aim_info := _cursor_aim()
 	var aim: Vector3 = aim_info["point"]
 	if not inventory_open:
-		_face_toward(aim)
+		_face_toward(aim, delta)
 	_update_stance(delta)
 	_move(delta)
 	_update_lean(delta)
@@ -337,28 +363,22 @@ func _run_local_frame(delta: float) -> void:
 	_try_interact()
 	if inventory_open:
 		return
-	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
+	if _fire_requested() and not _pointer_over_ui():
+		var spec := held_weapon()
 		if holds_build_tool() or holds_repair_tool() or holds_upgrade_tool() or holds_deployable():
 			pass
 		elif holds_blast_gun():
 			_try_local_blast()
 		elif holds_harvest_tool():
 			_try_local_harvest()
-		elif holds_pistol():
-			if not _spend_ammo("ammo_9mm", 1):
-				show_item_notice("No 9mm ammunition.")
-			else:
-				_weapon.try_fire(shot_origin(), direction)
-				_request_shoot_anim()
-		elif holds_debug_weapon():
-			_weapon.try_fire(shot_origin(), direction)
-			_request_shoot_anim()
+		elif spec != null:
+			_fire_local_weapon(spec, direction)
 		else:
 			show_item_notice("No weapon in hand.")
 
 
 
-func _run_owner_frame(_delta: float) -> void:
+func _run_owner_frame(delta: float) -> void:
 	rotation = Vector3.ZERO
 	if _camera == null or _aim_marker == null or _session == null:
 		return
@@ -376,7 +396,14 @@ func _run_owner_frame(_delta: float) -> void:
 	var sprinting := _read_sprint(inventory_open or container_view != null, crouch)
 	_sprinting = sprinting
 	_set_sprint_align(wish_direction(input_2d, _camera.get_yaw()))
-	var aim_yaw := get_facing_yaw() if inventory_open else _yaw_from_aim(aim)
+	# The owner's body is drawn from server snapshots, so the turn limit is
+	# applied to the yaw we report rather than to the presented pose.
+	if not _owner_aim_yaw_ready:
+		_owner_aim_yaw = get_facing_yaw()
+		_owner_aim_yaw_ready = true
+	if not inventory_open:
+		_owner_aim_yaw = _turn_limited(_owner_aim_yaw, _yaw_from_aim_or(aim, _owner_aim_yaw), delta)
+	var aim_yaw := get_facing_yaw() if inventory_open else _owner_aim_yaw
 	var direction := direction_toward_aim(aim)
 	var pitch := _aim_pitch if inventory_open else asin(clampf(direction.y, -1.0, 1.0))
 	_owner_crouch = clampf(crouch, 0.0, 1.0)
@@ -385,18 +412,30 @@ func _run_owner_frame(_delta: float) -> void:
 	_try_interact()
 	if inventory_open:
 		return
-	if Input.is_action_just_pressed(&"fire") and not _pointer_over_ui():
+	if _fire_requested() and not _pointer_over_ui():
+		var spec := held_weapon()
 		if holds_build_tool() or holds_repair_tool() or holds_upgrade_tool() or holds_deployable():
 			pass
 		elif holds_blast_gun():
 			_try_network_blast()
-		elif holds_harvest_tool() or holds_debug_weapon() or holds_pistol():
+		elif holds_harvest_tool():
 			_session.call("send_owner_fire", direction, aim_yaw, lean, _owner_crouch)
 			_weapon.note_local_request()
-			if holds_harvest_tool():
-				_request_harvest_anim()
-			elif holds_debug_weapon() or holds_pistol():
-				_request_shoot_anim()
+			_request_harvest_anim()
+		elif spec != null:
+			if not _weapon.is_ready():
+				pass
+			elif spec.uses_ammo() and inventory != null and inventory.count_item(spec.ammo_id) <= 0:
+				# The server would refuse it too. Say so here, and do not ask every frame.
+				_weapon.note_local_request()
+				show_item_notice(spec.no_ammo_notice())
+			else:
+				_session.call("send_owner_fire", direction, aim_yaw, lean, _owner_crouch)
+				_weapon.note_local_request()
+				if spec.is_melee():
+					_request_harvest_anim()
+				else:
+					_request_shoot_anim()
 		else:
 			show_item_notice("No weapon in hand.")
 
@@ -418,7 +457,7 @@ func _hidden_building_pieces() -> Callable:
 
 func apply_confirmed_inventory(item_ids: PackedStringArray, item_qtys: PackedInt32Array) -> void:
 	if inventory == null:
-		inventory = Inventory.new(item_ids.size())
+		inventory = Inventory.new_player() if item_ids.size() == NetConfig.INVENTORY_SLOTS else Inventory.new(item_ids.size())
 	if inventory.capacity != item_ids.size():
 		inventory.resize(item_ids.size())
 	inventory.read_snapshot(item_ids, item_qtys)
@@ -436,9 +475,20 @@ func apply_confirmed_container(container_id: String, item_ids: PackedStringArray
 	container_view_id = container_id
 	if container_view == null or container_view.capacity != item_ids.size():
 		container_view = Inventory.new(item_ids.size())
+	container_view.grid_columns = _grid_columns_of(container_id)
 	container_view.read_snapshot(item_ids, item_qtys)
 	container_changed.emit()
 	inventory_changed.emit()
+
+
+## Slots per row of a chest's footprint grid, or 0 for a station whose slots are single cells.
+## The client only receives ids and quantities, so it reads the layout from the chest itself.
+func _grid_columns_of(container_id: String) -> int:
+	for node in get_tree().get_nodes_in_group(&"loot_container"):
+		var crate := node as LootContainer
+		if crate != null and crate.container_id == container_id:
+			return crate.grid_columns
+	return 0
 
 
 func clear_container_view() -> void:
@@ -615,7 +665,7 @@ func request_item_rearrange(in_container: bool, source_slot: int, dest_slot: int
 
 func _setup_inventory_ui() -> void:
 	if inventory == null:
-		inventory = Inventory.new(NetConfig.INVENTORY_SLOTS)
+		inventory = Inventory.new_player()
 		inventory.grant_loadout(_local_map_id())
 	refresh_weapon_visual()
 	_item_ui = InventoryUI.new()
@@ -981,12 +1031,44 @@ func holds_upgrade_tool() -> bool:
 	return _hotbar_is("upgrade_tool") or _hotbar_is("upgrade_hammer")
 
 
-func holds_debug_weapon() -> bool:
-	return _hotbar_is("debugweapon")
+## The weapon in hand, or null. Rebuilt from the item catalog on each call, so a
+## stack swap or a hot-reloaded definition is always seen.
+func held_weapon() -> WeaponSpec:
+	return WeaponSpec.for_item(held_item_id())
 
 
-func holds_pistol() -> bool:
-	return _hotbar_is("pistol")
+func holds_firearm() -> bool:
+	return WeaponSpec.kind_of(held_item_id()) == WeaponSpec.FIREARM
+
+
+func holds_melee() -> bool:
+	return WeaponSpec.kind_of(held_item_id()) == WeaponSpec.MELEE
+
+
+## A click, or the button held down while an automatic weapon is in hand.
+func _fire_requested() -> bool:
+	if Input.is_action_just_pressed(&"fire"):
+		return true
+	if not Input.is_action_pressed(&"fire") or _weapon == null or not _weapon.is_ready():
+		return false
+	var spec := held_weapon()
+	return spec != null and spec.automatic
+
+
+func _fire_local_weapon(spec: WeaponSpec, direction: Vector3) -> void:
+	if not _weapon.is_ready():
+		return
+	if spec.uses_ammo() and not _spend_ammo(spec.ammo_id, 1):
+		show_item_notice(spec.no_ammo_notice())
+		# A held trigger on an empty gun should not repeat the notice every frame.
+		_weapon.note_local_request()
+		return
+	_weapon.configure(spec)
+	_weapon.try_fire(shot_origin(), direction)
+	if spec.is_melee():
+		_request_harvest_anim()
+	else:
+		_request_shoot_anim()
 
 
 func charges_build_cost() -> bool:
@@ -1012,7 +1094,11 @@ func held_item_id() -> String:
 	var slot: Dictionary = inventory.slots[hotbar_index]
 	if int(slot.get("qty", 0)) <= 0:
 		return ""
-	return str(slot.get("id", ""))
+	var item_id := str(slot.get("id", ""))
+	# A weapon only counts as held from a weapon slot, never from the hotbar.
+	if not inventory.usable_in_hand(hotbar_index, item_id):
+		return ""
+	return item_id
 
 
 func holds_harvest_tool() -> bool:
@@ -1101,24 +1187,81 @@ func _spend_ammo(item_id: String, quantity: int) -> bool:
 
 
 func select_hotbar(index: int) -> void:
-	hotbar_index = clampi(index, 0, NetConfig.HOTBAR_SLOTS - 1)
+	select_slot(clampi(index, 0, NetConfig.HOTBAR_SLOTS - 1))
+
+
+## Takes a hotbar slot or a weapon slot into the hand. Anything else is ignored.
+func select_slot(index: int) -> void:
+	if not NetConfig.is_selectable_slot(index):
+		return
+	hotbar_index = index
+	if index < NetConfig.HOTBAR_SLOTS:
+		_hotbar_return = index
 	refresh_weapon_visual()
 	if net_role == NetRole.OWNER and _session != null:
 		_session.call("send_hotbar_select", hotbar_index)
 	inventory_changed.emit()
 
 
-func set_weapon_drawn(drawn: bool) -> void:
-	if _weapon_mesh != null:
-		_weapon_mesh.visible = drawn
+## Q. Primary, then sidearm, then melee, skipping empty slots. One press past the
+## last one holsters: the hotbar slot that was in hand before comes back.
+func cycle_weapon() -> void:
+	if inventory == null:
+		return
+	var next := inventory.next_weapon_slot(hotbar_index)
+	if next >= 0:
+		select_slot(next)
+	elif hotbar_index >= NetConfig.BAG_SLOTS:
+		select_slot(_hotbar_return)
+	else:
+		show_item_notice("No weapon equipped.")
+
+
+## Other players only learn "gun or blade" from the snapshot, so they see the
+## pistol box or the sword blade. The owner's own view uses the exact weapon.
+func set_weapon_drawn(drawn: bool, blade: bool = false) -> void:
+	if _weapon_mesh == null:
+		return
+	_weapon_mesh.visible = drawn
+	if drawn:
+		_shape_weapon_mesh(BLADE_LENGTH if blade else 0.0, blade)
+
+
+## Stand-in until a mesh exists: the gun box, stretched to the weapon's length
+## and thinned into a blade for a sword. length 0 keeps the pistol box.
+func _shape_weapon_mesh(length: float, blade: bool) -> void:
+	if _weapon_mesh == null:
+		return
+	_shape_length = length
+	_shape_blade = blade
+	var model := length if length > 0.0 else WeaponSpec.PLACEHOLDER_LENGTH
+	var key := Vector2(model, 1.0 if blade else 0.0)
+	if _weapon_mesh.has_meta(&"shape") and _weapon_mesh.get_meta(&"shape") == key:
+		return
+	_weapon_mesh.set_meta(&"shape", key)
+	var stretch := model / WeaponSpec.PLACEHOLDER_LENGTH
+	_weapon_mesh.scale = Vector3(0.55, 0.3, stretch) if blade else Vector3(1.0, 1.0, stretch)
+	if _weapon_in_hand:
+		# The box is centred on the hand, so a long weapon is slid forward along
+		# the fingers to keep the grip in the palm.
+		var slide := (model - WeaponSpec.PLACEHOLDER_LENGTH) * 0.4
+		_weapon_mesh.position = HAND_WEAPON_OFFSET + Vector3(0.0, slide, 0.0)
 
 
 func refresh_weapon_visual() -> void:
 	_refresh_held_tool()
 	if net_role == NetRole.PUPPET:
 		return
-	set_weapon_drawn(holds_debug_weapon() or holds_pistol() or holds_blast_gun())
-	if holds_debug_weapon() or holds_pistol():
+	var spec := held_weapon()
+	if spec != null and _weapon != null:
+		_weapon.configure(spec)
+	if _weapon_mesh != null:
+		_weapon_mesh.visible = spec != null or holds_blast_gun()
+		if spec != null:
+			_shape_weapon_mesh(spec.model_length(), spec.is_melee())
+		elif holds_blast_gun():
+			_shape_weapon_mesh(0.0, false)
+	if spec != null and not spec.is_melee():
 		_aim_hold = maxf(_aim_hold, DRAW_HOLD_SEC)
 	_update_aim_anim()
 	if _weapon_mesh == null:
@@ -1128,7 +1271,12 @@ func refresh_weapon_visual() -> void:
 		return
 	if not _weapon_mesh.has_meta(&"pistol_color"):
 		_weapon_mesh.set_meta(&"pistol_color", material.albedo_color)
-	material.albedo_color = Color(0.95, 0.42, 0.12) if holds_blast_gun() else _weapon_mesh.get_meta(&"pistol_color")
+	if holds_blast_gun():
+		material.albedo_color = Color(0.95, 0.42, 0.12)
+	elif spec != null:
+		material.albedo_color = spec.swatch.darkened(0.5)
+	else:
+		material.albedo_color = _weapon_mesh.get_meta(&"pistol_color")
 
 
 func get_aim_pitch() -> float:
@@ -1473,12 +1621,16 @@ func direction_toward_aim(aim: Vector3) -> Vector3:
 	return toward.normalized()
 
 
-func _face_toward(aim: Vector3) -> void:
-	var flat := Vector3(aim.x - global_position.x, 0.0, aim.z - global_position.z)
-	if flat.length_squared() < 0.04:
-		return
+func _face_toward(aim: Vector3, delta: float) -> void:
 	# Node forward is -Z. This yaw is the aim, not the camera orbit.
-	_visual_root.rotation.y = atan2(-flat.x, -flat.z)
+	_visual_root.rotation.y = _turn_limited(get_facing_yaw(), _yaw_from_aim(aim), delta)
+
+
+## Steps `current` toward `target` by at most TURN_SPEED * delta, taking the
+## short way around.
+static func _turn_limited(current: float, target: float, delta: float) -> float:
+	var step := TURN_SPEED * delta
+	return wrapf(current + clampf(angle_difference(current, target), -step, step), -PI, PI)
 
 
 func _move(delta: float) -> void:
@@ -1518,9 +1670,13 @@ func _update_lean(delta: float) -> void:
 
 
 func _yaw_from_aim(aim: Vector3) -> float:
+	return _yaw_from_aim_or(aim, get_facing_yaw())
+
+
+func _yaw_from_aim_or(aim: Vector3, fallback: float) -> float:
 	var flat := Vector3(aim.x - global_position.x, 0.0, aim.z - global_position.z)
 	if flat.length_squared() < 0.04:
-		return get_facing_yaw()
+		return fallback
 	return atan2(-flat.x, -flat.z)
 
 
@@ -1682,11 +1838,14 @@ func _attach_weapon_to_hand() -> void:
 	_weapon_mesh.get_parent().remove_child(_weapon_mesh)
 	attach.add_child(_weapon_mesh)
 	_weapon_mesh.transform = Transform3D(Basis.from_euler(HAND_WEAPON_TILT), HAND_WEAPON_OFFSET)
+	_weapon_in_hand = true
+	# The line above reset the scale and offset the weapon's shape had set.
+	_weapon_mesh.remove_meta(&"shape")
+	_shape_weapon_mesh(_shape_length, _shape_blade)
 	var grip := Node3D.new()
 	grip.name = "ToolGrip"
 	attach.add_child(grip)
 	_tool_grip = grip
-	_weapon_in_hand = true
 
 
 ## Right-hand socket for res://assets/equipment/<id>.glb. The gun box stays
@@ -1768,7 +1927,7 @@ func _update_locomotion_anim() -> void:
 func _update_aim_anim() -> void:
 	if _anim_tree == null:
 		return
-	if not (holds_pistol() or holds_debug_weapon()):
+	if not holds_firearm():
 		return
 	var max_pitch := maxf(InputGuard.MAX_AIM_PITCH, 0.001)
 	var aim_blend := clampf(_aim_pitch / max_pitch, -1.0, 1.0)
@@ -1781,7 +1940,7 @@ func _update_aim_anim() -> void:
 func _update_upper_blend(delta: float) -> void:
 	if _anim_tree == null or not _anim_tree.active:
 		return
-	var armed := holds_pistol() or holds_debug_weapon()
+	var armed := holds_firearm()
 	_aim_hold = maxf(_aim_hold - delta, 0.0)
 	_aim_ready = move_toward(_aim_ready, 1.0 if armed and _aim_hold > 0.0 else 0.0, AIM_BLEND_SPEED * delta)
 	_anim_tree.set("parameters/upper/blend_amount", _aim_ready)
@@ -1790,13 +1949,15 @@ func _update_upper_blend(delta: float) -> void:
 func _request_shoot_anim() -> void:
 	if _anim_tree == null:
 		return
-	if not (holds_pistol() or holds_debug_weapon()):
+	if not holds_firearm():
 		return
 	_aim_hold = AIM_HOLD_SEC
 	_anim_tree.set("parameters/shoot/request", AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 
 
 func _harvest_clip_name() -> StringName:
+	if holds_melee():
+		return &"TreeChopping"
 	var definition := ItemCatalog.get_item(held_item_id())
 	var kind := "" if definition == null else definition.harvest_kind
 	match kind:

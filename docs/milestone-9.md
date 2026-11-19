@@ -1,6 +1,6 @@
 # Milestone 9 — enemy v1, part a: the hog (vertical slice, phase 2a)
 
-The first creature. It shares a base class with everything that comes later (swarmers, brutes), so this milestone is mostly the foundation: server-side simulation, replication to clients, loot, and a test that drives the creature by hand.
+The first creature. It shares a base class with everything that comes later (the NEXUS robots), so this milestone is mostly the foundation: server-side simulation, replication to clients, loot, and a test that drives the creature by hand.
 
 ## What the hog does
 
@@ -57,4 +57,4 @@ The placeholder art can be rendered with `tests/creature_capture.gd` (needs a wi
 - Hogs are not hurt by other hogs, do not path around obstacles (they walk straight, and give up a stuck wander goal), and do not attack buildings.
 - Local (offline) play has no `GameNet`, so no hogs there.
 - Melee harvest tools do not hit creatures; only the pistol does.
-- Next: swarmers and the nest (2b), now M10 in [roadmap.md](roadmap.md). The base class, replication, and spawner are meant to be reused as they are.
+- Next: NEXUS HOUND SECURITY (2b), now M10 in [roadmap.md](roadmap.md). The base class, replication, and spawner are meant to be reused as they are.

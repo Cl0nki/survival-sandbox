@@ -124,7 +124,7 @@ static func category_label(item_category: String) -> String:
 		"medical":
 			return "Meds"
 		"weapon":
-			return "Guns"
+			return "Weapons"
 		"ammo":
 			return "Ammunition"
 		"deployable":
@@ -150,7 +150,7 @@ static func category_sort_key(label: String) -> int:
 		"Tools",
 		"Parts",
 		"Meds",
-		"Guns",
+		"Weapons",
 		"Ammunition",
 		"Food",
 		"Materials",
@@ -323,10 +323,9 @@ static func _warm() -> void:
 	_station("kiln", "craft", "kiln", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Kiln", Vector2i(1, 1), Color(0.64, 0.32, 0.24), "Clay, stone, or limestone. One coal.")
 	_station("kiln_shed", "craft", "kiln", 2, 8, 2.5, 1, 2, coal, 500, 0.84, "Kiln Shed", Vector2i(2, 2), Color(0.52, 0.28, 0.22), "Also cement and concrete. Eight at a time.")
 	_station("workbench", "craft", "bench", 1, 1, 5.0, 1, 1, coal, 100, 2.0, "Workbench", Vector2i(2, 1), Color(0.52, 0.36, 0.20), "Scrap tools, early deployables, pistol, and building plan. One coal.")
-
-	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 2.0, "Iron Workbench", Vector2i(2, 1), Color(0.58, 0.58, 0.62), "Iron tools, mid deployables, wiring, and metal beam.")
-	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 2.0, "Steel Workbench", Vector2i(2, 1), Color(0.40, 0.44, 0.50), "Steel tools, advanced stations, steel plate, pipe, and screw bolt.")
-	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 2.0, "Composite Workbench", Vector2i(2, 1), Color(0.42, 0.40, 0.48), "Composite tools, late stations, industrial motor, and composite panel.")
+	_station("workbench_iron", "craft", "bench", 2, 3, 3.5, 1, 1, coal, 200, 2.0, "Iron Workbench", Vector2i(2, 1), Color(0.58, 0.58, 0.62), "Iron tools, mid deployables, wiring, metal beam, and early guns.")
+	_station("workbench_steel", "craft", "bench", 3, 5, 2.5, 1, 2, coal, 400, 2.0, "Steel Workbench", Vector2i(2, 1), Color(0.40, 0.44, 0.50), "Steel tools, advanced stations, steel plate, pipe, screw bolt, rifles, SMGs, and the sword.")
+	_station("workbench_composite", "craft", "bench", 4, 8, 1.5, 1, 2, coal, 800, 2.0, "Composite Workbench", Vector2i(2, 1), Color(0.42, 0.40, 0.48), "Composite tools, late stations, industrial motor, composite panel, and heavy guns.")
 	_station("machine_shop", "craft", "bench", 4, 12, 1.2, 1, 4, coal, 1200, 1.419, "Machine Shop", Vector2i(2, 3), Color(0.36, 0.38, 0.42), "The same bench jobs, twelve at a time.")
 	_station("chem_bench", "craft", "chem", 1, 1, 6.0, 1, 1, coal, 200, 0.84, "Chem Bench", Vector2i(1, 1), Color(0.42, 0.62, 0.36), "Gunpowder, plastic, rubber, and fuel.")
 	_station("refinery", "craft", "chem", 2, 8, 2.0, 1, 2, coal, 800, 0.84, "Refinery", Vector2i(3, 2), Color(0.32, 0.36, 0.34), "The chem bench, plus a drum of oil into fuel.")
@@ -382,15 +381,18 @@ static func _warm() -> void:
 		_out("bench", 2, "iron_ingot", "steel_scrap", "crowbar_iron", 1, 1, 1),
 		_out("bench", 2, "iron_ingot", "cloth", "workbench_iron", 4, 2, 1),
 		_out("bench", 2, "iron_ingot", "clay", "smelter_iron", 8, 6, 1),
-		_out("bench", 2, "brick", "iron_ingot", "door_brick", 4, 2, 1),
-		_out("bench", 2, "brick", "nail", "window_brick", 2, 4, 1),
+		_out("bench", 2, "iron_ingot", "nail", "door_iron", 4, 2, 1),
+		_out("bench", 2, "iron_ingot", "metal_part", "window_iron", 2, 2, 1),
 		_out("bench", 2, "iron_ingot", "brick", "stove", 4, 6, 1),
 		_out("bench", 2, "copper_ingot", "plastic", "chem_bench", 4, 4, 1),
-		_out("bench", 2, "cut_stone", "iron_ingot", "door_stone", 4, 2, 1),
-		_out("bench", 2, "cut_stone", "nail", "window_stone", 2, 4, 1),
+		_out("bench", 2, "metal_beam", "iron_ingot", "door_reinforced", 2, 4, 1),
+		_out("bench", 2, "metal_beam", "nail", "window_reinforced", 2, 4, 1),
 		_out("bench", 2, "mechanical_part", "scrap_metal", "pump_jack_gas", 2, 8, 1),
 		_out("bench", 2, "mechanical_part", "steel_scrap", "pump_jack_oil", 2, 8, 1),
 		_out("bench", 2, "iron_ingot", "gunpowder", "ammo_bench", 4, 4, 1),
+		_out("bench", 2, "metal_part", "plank", "courier_pistol", 3, 2, 1),
+		_out("bench", 2, "metal_part", "steel_scrap", "marshal_pistol", 4, 3, 1),
+		_out("bench", 2, "metal_part", "log", "mule_shotgun", 5, 2, 1),
 		_out("bench", 3, "steel_ingot", "", "steel_plate", 1, 0, 1),
 		_out("bench", 3, "steel_ingot", "iron_ingot", "screw_bolt", 1, 1, 8),
 		_out("bench", 3, "steel_ingot", "copper_ingot", "pipe", 1, 1, 2),
@@ -407,8 +409,14 @@ static func _warm() -> void:
 		_out("bench", 3, "steel_plate", "mechanical_part", "refinery", 4, 2, 1),
 		_out("bench", 3, "steel_plate", "gunpowder", "armory", 4, 6, 1),
 		_out("bench", 3, "steel_plate", "iron_ingot", "kitchen", 4, 4, 1),
-		_out("bench", 3, "concrete_mix", "steel_ingot", "door_concrete", 4, 2, 1),
-		_out("bench", 3, "concrete_mix", "screw_bolt", "window_concrete", 2, 4, 1),
+		_out("bench", 3, "steel_plate", "steel_ingot", "door_steel", 4, 2, 1),
+		_out("bench", 3, "steel_ingot", "screw_bolt", "window_steel", 2, 4, 1),
+		_out("bench", 3, "steel_plate", "screw_bolt", "hornet_pdw", 2, 6, 1),
+		_out("bench", 3, "pipe", "metal_part", "rattler_smg", 2, 8, 1),
+		_out("bench", 3, "steel_plate", "pipe", "ridgeback_rifle", 3, 2, 1),
+		_out("bench", 3, "steel_plate", "plank", "kodiak_rifle", 4, 2, 1),
+		_out("bench", 3, "pipe", "plank", "breacher_shotgun", 3, 2, 1),
+		_out("bench", 3, "steel_ingot", "cloth", "sword", 3, 2, 1),
 		_out("bench", 4, "steel_ingot", "electronics", "industrial_motor", 1, 1, 1),
 		_out("bench", 4, "aluminum_ingot", "refined_plastic", "composite_panel", 1, 1, 1),
 		_out("bench", 4, "aluminum_ingot", "stick", "hatchet_composite", 1, 1, 1),
@@ -420,6 +428,10 @@ static func _warm() -> void:
 		_out("bench", 4, "industrial_motor", "brick", "foundry", 1, 12, 1),
 		_out("bench", 4, "composite_panel", "aluminum_ingot", "door_composite", 2, 4, 1),
 		_out("bench", 4, "composite_panel", "screw_bolt", "window_composite", 2, 4, 1),
+		_out("bench", 4, "mechanical_component", "steel_plate", "hailstorm_lmg", 3, 6, 1),
+		_out("bench", 4, "composite_panel", "pipe", "falconer_rifle", 2, 3, 1),
+		_out("bench", 4, "composite_panel", "steel_plate", "goliath_amr", 3, 8, 1),
+		_out("bench", 4, "metal_beam", "mechanical_component", "titan_hmg", 4, 4, 1),
 		_out("chem", 1, "sulfur", "", "gunpowder", 1, 0, 1),
 		_out("chem", 1, "plastic", "", "refined_plastic", 1, 0, 1),
 		_out("chem", 1, "rubber", "", "synthetic_rubber", 1, 0, 1),

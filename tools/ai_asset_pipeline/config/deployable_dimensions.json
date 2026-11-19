@@ -35,15 +35,15 @@
     "pump_jack_oil": { "footprint": [2, 2], "height": 0.84 },
     "door_scrap": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
     "door_wood": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
-    "door_brick": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
-    "door_stone": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
-    "door_concrete": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
+    "door_iron": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
+    "door_reinforced": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
+    "door_steel": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
     "door_composite": { "footprint": [0, 0], "height": 2.2, "opening": "door" },
     "window_scrap": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
     "window_wood": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
-    "window_brick": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
-    "window_stone": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
-    "window_concrete": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
+    "window_iron": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
+    "window_reinforced": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
+    "window_steel": { "footprint": [0, 0], "height": 1.1, "opening": "window" },
     "window_composite": { "footprint": [0, 0], "height": 1.1, "opening": "window" }
   }
 }

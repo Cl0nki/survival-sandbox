@@ -365,10 +365,13 @@ func _next_seq() -> int:
 	return _seq
 
 
+## `index` keeps the old numbering: 0 the gun, 1 the build tool, 2 the blast gun, 3 the
+## repair tool and 4 the upgrade tool. The gun now sits in its weapon slot, so the
+## tools are one hotbar slot lower.
 func _tool(net: GameNet, peer_id: int, index: int) -> void:
 	var player := net.debug_player(peer_id)
 	if player != null:
-		player.hotbar_index = index
+		player.hotbar_index = NetConfig.BAG_SLOTS + 1 if index == 0 else index - 1
 
 
 func _deliver(system: BuildingSystem, peer_id: int, mirror: BuildingSystem) -> String:

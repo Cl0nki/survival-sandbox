@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "falconer_rifle"
+display_name = "Falconer Marksman Rifle"
+description = "Long, steady rifle for single placed shots. 7.62mm."
+max_stack = 1
+weight = 5.0
+category = "weapon"
+can_pickup = true
+can_store = true
+grid_w = 3
+grid_h = 1
+swatch = Color(0.34, 0.38, 0.3, 1)
+weapon_kind = "firearm"
+ammo_id = "ammo_762"
+weapon_damage = 78
+weapon_range = 100.0
+weapon_cooldown = 0.7
+weapon_pellets = 1
+weapon_spread_deg = 0.0
+weapon_automatic = false
+weapon_length = 0.86

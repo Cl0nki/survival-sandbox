@@ -167,6 +167,14 @@ static func _build(
 ) -> MeshInstance3D:
 	if root.get_node_or_null("GroundSplat") != null:
 		return root.get_node("GroundSplat") as MeshInstance3D
+	# Footsteps read the same rectangles the shader paints.
+	GroundSurface.register(
+		regions,
+		soil_regions,
+		asphalt_regions,
+		forest_regions,
+		GroundSurface.GRASS if yard_size > YARD_SIZE + 0.1 else GroundSurface.DIRT
+	)
 	var mesh := MeshInstance3D.new()
 	mesh.name = "GroundSplat"
 	var plane := PlaneMesh.new()

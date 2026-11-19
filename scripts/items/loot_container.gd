@@ -10,6 +10,9 @@ const _READOUT := preload("res://scripts/deployables/deployable_readout.gd")
 
 @export var container_id := ""
 @export var slot_count := 8
+## Slots per row when items take up more than one cell. Stations keep every slot a
+## single cell with a fixed job, so they set this to zero.
+var grid_columns := NetConfig.GRID_COLUMNS
 @export var prompt := "Crate"
 @export var box_color := Color(0.42, 0.3, 0.18, 1)
 
@@ -45,6 +48,7 @@ func _ready() -> void:
 	_placed = get_parent() is DeployableSystem
 	if inventory == null:
 		inventory = Inventory.new(slot_count)
+	inventory.grid_columns = grid_columns
 	_build_visual()
 
 
@@ -71,6 +75,7 @@ func clear_contents() -> void:
 		inventory = Inventory.new(slot_count)
 	else:
 		inventory.resize(slot_count)
+	inventory.grid_columns = grid_columns
 
 
 func _build_visual() -> void:

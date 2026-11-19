@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "hornet_pdw"
+display_name = "Hornet PDW"
+description = "Compact bullpup personal defense weapon. Light and fast, loose at range. Hold to fire. 9mm."
+max_stack = 1
+weight = 2.4
+category = "weapon"
+can_pickup = true
+can_store = true
+grid_w = 2
+grid_h = 1
+swatch = Color(0.4, 0.44, 0.4, 1)
+weapon_kind = "firearm"
+ammo_id = "ammo_9mm"
+weapon_damage = 15
+weapon_range = 35.0
+weapon_cooldown = 0.1
+weapon_pellets = 1
+weapon_spread_deg = 2.5
+weapon_automatic = true
+weapon_length = 0.36

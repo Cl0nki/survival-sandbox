@@ -7,6 +7,9 @@ class_name CreatureView
 ## _build_hog() for a model later and keep the rest.
 
 const LABEL_HEIGHT := 1.35
+const VOICE_HEIGHT := 0.6
+const GRUNT_MIN_SEC := 6.0
+const GRUNT_MAX_SEC := 16.0
 
 var creature_id := 0
 var kind := 0
@@ -27,6 +30,9 @@ var _lean := 0.0
 var _tint := 0.0
 var _sink := 0.0
 var _dig := 0.0
+var _grunt_in := 0.0
+var _voiced_death := false
+var _rng := RandomNumberGenerator.new()
 
 const SKIN := Color(0.42, 0.3, 0.22, 1)
 const SKIN_ANGRY := Color(0.62, 0.16, 0.1, 1)
@@ -49,6 +55,10 @@ func setup(id: int, kind_id: int, hit_points: int, max_hit_points: int, start_st
 	_refresh_label()
 	if state == Creature.S_DEAD:
 		_sink = 1.0
+		# Already dead when we arrived (late join): no death cry for an old corpse.
+		_voiced_death = true
+	_rng.seed = creature_id * 7919 + 13
+	_grunt_in = _rng.randf_range(1.0, GRUNT_MAX_SEC)
 
 
 func push_pose(stamp: float, pos: Vector3, yaw: float, next_state: int) -> void:
@@ -59,15 +69,61 @@ func push_pose(stamp: float, pos: Vector3, yaw: float, next_state: int) -> void:
 
 
 func set_state(next: int) -> void:
+	var changed := next != state
 	state = next
+	if changed:
+		if next == Creature.S_DEAD:
+			_speak_death()
+		else:
+			_voice(voice_for_state(next))
 	_refresh_label()
 
 
 func set_health(current: int) -> void:
+	var before := hp
 	hp = clampi(current, 0, max_hp)
 	if hp == 0:
 		state = Creature.S_DEAD
+		_speak_death()
+	elif hp < before:
+		_voice(&"hog_hurt")
 	_refresh_label()
+
+
+## The sound a hog makes when it enters a state, or &"" for a quiet state.
+static func voice_for_state(next: int) -> StringName:
+	match next:
+		Hog.S_WINDUP:
+			return &"hog_alert"
+		Hog.S_CHARGE:
+			return &"hog_charge"
+		Hog.S_STUNNED:
+			return &"hog_hurt"
+	return &""
+
+
+func _speak_death() -> void:
+	if _voiced_death:
+		return
+	_voiced_death = true
+	_voice(&"hog_die")
+
+
+func _voice(event: StringName) -> void:
+	if event == &"" or not is_inside_tree():
+		return
+	Sfx.play_at(event, global_position + Vector3.UP * VOICE_HEIGHT)
+
+
+## Now and then a calm hog grunts, so a field of hogs is not silent.
+func _update_voice(delta: float) -> void:
+	if state != Creature.S_IDLE and state != Hog.S_WALK:
+		return
+	_grunt_in -= delta
+	if _grunt_in > 0.0:
+		return
+	_grunt_in = _rng.randf_range(GRUNT_MIN_SEC, GRUNT_MAX_SEC)
+	_voice(&"hog_grunt")
 
 
 func is_dead() -> bool:
@@ -79,6 +135,7 @@ func _process(delta: float) -> void:
 	if not pose.is_empty():
 		position = pose["position"]
 		rotation.y = float(pose["yaw"])
+	_update_voice(delta)
 	_animate(delta)
 
 

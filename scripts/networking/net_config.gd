@@ -26,8 +26,15 @@ const VISIBILITY_EDGE_MARGIN := 0.05
 const VISIBILITY_LEAD := 0.3
 ## Zero recomputes sight every physics frame, after movement.
 const VISIBILITY_INTERVAL_SEC := 0.0
-const INVENTORY_SLOTS := 36
+## Hotbar plus storage.
+const BAG_SLOTS := 36
+## Primary, sidearm and melee, in the order of WeaponSpec.SLOTS. They follow the bag
+## in the player's slot list, so a selected weapon is just another selected index.
+const WEAPON_SLOT_COUNT := 3
+const INVENTORY_SLOTS := BAG_SLOTS + WEAPON_SLOT_COUNT
 const HOTBAR_SLOTS := 9
+## Cells to a row in the storage grid and in chests.
+const GRID_COLUMNS := 9
 const CONTAINER_SLOTS := 27
 const INTERACT_RANGE := 2.5
 const ITEM_RATE_PER_SEC := 40
@@ -37,6 +44,13 @@ const MODE_CLIENT := 2
 const MAP_DEBUG := "debug"
 const MAP_SURVIVAL := "survival"
 const DEFAULT_MAP := MAP_DEBUG
+
+## A slot the player can hold in hand: a hotbar slot or one of the weapon slots.
+static func is_selectable_slot(index: int) -> bool:
+	if index >= 0 and index < HOTBAR_SLOTS:
+		return true
+	return index >= BAG_SLOTS and index < INVENTORY_SLOTS
+
 
 static func usage() -> String:
 	return "\n".join([

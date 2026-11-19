@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "nexus_shipping_container"
+display_name = "NEXUS Shipping Container"
+description = "A 20-foot NEXUS LOGISTICS cargo container, still sealed and waiting for a MULE that never came. Packed with freight."
+category = "world_prop"
+kind = "crate"
+deposit_id = ""
+body_size = Vector3(6.06, 2.6, 2.44)
+swatch = Color(0.36, 0.4, 0.44, 1)

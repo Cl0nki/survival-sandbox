@@ -12,4 +12,4 @@ weight = 3.0
 category = "deployable"
 can_pickup = true
 can_store = true
-swatch = Color(0.446, 0.36, 0.273, 1)
+swatch = Color(0.347, 0.248, 0.174, 1)

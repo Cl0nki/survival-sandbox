@@ -1,0 +1,32 @@
+---
+description: NEXUS INDUSTRIES robot faction design reference. Only relevant when the task is about NEXUS robots, robot enemies/AI, NEXUS facilities, or robot lore/assets. Ignore for all other work.
+alwaysApply: false
+---
+
+# NEXUS INDUSTRIES (authoritative reference: `docs/nexus-industries.md`)
+
+Read `docs/nexus-industries.md` before creating or changing robots, enemy AI, facilities, items/resources, lore, or 3D/concept assets.
+
+## Core principles
+- NEXUS robots are working machines first, enemies second. They run their last valid industrial/security instructions after human collapse (2030–2050). NEXUS is NOT an evil AI.
+- Every robot has a job (MINER mines, MULE hauls, HOUND inspects, SENTINEL patrols...). No idle "stand and wait" enemies.
+- Intruders are anyone interfering with production; conflict comes from competing resource needs.
+- Prefer plausible industrial robotics (quadrupeds, AGVs, drones, UGVs). No humanoid mechs by default, no oversized sci-fi weapons, no neon.
+
+## Implementation (Godot 4.6)
+- Reuse shared systems: Perception, Navigation, Job, Security, Combat, Damage/Loot. Variants are data-driven (resources), not duplicated AI code.
+- Keep job and combat behavior separate; facility security state (0 Normal, 1 Anomaly, 2 Warning, 3 Breach, 4 Lockdown) is per facility.
+- Escalation must make existing robots react (not only spawn more enemies); facilities can return to normal.
+- Extend existing systems before adding new gameplay systems. Keep presentation separate from gameplay logic.
+- Prototype scope: 1 mining facility, MINER, MULE, HOUND, WASP, SENTINEL, HOUND SECURITY, resource extraction, alarm system, basic combat. Do not expand the roster first.
+
+## New enemies / facilities must define
+- Enemies: industrial purpose, behavior, threat level, loot drops (consistent with function/construction), visual identity, silhouette, isometric readability.
+- Facilities: production process, resources, robot population.
+- Offer non-combat options where sensible: hack, distract, sabotage, avoid, repurpose.
+
+## Art
+- Stylized low-poly, hand-painted, subtle PBR, strong silhouettes, small NEXUS markings. Color palette is intentionally undefined for now; ignore it.
+
+## Conflicts
+If an idea contradicts the doc, explain the conflict and ask before changing direction.

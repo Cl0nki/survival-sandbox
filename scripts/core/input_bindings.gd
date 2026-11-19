@@ -2,7 +2,8 @@ extends Node
 
 ## Registers prototype actions in code so the binding list stays next to the
 ## systems that use them and does not depend on serialized InputEvent text.
-## Keys use physical positions: WASD / Q / E on a US keyboard, ZQSD / A / E on AZERTY.
+## Keys use physical positions: WASD on a US keyboard, ZQSD on AZERTY.
+## Q cycles weapons, X and V lean.
 ## F1 flips debug_enabled. Starts off, same as the resource labels and the zoom cap.
 
 var debug_enabled := false
@@ -16,8 +17,9 @@ func _enter_tree() -> void:
 	_bind_key(&"move_left", KEY_LEFT)
 	_bind_key(&"move_right", KEY_D)
 	_bind_key(&"move_right", KEY_RIGHT)
-	_bind_key(&"lean_left", KEY_Q)
-	_bind_key(&"lean_right", KEY_E)
+	_bind_key(&"lean_left", KEY_X)
+	_bind_key(&"lean_right", KEY_V)
+	_bind_key(&"cycle_weapon", KEY_Q)
 	_bind_key(&"crouch", KEY_CTRL)
 	_bind_key(&"sprint", KEY_SHIFT)
 	_bind_key(&"interact", KEY_F)

@@ -31,6 +31,10 @@ const ORDER: PackedStringArray = [
 	"drum_stack",
 	"appliance_pile",
 	"loot_crate",
+	"nexus_shipping_container",
+	"nexus_supply_chest",
+	"nexus_parts_chest",
+	"nexus_security_lockbox",
 ]
 
 const KIND_RESOURCE := "resource"

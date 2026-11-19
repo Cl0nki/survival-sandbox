@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "mule_shotgun"
+display_name = "Mule Sawn-Off Shotgun"
+description = "Cut-down shotgun. Huge spread, one shell, almost no range. 12 gauge."
+max_stack = 1
+weight = 2.8
+category = "weapon"
+can_pickup = true
+can_store = true
+grid_w = 2
+grid_h = 1
+swatch = Color(0.46, 0.34, 0.24, 1)
+weapon_kind = "firearm"
+ammo_id = "ammo_12gauge"
+weapon_damage = 11
+weapon_range = 16.0
+weapon_cooldown = 1.0
+weapon_pellets = 10
+weapon_spread_deg = 8.0
+weapon_automatic = false
+weapon_length = 0.52

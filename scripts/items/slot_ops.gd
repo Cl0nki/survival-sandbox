@@ -30,33 +30,48 @@ static func click(
 		return "closed" if area == AREA_CONTAINER else "missing"
 	if index < 0 or index >= bag.capacity:
 		return "bad_source"
-	var slot: Dictionary = bag.slots[index]
 	if _empty(cursor):
-		if _empty(slot):
+		# Any cell an item covers picks that item up, not just its top-left one.
+		var from := bag.anchor_at(index)
+		if from < 0:
 			return ""
+		var slot: Dictionary = bag.slots[from]
 		if ItemCatalog.get_item(str(slot["id"])) == null:
 			return "unknown_item"
 		var take := int(slot["qty"])
 		if right:
 			take = (take + 1) / 2
-		var pulled := _pull(bag, index, take)
+		var pulled := _pull(bag, from, take)
 		cursor["id"] = pulled["id"]
 		cursor["qty"] = pulled["qty"]
 		return ""
-	if ItemCatalog.get_item(str(cursor["id"])) == null:
+	var held_id := str(cursor["id"])
+	if ItemCatalog.get_item(held_id) == null:
 		return "unknown_item"
-	if _empty(slot):
+	# The held stack goes down with its top-left on the clicked cell.
+	var hits := bag.footprint_hits(index, held_id)
+	if not bool(hits["fits"]):
+		return "occupied"
+	var holders: Array = hits["anchors"]
+	if holders.is_empty():
 		return _place(bag, index, cursor, 1 if right else int(cursor["qty"]))
-	if str(slot["id"]) == str(cursor["id"]):
-		return _place(bag, index, cursor, 1 if right else int(cursor["qty"]))
+	if holders.size() > 1:
+		return "occupied"
+	var at: int = holders[0]
+	var slot: Dictionary = bag.slots[at]
+	if str(slot["id"]) == held_id:
+		return _place(bag, at, cursor, 1 if right else int(cursor["qty"]))
 	if ItemCatalog.get_item(str(slot["id"])) == null:
 		return "unknown_item"
-	if not bag.accepts_insert(index, str(cursor["id"])):
+	if not bag.accepts_insert(index, held_id):
 		return "wrong_slot"
-	var held_id := str(cursor["id"])
+	# Swap: the held stack takes the spot, and the one it covered goes to the cursor.
+	if not bag.can_place(index, held_id, [at]):
+		return "occupied"
 	var held_qty := int(cursor["qty"])
 	cursor["id"] = str(slot["id"])
 	cursor["qty"] = int(slot["qty"])
+	bag.slots[at] = {"id": "", "qty": 0}
 	bag.slots[index] = {"id": held_id, "qty": held_qty}
 	return ""
 
@@ -67,14 +82,24 @@ static func quick_move(player_bag: Inventory, crate_bag: Inventory, area: int, i
 		return "closed" if area == AREA_CONTAINER else "missing"
 	if index < 0 or index >= from.capacity:
 		return "bad_source"
-	if _empty(from.slots[index]):
+	# A covered cell moves the item that covers it.
+	index = from.anchor_at(index)
+	if index < 0:
 		return "short"
+	var item_id := str(from.slots[index]["id"])
 	if area == AREA_CONTAINER:
-		return _pour(from, index, player_bag, _storage_then_hotbar(player_bag), false)
+		var order := _equip_first(player_bag, item_id, _storage_then_hotbar(player_bag))
+		return _pour(from, index, player_bag, order, false)
 	if crate_bag != null:
 		return _pour(from, index, crate_bag, _all_slots(crate_bag), true)
+	if not player_bag.weapon_slot_for(index).is_empty():
+		return _pour(player_bag, index, player_bag, _storage_then_hotbar(player_bag), false)
+	# A weapon goes to its own empty slot first. If that is taken it moves like any item.
+	var equip := _equip_first(player_bag, item_id, [])
+	if not equip.is_empty() and _pour(player_bag, index, player_bag, equip, false) == "":
+		return ""
 	if index < HOTBAR:
-		return _pour(player_bag, index, player_bag, _range_slots(HOTBAR, player_bag.capacity), false)
+		return _pour(player_bag, index, player_bag, _range_slots(HOTBAR, player_bag.storage_end()), false)
 	return _pour(player_bag, index, player_bag, _range_slots(0, HOTBAR), false)
 
 
@@ -131,6 +156,9 @@ static func spread(
 			continue
 		if not bag.accepts_insert(index, str(cursor["id"])):
 			continue
+		# A free cell has to have room for the whole footprint, which also skips cells a big item covers.
+		if _empty(slot) and not bag.can_place(index, str(cursor["id"])):
+			continue
 		var key := Vector2i(area, index)
 		if chosen.has(key):
 			continue
@@ -167,15 +195,25 @@ static func swap_hotbar(player_bag: Inventory, crate_bag: Inventory, area: int, 
 		return "bad_source"
 	if bag == player_bag and index == hotbar_index:
 		return ""
-	var from: Dictionary = bag.slots[index]
+	# Hovering any cell of a big item swaps that item, which then sits at its own top-left.
+	var holder := bag.anchor_at(index)
+	var spot := index if holder < 0 else holder
+	if bag == player_bag and spot == hotbar_index:
+		return ""
+	var from: Dictionary = empty_stack() if holder < 0 else bag.slots[spot]
 	var hot: Dictionary = player_bag.slots[hotbar_index]
 	if not _empty(from) and ItemCatalog.get_item(str(from["id"])) == null:
 		return "unknown_item"
 	if not _empty(hot) and ItemCatalog.get_item(str(hot["id"])) == null:
 		return "unknown_item"
-	if not _empty(hot) and not bag.accepts_insert(index, str(hot["id"])):
+	if not _empty(hot) and not bag.accepts_insert(spot, str(hot["id"])):
 		return "wrong_slot"
-	bag.slots[index] = hot.duplicate()
+	if not _empty(from) and not player_bag.accepts_insert(hotbar_index, str(from["id"])):
+		return "wrong_slot"
+	# A hotbar slot holds anything in one cell, but the bag needs room for the footprint.
+	if not _empty(hot) and not bag.can_place(spot, str(hot["id"]), [] if holder < 0 else [spot]):
+		return "occupied"
+	bag.slots[spot] = hot.duplicate()
 	player_bag.slots[hotbar_index] = from.duplicate()
 	return ""
 
@@ -201,7 +239,10 @@ static func throw_stack(
 			cursor["qty"] = 0
 		return thrown
 	var bag := _bag(player_bag, crate_bag, area)
-	if bag == null or index < 0 or index >= bag.capacity or _empty(bag.slots[index]):
+	if bag == null or index < 0 or index >= bag.capacity:
+		return empty_stack()
+	index = bag.anchor_at(index)
+	if index < 0:
 		return empty_stack()
 	if ItemCatalog.get_item(str(bag.slots[index]["id"])) == null:
 		return empty_stack()
@@ -260,6 +301,8 @@ static func _push_into(bag: Inventory, index: int, item_id: String, amount: int)
 		return 0
 	var slot: Dictionary = bag.slots[index]
 	if _empty(slot):
+		if not bag.can_place(index, item_id):
+			return 0
 		var put := mini(amount, definition.max_stack)
 		bag.slots[index] = {"id": item_id, "qty": put}
 		return put
@@ -305,9 +348,21 @@ static func _all_slots(bag: Inventory) -> Array:
 
 
 static func _storage_then_hotbar(bag: Inventory) -> Array:
-	var order := _range_slots(HOTBAR, bag.capacity)
-	order.append_array(_range_slots(0, mini(HOTBAR, bag.capacity)))
+	var order := _range_slots(HOTBAR, bag.storage_end())
+	order.append_array(_range_slots(0, mini(HOTBAR, bag.storage_end())))
 	return order
+
+
+## `order` with the item's weapon slot in front when that slot is free.
+## Returns `order` unchanged for anything else.
+static func _equip_first(bag: Inventory, item_id: String, order: Array) -> Array:
+	var weapon_slot := WeaponSpec.slot_of(item_id)
+	var index := -1 if weapon_slot.is_empty() else bag.weapon_slot_index(weapon_slot)
+	if index < 0 or not _empty(bag.slots[index]):
+		return order
+	var result: Array = [index]
+	result.append_array(order)
+	return result
 
 
 static func _range_slots(start: int, end: int) -> Array:

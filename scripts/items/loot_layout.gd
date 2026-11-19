@@ -185,19 +185,88 @@ const COMPONENTS := [
 	["explosive_compound", 8],
 ]
 
+## Ammo is 10x the old stock (~30 slots of stacks), so the military crate is larger than the default.
+const MILITARY_SLOTS := 40
+
 const MILITARY := [
-	["ammo_9mm", 30],
-	["ammo_45acp", 30],
-	["ammo_556", 30],
-	["ammo_762", 30],
-	["ammo_12gauge", 20],
-	["ammo_50bmg", 10],
+	["ammo_9mm", 300],
+	["ammo_45acp", 300],
+	["ammo_556", 300],
+	["ammo_762", 300],
+	["ammo_12gauge", 200],
+	["ammo_50bmg", 100],
 	["grenade", 4],
 	["smoke_grenade", 4],
 	["flash_grenade", 4],
 	["demolition_charge", 4],
 	["mine", 4],
 	["rocket_warhead", 2],
+]
+
+## NEXUS storage. Each table matches what the owning division actually keeps in that box,
+## and only uses existing item ids. See docs/nexus-industries.md, section 8.
+## LOGISTICS freight: bulk stock moved between facilities.
+const NEXUS_CONTAINER_SLOTS := 54
+
+const NEXUS_CONTAINER := [
+	["battery", 40],
+	["electronics", 30],
+	["scrap_metal", 60],
+	["steel_scrap", 40],
+	["plastic", 40],
+	["rubber", 30],
+	["mechanical_part", 20],
+	["metal_part", 30],
+	["steel_plate", 20],
+	["wiring", 40],
+	["pipe", 20],
+]
+
+## LOGISTICS transit case: small general stock.
+const NEXUS_SUPPLY := [
+	["battery", 8],
+	["electronics", 10],
+	["scrap_metal", 20],
+	["plastic", 20],
+	["rubber", 10],
+]
+
+## CONSTRUCTION field-repair chest: mechanical spares and fasteners.
+const NEXUS_PARTS := [
+	["mechanical_part", 10],
+	["mechanical_component", 6],
+	["metal_part", 15],
+	["screw_bolt", 50],
+	["nail", 30],
+	["pipe", 10],
+	["industrial_motor", 1],
+]
+
+## SECURITY lockbox: circuits and a little ammunition. The best of the NEXUS boxes.
+const NEXUS_SECURITY := [
+	["circuit_board", 8],
+	["electronics", 10],
+	["wiring", 20],
+	["steel_plate", 6],
+	["ammo_9mm", 60],
+]
+
+## One of every gun and the sword, grouped by ammunition. Test ammo is in the military crate.
+const WEAPONS := [
+	["pistol", 1],
+	["courier_pistol", 1],
+	["hornet_pdw", 1],
+	["marshal_pistol", 1],
+	["rattler_smg", 1],
+	["ridgeback_rifle", 1],
+	["hailstorm_lmg", 1],
+	["kodiak_rifle", 1],
+	["falconer_rifle", 1],
+	["breacher_shotgun", 1],
+	["mule_shotgun", 1],
+	["goliath_amr", 1],
+	["titan_hmg", 1],
+	["sword", 1],
 ]
 
 static func build(arena: Node3D) -> void:
@@ -227,13 +296,15 @@ static func build(arena: Node3D) -> void:
 	_crate(folder, "cook_stock_crate", "Cook Stock", Color(0.58, 0.36, 0.22), ShowcasePad.FOOD + Vector3(0.0, 0.15, 4.5), COOK_STOCK)
 	_crate(folder, "component_crate", "Parts", Color(0.32, 0.40, 0.48), ShowcasePad.BENCHES + Vector3(1.5, 0.15, 4.2), COMPONENTS)
 	_crate(folder, "collectable_crate", "Collectables", Color(0.28, 0.40, 0.36), ShowcasePad.SUPPLIES + Vector3(0.0, 0.15, 2.8), COLLECTABLES)
-	_crate(folder, "military_crate", "Military", Color(0.28, 0.32, 0.20), ShowcasePad.RANGE + Vector3(-3.7, 0.15, 3.9), MILITARY)
+	_crate(folder, "military_crate", "Military", Color(0.28, 0.32, 0.20), ShowcasePad.RANGE + Vector3(-3.7, 0.15, 3.9), MILITARY, MILITARY_SLOTS)
+	_crate(folder, "weapons_crate", "Weapons", Color(0.30, 0.30, 0.28), ShowcasePad.RANGE + Vector3(-1.6, 0.15, 3.9), WEAPONS)
 	_crate(folder, "smelters_crate", "Smelters", Color(0.48, 0.32, 0.24), ShowcasePad.DEPLOYABLES + Vector3(-4.2, 0.15, 1.5), smelter_contents())
 	_crate(folder, "crafting_crate", "Crafting", Color(0.52, 0.36, 0.20), ShowcasePad.DEPLOYABLES + Vector3(-1.4, 0.15, 1.5), crafting_contents())
 	_crate(folder, "cooking_crate", "Cooking", Color(0.62, 0.34, 0.18), ShowcasePad.DEPLOYABLES + Vector3(-4.2, 0.15, -4.5), cooking_contents())
 	_crate(folder, "pumps_crate", "Pumps", Color(0.32, 0.38, 0.36), ShowcasePad.DEPLOYABLES + Vector3(1.4, 0.15, 1.5), pump_contents())
 	_crate(folder, "doors_crate", "Doors and Windows", Color(0.50, 0.40, 0.30), ShowcasePad.DEPLOYABLES + Vector3(4.2, 0.15, 1.5), opening_contents())
 	_building_chests(folder)
+	_nexus_storage(folder)
 
 
 ## Furnaces and the foundry.
@@ -313,21 +384,48 @@ static func _building_chests(folder: Node3D) -> void:
 		)
 
 
+## NEXUS container and chests on the east edge of the SUPPLIES tile. The container runs
+## north to south beside the pickups. The chests line up along the tile's north edge.
+static func _nexus_storage(folder: Node3D) -> void:
+	var base := ShowcasePad.SUPPLIES
+	_crate(
+		folder, "nexus_container", "NEXUS Shipping Container", WorldPropCatalog.get_definition("nexus_shipping_container").swatch,
+		base + Vector3(3.4, 0.15, 0.0), NEXUS_CONTAINER, NEXUS_CONTAINER_SLOTS, "nexus_shipping_container", 90.0
+	)
+	var chests := [
+		["nexus_supply_chest_1", "NEXUS Supply Chest", "nexus_supply_chest", NEXUS_SUPPLY, -3.4],
+		["nexus_supply_chest_2", "NEXUS Supply Chest", "nexus_supply_chest", NEXUS_SUPPLY, -2.0],
+		["nexus_parts_chest", "NEXUS Parts Chest", "nexus_parts_chest", NEXUS_PARTS, -0.8],
+		["nexus_security_lockbox", "NEXUS Security Lockbox", "nexus_security_lockbox", NEXUS_SECURITY, 0.4],
+	]
+	for entry in chests:
+		var prop_id := str(entry[2])
+		_crate(
+			folder, str(entry[0]), str(entry[1]), WorldPropCatalog.get_definition(prop_id).swatch,
+			base + Vector3(float(entry[4]), 0.15, -3.0), entry[3], NetConfig.CONTAINER_SLOTS, prop_id
+		)
+
+
 static func _crate(
 	folder: Node3D,
 	container_id: String,
 	prompt: String,
 	color: Color,
 	pos: Vector3,
-	contents: Array
+	contents: Array,
+	slots: int = NetConfig.CONTAINER_SLOTS,
+	prop_id: String = "loot_crate",
+	yaw_degrees: float = 0.0
 ) -> void:
 	var crate := LootContainer.new()
 	crate.name = container_id
 	crate.container_id = container_id
 	crate.prompt = prompt
 	crate.box_color = color
-	crate.prop_art_id = "loot_crate"
-	crate.slot_count = NetConfig.CONTAINER_SLOTS
+	crate.prop_art_id = prop_id
+	crate.body_size = WorldPropCatalog.body_size(prop_id)
+	crate.rotation_degrees.y = yaw_degrees
+	crate.slot_count = _slots_for(contents, slots)
 	crate.position = pos
 	folder.add_child(crate)
 	for entry in contents:
@@ -335,6 +433,23 @@ static func _crate(
 		var qty := int(entry[1])
 		if not crate.inventory.add_exact(item_id, qty):
 			push_error("loot crate %s could not add %s x%d" % [container_id, item_id, qty])
+
+
+## Slots a crate needs for its contents. Every stack covers its item's footprint, so
+## big items such as rifles and benches take more room than their count suggests.
+## One spare row keeps first-fit placement from running short. Never less than `minimum`.
+static func _slots_for(contents: Array, minimum: int) -> int:
+	var cells := 0
+	for entry in contents:
+		var item_id := str(entry[0])
+		var definition := ItemCatalog.get_item(item_id)
+		if definition == null or definition.max_stack <= 0:
+			continue
+		var stacks := ceili(float(int(entry[1])) / float(definition.max_stack))
+		var size := Inventory.footprint_of(item_id)
+		cells += stacks * size.x * size.y
+	var rows := ceili(float(cells) / float(NetConfig.GRID_COLUMNS)) + 1
+	return maxi(minimum, rows * NetConfig.GRID_COLUMNS)
 
 
 static func _label(folder: Node3D, text: String, at: Vector3, color: Color) -> void:

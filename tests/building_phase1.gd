@@ -1011,6 +1011,11 @@ func _test_arena_integration() -> void:
 	if tool == null or slot < 0:
 		arena.free()
 		return
+	# The build tool leads the hotbar now that the debug gun lives in its weapon slot.
+	# Draw the gun so the tool starts out not selected.
+	player.select_slot(NetConfig.BAG_SLOTS + 1)
+	await process_frame
+	await process_frame
 	_check(not tool.equipped, "tool equipped without being selected")
 	player.select_hotbar(slot)
 	await process_frame
@@ -1028,7 +1033,7 @@ func _test_arena_integration() -> void:
 			break
 		print("   arena spot ", candidate, " rejected: ", result.get("reason", "no plan"))
 	_check(built, "could not build a room anywhere in the arena")
-	player.select_hotbar(0)
+	player.select_slot(NetConfig.BAG_SLOTS + 1)
 	await process_frame
 	await process_frame
 	_check(not tool.equipped and not tool.preview.visible, "switching items did not unequip the tool")

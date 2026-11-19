@@ -3,6 +3,8 @@ class_name DeployableCatalog
 
 ## Placeable kinds. A chest, the crafting stations, the fires, and the smelters
 ## stand on cells. A door or window bars of each building tier mounts on the matching opening.
+## Fittings follow their own material ladder, not the wall one: Scrap, Wood, Iron,
+## Reinforced Iron, Steel, Composite. Health still matches the building tier.
 
 const CELL_HEALTH := 100
 const CHEST_HEIGHT := 0.72
@@ -10,7 +12,38 @@ const BENCH_HEIGHT := 0.84
 const SMELTER_HEIGHT := 1.15
 const PUMP_HEIGHT := 0.84
 
-const _SLUGS: PackedStringArray = ["", "scrap", "wood", "brick", "stone", "concrete", "composite"]
+const _SLUGS: PackedStringArray = ["", "scrap", "wood", "iron", "reinforced", "steel", "composite"]
+const _NAMES: PackedStringArray = ["", "Scrap", "Wood", "Iron", "Reinforced Iron", "Steel", "Composite"]
+
+## Door and bars colours, index = building tier. Dark rusty sheet, plank brown,
+## black iron, darker riveted iron, bright steel, teal composite.
+const _COLORS: Array[Color] = [
+	Color(0.0, 0.0, 0.0),
+	Color(0.56, 0.40, 0.28),
+	Color(0.58, 0.40, 0.20),
+	Color(0.36, 0.37, 0.40),
+	Color(0.27, 0.28, 0.32),
+	Color(0.66, 0.69, 0.72),
+	Color(0.26, 0.52, 0.58),
+]
+const _ROUGHNESS: PackedFloat32Array = [0.0, 0.95, 0.9, 0.7, 0.55, 0.35, 0.28]
+const _METALLIC: PackedFloat32Array = [0.0, 0.35, 0.0, 0.7, 0.8, 0.9, 0.5]
+
+
+static func fitting_name(tier: int) -> String:
+	return _NAMES[BuildingTier.clamp_tier(tier)]
+
+
+static func fitting_color(tier: int) -> Color:
+	return _COLORS[BuildingTier.clamp_tier(tier)]
+
+
+static func fitting_roughness(tier: int) -> float:
+	return _ROUGHNESS[BuildingTier.clamp_tier(tier)]
+
+
+static func fitting_metallic(tier: int) -> float:
+	return _METALLIC[BuildingTier.clamp_tier(tier)]
 
 
 static func door_id(tier: int) -> String:
@@ -63,7 +96,7 @@ static func display_name(kind: String) -> String:
 	var tier := tier_of(kind)
 	if tier == 0:
 		return kind
-	var prefix := BuildingTier.display_name(tier)
+	var prefix := fitting_name(tier)
 	if kind.begins_with("door_"):
 		return "%s Door" % prefix
 	return "%s Window Bars" % prefix

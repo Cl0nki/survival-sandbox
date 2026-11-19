@@ -213,14 +213,15 @@ def write_one(entry):
 
 def main():
     entries = list(ITEMS)
-    # Half of BuildingTier.HEALTH, in the same tier order.
+    # Half of BuildingTier.HEALTH, in the same tier order. Names and colours
+    # follow DeployableCatalog: a door or bars ladder of its own materials.
     tiers = [
-        ("scrap", "Scrap", (0.72, 0.58, 0.44), 100),
-        ("wood", "Wood", (0.78, 0.60, 0.38), 200),
-        ("brick", "Brick", (0.74, 0.42, 0.32), 400),
-        ("stone", "Stone", (0.76, 0.74, 0.68), 800),
-        ("concrete", "Concrete", (0.84, 0.80, 0.74), 1800),
-        ("composite", "Composite", (0.46, 0.64, 0.68), 4000),
+        ("scrap", "Scrap", (0.56, 0.40, 0.28), 100),
+        ("wood", "Wood", (0.58, 0.40, 0.20), 200),
+        ("iron", "Iron", (0.36, 0.37, 0.40), 400),
+        ("reinforced", "Reinforced Iron", (0.27, 0.28, 0.32), 800),
+        ("steel", "Steel", (0.66, 0.69, 0.72), 1800),
+        ("composite", "Composite", (0.26, 0.52, 0.58), 4000),
     ]
     for slug, name, rgb, hp in tiers:
         entries.append(item(

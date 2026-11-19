@@ -208,7 +208,7 @@
     {
       "id": "ammo_9mm",
       "display_name": "9mm Ammunition",
-      "description": "World pickup is still a colored box. Pistol and SMG cartridges.",
+      "description": "Pistol and SMG cartridges.",
       "category": "ammo",
       "folder": "military",
       "max_stack": 60,
@@ -645,6 +645,47 @@
       "column": "none"
     },
     {
+      "id": "breacher_shotgun",
+      "display_name": "Breacher Pump Shotgun",
+      "description": "Pump-action shotgun. Brutal up close, useless past a short run. 12 gauge.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 3.8,
+      "swatch": [
+        0.4,
+        0.3,
+        0.22,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/breacher_shotgun.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "pipe",
+          "extra": "plank",
+          "output": "breacher_shotgun",
+          "in_n": 3,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "3 Pipe + 2 Plank \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
+    },
+    {
       "id": "brick",
       "display_name": "Brick",
       "description": "Fired clay brick.",
@@ -684,24 +725,6 @@
       ],
       "used_by": [
         {
-          "output": "door_brick",
-          "output_name": "Brick Door",
-          "family": "bench",
-          "tier": 2,
-          "role": "input",
-          "qty": 4,
-          "station": "Iron Workbench"
-        },
-        {
-          "output": "window_brick",
-          "output_name": "Brick Window Bars",
-          "family": "bench",
-          "tier": 2,
-          "role": "input",
-          "qty": 2,
-          "station": "Iron Workbench"
-        },
-        {
           "output": "stove",
           "output_name": "Stove",
           "family": "bench",
@@ -730,88 +753,6 @@
         }
       ],
       "column": "kiln"
-    },
-    {
-      "id": "door_brick",
-      "display_name": "Brick Door",
-      "description": "Fits a doorway. Opens and closes with F. 400 HP.",
-      "category": "deployable",
-      "folder": "deployables",
-      "max_stack": 1,
-      "weight": 6.0,
-      "swatch": [
-        0.74,
-        0.42,
-        0.32,
-        1.0
-      ],
-      "harvest_kind": "",
-      "harvest_tier": 0,
-      "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
-      "debug": false,
-      "sources": [
-        {
-          "kind": "craft",
-          "family": "bench",
-          "tier": 2,
-          "input": "brick",
-          "extra": "iron_ingot",
-          "output": "door_brick",
-          "in_n": 4,
-          "extra_n": 2,
-          "out_n": 1,
-          "alloy": false,
-          "station": "Iron Workbench",
-          "station_kind": "workbench_iron",
-          "station_note": "Iron Workbench and above",
-          "chip": "4 Brick + 2 Iron Ingot \u2192 Iron Workbench"
-        }
-      ],
-      "used_by": [],
-      "column": "workbench_iron"
-    },
-    {
-      "id": "window_brick",
-      "display_name": "Brick Window Bars",
-      "description": "Fits a window opening. 400 HP.",
-      "category": "deployable",
-      "folder": "deployables",
-      "max_stack": 1,
-      "weight": 3.0,
-      "swatch": [
-        0.459,
-        0.26,
-        0.198,
-        1.0
-      ],
-      "harvest_kind": "",
-      "harvest_tier": 0,
-      "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
-      "debug": false,
-      "sources": [
-        {
-          "kind": "craft",
-          "family": "bench",
-          "tier": 2,
-          "input": "brick",
-          "extra": "nail",
-          "output": "window_brick",
-          "in_n": 2,
-          "extra_n": 4,
-          "out_n": 1,
-          "alloy": false,
-          "station": "Iron Workbench",
-          "station_kind": "workbench_iron",
-          "station_note": "Iron Workbench and above",
-          "chip": "2 Brick + 4 Nail \u2192 Iron Workbench"
-        }
-      ],
-      "used_by": [],
-      "column": "workbench_iron"
     },
     {
       "id": "build_tool",
@@ -1096,7 +1037,7 @@
     {
       "id": "chemicals",
       "display_name": "Chemicals",
-      "description": "Unlabeled flasks and lab leftovers.",
+      "description": "Unlabeled drums and lab leftovers.",
       "category": "harvest",
       "folder": "harvestable",
       "max_stack": 20,
@@ -1168,8 +1109,8 @@
       "harvest_kind": "",
       "harvest_tier": 0,
       "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
+      "has_art": true,
+      "icon": "assets/icons/chest.png",
       "debug": false,
       "sources": [
         {
@@ -1195,7 +1136,7 @@
     {
       "id": "circuit_board",
       "display_name": "Circuit Board",
-      "description": "Assembled board from refined electronics.",
+      "description": "Assembled boards from refined electronics.",
       "category": "component",
       "folder": "components",
       "max_stack": 20,
@@ -1451,6 +1392,15 @@
           "role": "extra",
           "qty": 2,
           "station": "Iron Workbench"
+        },
+        {
+          "output": "sword",
+          "output_name": "Steel Sword",
+          "family": "bench",
+          "tier": 3,
+          "role": "extra",
+          "qty": 2,
+          "station": "Steel Workbench"
         }
       ],
       "column": "none"
@@ -1544,9 +1494,9 @@
       "max_stack": 1,
       "weight": 6.0,
       "swatch": [
-        0.46,
-        0.64,
-        0.68,
+        0.26,
+        0.52,
+        0.58,
         1.0
       ],
       "harvest_kind": "",
@@ -1673,6 +1623,24 @@
           "role": "input",
           "qty": 2,
           "station": "Composite Workbench"
+        },
+        {
+          "output": "falconer_rifle",
+          "output_name": "Falconer Marksman Rifle",
+          "family": "bench",
+          "tier": 4,
+          "role": "input",
+          "qty": 2,
+          "station": "Composite Workbench"
+        },
+        {
+          "output": "goliath_amr",
+          "output_name": "Goliath Anti-Materiel Rifle",
+          "family": "bench",
+          "tier": 4,
+          "role": "input",
+          "qty": 3,
+          "station": "Composite Workbench"
         }
       ],
       "column": "workbench_composite"
@@ -1760,6 +1728,30 @@
       "column": "workbench_composite"
     },
     {
+      "id": "composite_stock",
+      "display_name": "Composite Stock",
+      "description": "Smelted quartz. Stock for composite tools.",
+      "category": "refined",
+      "folder": "refined",
+      "max_stack": 50,
+      "weight": 0.35,
+      "swatch": [
+        0.7,
+        0.68,
+        0.78,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": false,
+      "icon": "",
+      "debug": false,
+      "sources": [],
+      "used_by": [],
+      "column": "none"
+    },
+    {
       "id": "window_composite",
       "display_name": "Composite Window Bars",
       "description": "Fits a window opening. 4000 HP.",
@@ -1768,9 +1760,9 @@
       "max_stack": 1,
       "weight": 3.0,
       "swatch": [
-        0.285,
-        0.397,
-        0.422,
+        0.161,
+        0.322,
+        0.36,
         1.0
       ],
       "harvest_kind": "",
@@ -1803,7 +1795,7 @@
     {
       "id": "workbench_composite",
       "display_name": "Composite Workbench",
-      "description": "Placed object is still a colored box. 2x1 bench. Composite tools, industrial motor, and composite panel. 800 HP.",
+      "description": "2x1 bench. Composite tools, industrial motor, and composite panel. 800 HP.",
       "category": "deployable",
       "folder": "deployables",
       "max_stack": 1,
@@ -1840,47 +1832,6 @@
       ],
       "used_by": [],
       "column": "workbench_composite"
-    },
-    {
-      "id": "door_concrete",
-      "display_name": "Concrete Door",
-      "description": "Fits a doorway. Opens and closes with F. 1800 HP.",
-      "category": "deployable",
-      "folder": "deployables",
-      "max_stack": 1,
-      "weight": 6.0,
-      "swatch": [
-        0.84,
-        0.8,
-        0.74,
-        1.0
-      ],
-      "harvest_kind": "",
-      "harvest_tier": 0,
-      "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
-      "debug": false,
-      "sources": [
-        {
-          "kind": "craft",
-          "family": "bench",
-          "tier": 3,
-          "input": "concrete_mix",
-          "extra": "steel_ingot",
-          "output": "door_concrete",
-          "in_n": 4,
-          "extra_n": 2,
-          "out_n": 1,
-          "alloy": false,
-          "station": "Steel Workbench",
-          "station_kind": "workbench_steel",
-          "station_note": "Steel Workbench and above",
-          "chip": "4 Concrete Mix + 2 Steel Ingot \u2192 Steel Workbench"
-        }
-      ],
-      "used_by": [],
-      "column": "workbench_steel"
     },
     {
       "id": "concrete_mix",
@@ -1920,68 +1871,8 @@
           "chip": "1 Cement + 1 Sand \u2192 Kiln Shed"
         }
       ],
-      "used_by": [
-        {
-          "output": "door_concrete",
-          "output_name": "Concrete Door",
-          "family": "bench",
-          "tier": 3,
-          "role": "input",
-          "qty": 4,
-          "station": "Steel Workbench"
-        },
-        {
-          "output": "window_concrete",
-          "output_name": "Concrete Window Bars",
-          "family": "bench",
-          "tier": 3,
-          "role": "input",
-          "qty": 2,
-          "station": "Steel Workbench"
-        }
-      ],
-      "column": "kiln_shed"
-    },
-    {
-      "id": "window_concrete",
-      "display_name": "Concrete Window Bars",
-      "description": "Fits a window opening. 1800 HP.",
-      "category": "deployable",
-      "folder": "deployables",
-      "max_stack": 1,
-      "weight": 3.0,
-      "swatch": [
-        0.521,
-        0.496,
-        0.459,
-        1.0
-      ],
-      "harvest_kind": "",
-      "harvest_tier": 0,
-      "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
-      "debug": false,
-      "sources": [
-        {
-          "kind": "craft",
-          "family": "bench",
-          "tier": 3,
-          "input": "concrete_mix",
-          "extra": "screw_bolt",
-          "output": "window_concrete",
-          "in_n": 2,
-          "extra_n": 4,
-          "out_n": 1,
-          "alloy": false,
-          "station": "Steel Workbench",
-          "station_kind": "workbench_steel",
-          "station_note": "Steel Workbench and above",
-          "chip": "2 Concrete Mix + 4 Screw & Bolt \u2192 Steel Workbench"
-        }
-      ],
       "used_by": [],
-      "column": "workbench_steel"
+      "column": "kiln_shed"
     },
     {
       "id": "cooked_corn",
@@ -2359,6 +2250,47 @@
       "column": "none"
     },
     {
+      "id": "courier_pistol",
+      "display_name": "Courier Pistol",
+      "description": "Machined service pistol. Accurate and quick to follow up. Fires 9mm.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 1.0,
+      "swatch": [
+        0.46,
+        0.48,
+        0.52,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/courier_pistol.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 2,
+          "input": "metal_part",
+          "extra": "plank",
+          "output": "courier_pistol",
+          "in_n": 3,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Iron Workbench",
+          "station_kind": "workbench_iron",
+          "station_note": "Iron Workbench and above",
+          "chip": "3 Metal Part + 2 Plank \u2192 Iron Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_iron"
+    },
+    {
       "id": "pump_jack_oil",
       "display_name": "Crude Pump Jack",
       "description": "2x2 pump jack. One slot. An empty oil drum comes out full. 400 HP.",
@@ -2402,7 +2334,7 @@
     {
       "id": "cut_stone",
       "display_name": "Cut Stone",
-      "description": "",
+      "description": "Dressed blocks for walls and foundations.",
       "category": "refined",
       "folder": "refined",
       "max_stack": 50,
@@ -2437,26 +2369,7 @@
           "chip": "1 Stone \u2192 Kiln"
         }
       ],
-      "used_by": [
-        {
-          "output": "door_stone",
-          "output_name": "Stone Door",
-          "family": "bench",
-          "tier": 2,
-          "role": "input",
-          "qty": 4,
-          "station": "Iron Workbench"
-        },
-        {
-          "output": "window_stone",
-          "output_name": "Stone Window Bars",
-          "family": "bench",
-          "tier": 2,
-          "role": "input",
-          "qty": 2,
-          "station": "Iron Workbench"
-        }
-      ],
+      "used_by": [],
       "column": "kiln"
     },
     {
@@ -2561,7 +2474,7 @@
     {
       "id": "electronics",
       "display_name": "Electronics",
-      "description": "Pulled from wrecks.",
+      "description": "Pulled boards and chips from wrecks.",
       "category": "harvest",
       "folder": "harvestable",
       "max_stack": 30,
@@ -2681,8 +2594,8 @@
       "harvest_kind": "",
       "harvest_tier": 0,
       "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
+      "has_art": true,
+      "icon": "assets/icons/oil_drum_empty.png",
       "debug": false,
       "sources": [],
       "used_by": [],
@@ -2691,7 +2604,7 @@
     {
       "id": "water_bottle_empty",
       "display_name": "Empty Water Bottle",
-      "description": "",
+      "description": "Place in a well. Comes out full.",
       "category": "container",
       "folder": "harvestable",
       "max_stack": 1,
@@ -2881,6 +2794,47 @@
       "column": "armory"
     },
     {
+      "id": "falconer_rifle",
+      "display_name": "Falconer Marksman Rifle",
+      "description": "Long, steady rifle for single placed shots. 7.62mm.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 5.0,
+      "swatch": [
+        0.34,
+        0.38,
+        0.3,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/falconer_rifle.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 4,
+          "input": "composite_panel",
+          "extra": "pipe",
+          "output": "falconer_rifle",
+          "in_n": 2,
+          "extra_n": 3,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Composite Workbench",
+          "station_kind": "workbench_composite",
+          "station_note": "Composite Workbench and above",
+          "chip": "2 Composite Panel + 3 Pipe \u2192 Composite Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_composite"
+    },
+    {
       "id": "fire_pit",
       "display_name": "Fire Pit",
       "description": "2x1 fire. Cooks four at a time. 120 HP.",
@@ -2897,8 +2851,8 @@
       "harvest_kind": "",
       "harvest_tier": 0,
       "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
+      "has_art": true,
+      "icon": "assets/icons/fire_pit.png",
       "debug": false,
       "sources": [
         {
@@ -2989,7 +2943,7 @@
     {
       "id": "foundry",
       "display_name": "Foundry",
-      "description": "3x3 foundry. Every melt, plus aluminum, twenty at a time. Burns coal or fuel. 1600 HP.",
+      "description": "3x3 foundry. Every melt, plus aluminum and composite stock, twenty at a time. Burns coal or fuel. 1600 HP.",
       "category": "deployable",
       "folder": "deployables",
       "max_stack": 1,
@@ -3349,7 +3303,7 @@
     {
       "id": "glass",
       "display_name": "Glass",
-      "description": "glasplane",
+      "description": "Broken panes and bottles. Recast or reuse.",
       "category": "harvest",
       "folder": "harvestable",
       "max_stack": 50,
@@ -3400,6 +3354,47 @@
       ],
       "used_by": [],
       "column": "smelter_steel"
+    },
+    {
+      "id": "goliath_amr",
+      "display_name": "Goliath Anti-Materiel Rifle",
+      "description": "Huge rifle that punches through anything it hits once. Slow to cycle. .50 BMG.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 11.0,
+      "swatch": [
+        0.26,
+        0.28,
+        0.26,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/goliath_amr.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 4,
+          "input": "composite_panel",
+          "extra": "steel_plate",
+          "output": "goliath_amr",
+          "in_n": 3,
+          "extra_n": 8,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Composite Workbench",
+          "station_kind": "workbench_composite",
+          "station_note": "Composite Workbench and above",
+          "chip": "3 Composite Panel + 8 Steel Plate \u2192 Composite Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_composite"
     },
     {
       "id": "gravel",
@@ -3600,6 +3595,47 @@
       "column": "chem_bench"
     },
     {
+      "id": "hailstorm_lmg",
+      "display_name": "Hailstorm LMG",
+      "description": "Belt-fed light machine gun. Heavy, and it drifts when it runs hot. Hold to fire. 5.56mm.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 7.5,
+      "swatch": [
+        0.3,
+        0.34,
+        0.3,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/hailstorm_lmg.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 4,
+          "input": "mechanical_component",
+          "extra": "steel_plate",
+          "output": "hailstorm_lmg",
+          "in_n": 3,
+          "extra_n": 6,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Composite Workbench",
+          "station_kind": "workbench_composite",
+          "station_note": "Composite Workbench and above",
+          "chip": "3 Mechanical Component + 6 Steel Plate \u2192 Composite Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_composite"
+    },
+    {
       "id": "headlight",
       "display_name": "Headlight",
       "description": "Glass lens and reflector pulled from a wreck.",
@@ -3637,6 +3673,47 @@
       ],
       "used_by": [],
       "column": "gather"
+    },
+    {
+      "id": "hornet_pdw",
+      "display_name": "Hornet PDW",
+      "description": "Compact bullpup personal defense weapon. Light and fast, loose at range. Hold to fire. 9mm.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 2.4,
+      "swatch": [
+        0.4,
+        0.44,
+        0.4,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/hornet_pdw.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "steel_plate",
+          "extra": "screw_bolt",
+          "output": "hornet_pdw",
+          "in_n": 2,
+          "extra_n": 6,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "2 Steel Plate + 6 Screw & Bolt \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
     },
     {
       "id": "industrial_motor",
@@ -3734,6 +3811,47 @@
           "station_kind": "workbench_iron",
           "station_note": "Iron Workbench and above",
           "chip": "1 Iron Ingot + 1 Steel Scrap \u2192 Iron Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_iron"
+    },
+    {
+      "id": "door_iron",
+      "display_name": "Iron Door",
+      "description": "Fits a doorway. Opens and closes with F. 400 HP.",
+      "category": "deployable",
+      "folder": "deployables",
+      "max_stack": 1,
+      "weight": 6.0,
+      "swatch": [
+        0.36,
+        0.37,
+        0.4,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": false,
+      "icon": "",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 2,
+          "input": "iron_ingot",
+          "extra": "nail",
+          "output": "door_iron",
+          "in_n": 4,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Iron Workbench",
+          "station_kind": "workbench_iron",
+          "station_note": "Iron Workbench and above",
+          "chip": "4 Iron Ingot + 2 Nail \u2192 Iron Workbench"
         }
       ],
       "used_by": [],
@@ -3892,11 +4010,20 @@
           "station": "Iron Workbench"
         },
         {
-          "output": "door_brick",
-          "output_name": "Brick Door",
+          "output": "door_iron",
+          "output_name": "Iron Door",
           "family": "bench",
           "tier": 2,
-          "role": "extra",
+          "role": "input",
+          "qty": 4,
+          "station": "Iron Workbench"
+        },
+        {
+          "output": "window_iron",
+          "output_name": "Iron Window Bars",
+          "family": "bench",
+          "tier": 2,
+          "role": "input",
           "qty": 2,
           "station": "Iron Workbench"
         },
@@ -3910,12 +4037,12 @@
           "station": "Iron Workbench"
         },
         {
-          "output": "door_stone",
-          "output_name": "Stone Door",
+          "output": "door_reinforced",
+          "output_name": "Reinforced Iron Door",
           "family": "bench",
           "tier": 2,
           "role": "extra",
-          "qty": 2,
+          "qty": 4,
           "station": "Iron Workbench"
         },
         {
@@ -4157,9 +4284,50 @@
       "column": "workbench_iron"
     },
     {
+      "id": "window_iron",
+      "display_name": "Iron Window Bars",
+      "description": "Fits a window opening. 400 HP.",
+      "category": "deployable",
+      "folder": "deployables",
+      "max_stack": 1,
+      "weight": 3.0,
+      "swatch": [
+        0.223,
+        0.229,
+        0.248,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": false,
+      "icon": "",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 2,
+          "input": "iron_ingot",
+          "extra": "metal_part",
+          "output": "window_iron",
+          "in_n": 2,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Iron Workbench",
+          "station_kind": "workbench_iron",
+          "station_note": "Iron Workbench and above",
+          "chip": "2 Iron Ingot + 2 Metal Part \u2192 Iron Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_iron"
+    },
+    {
       "id": "workbench_iron",
       "display_name": "Iron Workbench",
-      "description": "Placed object is still a colored box. 2x1 bench. Iron tools, wiring, and metal beam. 200 HP.",
+      "description": "2x1 bench. Iron tools, wiring, and metal beam. 200 HP.",
       "category": "deployable",
       "folder": "deployables",
       "max_stack": 1,
@@ -4315,6 +4483,47 @@
           "station_kind": "workbench_steel",
           "station_note": "Steel Workbench and above",
           "chip": "4 Steel Plate + 4 Iron Ingot \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
+    },
+    {
+      "id": "kodiak_rifle",
+      "display_name": "Kodiak Battle Rifle",
+      "description": "Semi-automatic battle rifle. Every round counts. 7.62mm.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 4.2,
+      "swatch": [
+        0.44,
+        0.34,
+        0.24,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/kodiak_rifle.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "steel_plate",
+          "extra": "plank",
+          "output": "kodiak_rifle",
+          "in_n": 4,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "4 Steel Plate + 2 Plank \u2192 Steel Workbench"
         }
       ],
       "used_by": [],
@@ -4648,6 +4857,15 @@
           "station": "Iron Workbench"
         },
         {
+          "output": "mule_shotgun",
+          "output_name": "Mule Sawn-Off Shotgun",
+          "family": "bench",
+          "tier": 2,
+          "role": "extra",
+          "qty": 2,
+          "station": "Iron Workbench"
+        },
+        {
           "output": "shovel_steel",
           "output_name": "Steel Shovel",
           "family": "bench",
@@ -4708,6 +4926,47 @@
       ],
       "used_by": [],
       "column": "workbench_composite"
+    },
+    {
+      "id": "marshal_pistol",
+      "display_name": "Marshal Heavy Pistol",
+      "description": "Slow, heavy-hitting sidearm. Fires .45 ACP.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 1.4,
+      "swatch": [
+        0.5,
+        0.46,
+        0.38,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/marshal_pistol.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 2,
+          "input": "metal_part",
+          "extra": "steel_scrap",
+          "output": "marshal_pistol",
+          "in_n": 4,
+          "extra_n": 3,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Iron Workbench",
+          "station_kind": "workbench_iron",
+          "station_note": "Iron Workbench and above",
+          "chip": "4 Metal Part + 3 Steel Scrap \u2192 Iron Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_iron"
     },
     {
       "id": "meat_stew",
@@ -4788,7 +5047,26 @@
           "chip": "1 Mechanical Part \u2192 Iron Workbench"
         }
       ],
-      "used_by": [],
+      "used_by": [
+        {
+          "output": "hailstorm_lmg",
+          "output_name": "Hailstorm LMG",
+          "family": "bench",
+          "tier": 4,
+          "role": "input",
+          "qty": 3,
+          "station": "Composite Workbench"
+        },
+        {
+          "output": "titan_hmg",
+          "output_name": "Titan Heavy Machine Gun",
+          "family": "bench",
+          "tier": 4,
+          "role": "extra",
+          "qty": 4,
+          "station": "Composite Workbench"
+        }
+      ],
       "column": "workbench_iron"
     },
     {
@@ -4970,7 +5248,35 @@
           "chip": "1 Iron Ingot + 1 Copper Ingot \u2192 Iron Workbench"
         }
       ],
-      "used_by": [],
+      "used_by": [
+        {
+          "output": "door_reinforced",
+          "output_name": "Reinforced Iron Door",
+          "family": "bench",
+          "tier": 2,
+          "role": "input",
+          "qty": 2,
+          "station": "Iron Workbench"
+        },
+        {
+          "output": "window_reinforced",
+          "output_name": "Reinforced Iron Window Bars",
+          "family": "bench",
+          "tier": 2,
+          "role": "input",
+          "qty": 2,
+          "station": "Iron Workbench"
+        },
+        {
+          "output": "titan_hmg",
+          "output_name": "Titan Heavy Machine Gun",
+          "family": "bench",
+          "tier": 4,
+          "role": "input",
+          "qty": 4,
+          "station": "Composite Workbench"
+        }
+      ],
       "column": "workbench_iron"
     },
     {
@@ -5011,7 +5317,53 @@
           "chip": "1 Steel Scrap \u2192 Workbench"
         }
       ],
-      "used_by": [],
+      "used_by": [
+        {
+          "output": "window_iron",
+          "output_name": "Iron Window Bars",
+          "family": "bench",
+          "tier": 2,
+          "role": "extra",
+          "qty": 2,
+          "station": "Iron Workbench"
+        },
+        {
+          "output": "courier_pistol",
+          "output_name": "Courier Pistol",
+          "family": "bench",
+          "tier": 2,
+          "role": "input",
+          "qty": 3,
+          "station": "Iron Workbench"
+        },
+        {
+          "output": "marshal_pistol",
+          "output_name": "Marshal Heavy Pistol",
+          "family": "bench",
+          "tier": 2,
+          "role": "input",
+          "qty": 4,
+          "station": "Iron Workbench"
+        },
+        {
+          "output": "mule_shotgun",
+          "output_name": "Mule Sawn-Off Shotgun",
+          "family": "bench",
+          "tier": 2,
+          "role": "input",
+          "qty": 5,
+          "station": "Iron Workbench"
+        },
+        {
+          "output": "rattler_smg",
+          "output_name": "Rattler SMG",
+          "family": "bench",
+          "tier": 3,
+          "role": "extra",
+          "qty": 8,
+          "station": "Steel Workbench"
+        }
+      ],
       "column": "workbench"
     },
     {
@@ -5058,7 +5410,7 @@
     {
       "id": "mortar",
       "display_name": "Mortar",
-      "description": "",
+      "description": "Lime mix for binding brick and stone.",
       "category": "refined",
       "folder": "refined",
       "max_stack": 50,
@@ -5095,6 +5447,47 @@
       ],
       "used_by": [],
       "column": "kiln"
+    },
+    {
+      "id": "mule_shotgun",
+      "display_name": "Mule Sawn-Off Shotgun",
+      "description": "Cut-down shotgun. Huge spread, one shell, almost no range. 12 gauge.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 2.8,
+      "swatch": [
+        0.46,
+        0.34,
+        0.24,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/mule_shotgun.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 2,
+          "input": "metal_part",
+          "extra": "log",
+          "output": "mule_shotgun",
+          "in_n": 5,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Iron Workbench",
+          "station_kind": "workbench_iron",
+          "station_note": "Iron Workbench and above",
+          "chip": "5 Metal Part + 2 Log \u2192 Iron Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_iron"
     },
     {
       "id": "mushroom",
@@ -5170,17 +5563,17 @@
       ],
       "used_by": [
         {
-          "output": "window_brick",
-          "output_name": "Brick Window Bars",
+          "output": "door_iron",
+          "output_name": "Iron Door",
           "family": "bench",
           "tier": 2,
           "role": "extra",
-          "qty": 4,
+          "qty": 2,
           "station": "Iron Workbench"
         },
         {
-          "output": "window_stone",
-          "output_name": "Stone Window Bars",
+          "output": "window_reinforced",
+          "output_name": "Reinforced Iron Window Bars",
           "family": "bench",
           "tier": 2,
           "role": "extra",
@@ -5193,7 +5586,7 @@
     {
       "id": "pipe",
       "display_name": "Pipe",
-      "description": "Metal pipe",
+      "description": "Metal pipe lengths.",
       "category": "component",
       "folder": "components",
       "max_stack": 30,
@@ -5228,12 +5621,49 @@
           "chip": "1 Steel Ingot + 1 Copper Ingot \u2192 Steel Workbench"
         }
       ],
-      "used_by": [],
+      "used_by": [
+        {
+          "output": "rattler_smg",
+          "output_name": "Rattler SMG",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 2,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "ridgeback_rifle",
+          "output_name": "Ridgeback Rifle",
+          "family": "bench",
+          "tier": 3,
+          "role": "extra",
+          "qty": 2,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "breacher_shotgun",
+          "output_name": "Breacher Pump Shotgun",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 3,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "falconer_rifle",
+          "output_name": "Falconer Marksman Rifle",
+          "family": "bench",
+          "tier": 4,
+          "role": "extra",
+          "qty": 3,
+          "station": "Composite Workbench"
+        }
+      ],
       "column": "workbench_steel"
     },
     {
       "id": "pistol",
-      "display_name": "Pistol",
+      "display_name": "Crude Pistol",
       "description": "Crude sidearm. Each shot spends one 9mm round.",
       "category": "weapon",
       "folder": "",
@@ -5312,12 +5742,39 @@
       ],
       "used_by": [
         {
+          "output": "courier_pistol",
+          "output_name": "Courier Pistol",
+          "family": "bench",
+          "tier": 2,
+          "role": "extra",
+          "qty": 2,
+          "station": "Iron Workbench"
+        },
+        {
           "output": "workbench_steel",
           "output_name": "Steel Workbench",
           "family": "bench",
           "tier": 3,
           "role": "extra",
           "qty": 4,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "kodiak_rifle",
+          "output_name": "Kodiak Battle Rifle",
+          "family": "bench",
+          "tier": 3,
+          "role": "extra",
+          "qty": 2,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "breacher_shotgun",
+          "output_name": "Breacher Pump Shotgun",
+          "family": "bench",
+          "tier": 3,
+          "role": "extra",
+          "qty": 2,
           "station": "Steel Workbench"
         },
         {
@@ -5335,7 +5792,7 @@
     {
       "id": "plant_resin",
       "display_name": "Plant Resin",
-      "description": "Sticky sap",
+      "description": "Sticky sap from felled trees.",
       "category": "harvest",
       "folder": "harvestable",
       "max_stack": 50,
@@ -5425,7 +5882,7 @@
     {
       "id": "plastic",
       "display_name": "Plastic",
-      "description": "",
+      "description": "Broken housings and bottles.",
       "category": "harvest",
       "folder": "harvestable",
       "max_stack": 50,
@@ -5639,6 +6096,47 @@
       "column": "gather"
     },
     {
+      "id": "rattler_smg",
+      "display_name": "Rattler SMG",
+      "description": "Open-bolt submachine gun with a wide spray. Hold to fire. .45 ACP.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 3.0,
+      "swatch": [
+        0.46,
+        0.4,
+        0.32,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/rattler_smg.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "pipe",
+          "extra": "metal_part",
+          "output": "rattler_smg",
+          "in_n": 2,
+          "extra_n": 8,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "2 Pipe + 8 Metal Part \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
+    },
+    {
       "id": "raw_fish",
       "display_name": "Raw Fish",
       "description": "Uncooked fish. Cook it on a fire.",
@@ -5727,7 +6225,7 @@
     {
       "id": "refined_plastic",
       "display_name": "Refined Plastic",
-      "description": "polymer",
+      "description": "Clean polymer stock.",
       "category": "refined",
       "folder": "refined",
       "max_stack": 50,
@@ -5817,9 +6315,91 @@
       "column": "workbench_steel"
     },
     {
+      "id": "door_reinforced",
+      "display_name": "Reinforced Iron Door",
+      "description": "Fits a doorway. Opens and closes with F. 800 HP.",
+      "category": "deployable",
+      "folder": "deployables",
+      "max_stack": 1,
+      "weight": 6.0,
+      "swatch": [
+        0.27,
+        0.28,
+        0.32,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": false,
+      "icon": "",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 2,
+          "input": "metal_beam",
+          "extra": "iron_ingot",
+          "output": "door_reinforced",
+          "in_n": 2,
+          "extra_n": 4,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Iron Workbench",
+          "station_kind": "workbench_iron",
+          "station_note": "Iron Workbench and above",
+          "chip": "2 Metal Beam + 4 Iron Ingot \u2192 Iron Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_iron"
+    },
+    {
+      "id": "window_reinforced",
+      "display_name": "Reinforced Iron Window Bars",
+      "description": "Fits a window opening. 800 HP.",
+      "category": "deployable",
+      "folder": "deployables",
+      "max_stack": 1,
+      "weight": 3.0,
+      "swatch": [
+        0.167,
+        0.174,
+        0.198,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": false,
+      "icon": "",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 2,
+          "input": "metal_beam",
+          "extra": "nail",
+          "output": "window_reinforced",
+          "in_n": 2,
+          "extra_n": 4,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Iron Workbench",
+          "station_kind": "workbench_iron",
+          "station_note": "Iron Workbench and above",
+          "chip": "2 Metal Beam + 4 Nail \u2192 Iron Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_iron"
+    },
+    {
       "id": "reinforcement_mesh",
       "display_name": "Reinforcement Mesh",
-      "description": "",
+      "description": "Wire grid for concrete and composites.",
       "category": "component",
       "folder": "components",
       "max_stack": 20,
@@ -5921,6 +6501,47 @@
       ],
       "used_by": [],
       "column": "workbench"
+    },
+    {
+      "id": "ridgeback_rifle",
+      "display_name": "Ridgeback Rifle",
+      "description": "Light, accurate assault rifle. The all-rounder. Hold to fire. 5.56mm.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 3.6,
+      "swatch": [
+        0.36,
+        0.42,
+        0.34,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/ridgeback_rifle.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "steel_plate",
+          "extra": "pipe",
+          "output": "ridgeback_rifle",
+          "in_n": 3,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "3 Steel Plate + 2 Pipe \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
     },
     {
       "id": "rocket_warhead",
@@ -6031,7 +6652,7 @@
     {
       "id": "sand",
       "display_name": "Sand",
-      "description": "Loose grit.",
+      "description": "Loose grit. Shovel it from dunes and pits.",
       "category": "harvest",
       "folder": "harvestable",
       "max_stack": 50,
@@ -6166,7 +6787,7 @@
     {
       "id": "crowbar_scrap",
       "display_name": "Scrap Crowbar",
-      "description": "World pickup is still a colored box. Tier I. Pries scrap from wrecks slowly.",
+      "description": "Tier I. Pries scrap from wrecks slowly.",
       "category": "tool",
       "folder": "tools",
       "max_stack": 1,
@@ -6207,15 +6828,15 @@
     {
       "id": "door_scrap",
       "display_name": "Scrap Door",
-      "description": "Placed object is still a colored box. Fits a doorway. Opens and closes with F. 100 HP.",
+      "description": "Fits a doorway. Opens and closes with F. 100 HP.",
       "category": "deployable",
       "folder": "deployables",
       "max_stack": 1,
       "weight": 6.0,
       "swatch": [
-        0.72,
-        0.58,
-        0.44,
+        0.56,
+        0.4,
+        0.28,
         1.0
       ],
       "harvest_kind": "",
@@ -6482,7 +7103,7 @@
         },
         {
           "output": "pistol",
-          "output_name": "Pistol",
+          "output_name": "Crude Pistol",
           "family": "bench",
           "tier": 1,
           "role": "extra",
@@ -6637,9 +7258,9 @@
       "max_stack": 1,
       "weight": 3.0,
       "swatch": [
-        0.446,
-        0.36,
-        0.273,
+        0.347,
+        0.248,
+        0.174,
         1.0
       ],
       "harvest_kind": "",
@@ -6709,12 +7330,21 @@
       ],
       "used_by": [
         {
-          "output": "window_concrete",
-          "output_name": "Concrete Window Bars",
+          "output": "window_steel",
+          "output_name": "Steel Window Bars",
           "family": "bench",
           "tier": 3,
           "role": "extra",
           "qty": 4,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "hornet_pdw",
+          "output_name": "Hornet PDW",
+          "family": "bench",
+          "tier": 3,
+          "role": "extra",
+          "qty": 6,
           "station": "Steel Workbench"
         },
         {
@@ -6789,6 +7419,47 @@
           "station_kind": "workbench_steel",
           "station_note": "Steel Workbench and above",
           "chip": "1 Steel Ingot + 1 Steel Scrap \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
+    },
+    {
+      "id": "door_steel",
+      "display_name": "Steel Door",
+      "description": "Fits a doorway. Opens and closes with F. 1800 HP.",
+      "category": "deployable",
+      "folder": "deployables",
+      "max_stack": 1,
+      "weight": 6.0,
+      "swatch": [
+        0.66,
+        0.69,
+        0.72,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": false,
+      "icon": "",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "steel_plate",
+          "extra": "steel_ingot",
+          "output": "door_steel",
+          "in_n": 4,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "4 Steel Plate + 2 Steel Ingot \u2192 Steel Workbench"
         }
       ],
       "used_by": [],
@@ -6983,12 +7654,30 @@
           "station": "Steel Workbench"
         },
         {
-          "output": "door_concrete",
-          "output_name": "Concrete Door",
+          "output": "door_steel",
+          "output_name": "Steel Door",
           "family": "bench",
           "tier": 3,
           "role": "extra",
           "qty": 2,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "window_steel",
+          "output_name": "Steel Window Bars",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 2,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "sword",
+          "output_name": "Steel Sword",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 3,
           "station": "Steel Workbench"
         },
         {
@@ -7138,8 +7827,62 @@
           "station": "Steel Workbench"
         },
         {
+          "output": "door_steel",
+          "output_name": "Steel Door",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 4,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "hornet_pdw",
+          "output_name": "Hornet PDW",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 2,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "ridgeback_rifle",
+          "output_name": "Ridgeback Rifle",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 3,
+          "station": "Steel Workbench"
+        },
+        {
+          "output": "kodiak_rifle",
+          "output_name": "Kodiak Battle Rifle",
+          "family": "bench",
+          "tier": 3,
+          "role": "input",
+          "qty": 4,
+          "station": "Steel Workbench"
+        },
+        {
           "output": "machine_shop",
           "output_name": "Machine Shop",
+          "family": "bench",
+          "tier": 4,
+          "role": "extra",
+          "qty": 8,
+          "station": "Composite Workbench"
+        },
+        {
+          "output": "hailstorm_lmg",
+          "output_name": "Hailstorm LMG",
+          "family": "bench",
+          "tier": 4,
+          "role": "extra",
+          "qty": 6,
+          "station": "Composite Workbench"
+        },
+        {
+          "output": "goliath_amr",
+          "output_name": "Goliath Anti-Materiel Rifle",
           "family": "bench",
           "tier": 4,
           "role": "extra",
@@ -7262,6 +8005,15 @@
           "station": "Iron Workbench"
         },
         {
+          "output": "marshal_pistol",
+          "output_name": "Marshal Heavy Pistol",
+          "family": "bench",
+          "tier": 2,
+          "role": "extra",
+          "qty": 3,
+          "station": "Iron Workbench"
+        },
+        {
           "output": "crowbar_steel",
           "output_name": "Steel Crowbar",
           "family": "bench",
@@ -7374,9 +8126,91 @@
       "column": "workbench_steel"
     },
     {
+      "id": "sword",
+      "display_name": "Steel Sword",
+      "description": "Forged blade. Needs no ammunition. Cuts anything within arm's reach.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 1.6,
+      "swatch": [
+        0.72,
+        0.74,
+        0.78,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/sword.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "steel_ingot",
+          "extra": "cloth",
+          "output": "sword",
+          "in_n": 3,
+          "extra_n": 2,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "3 Steel Ingot + 2 Cloth \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
+    },
+    {
+      "id": "window_steel",
+      "display_name": "Steel Window Bars",
+      "description": "Fits a window opening. 1800 HP.",
+      "category": "deployable",
+      "folder": "deployables",
+      "max_stack": 1,
+      "weight": 3.0,
+      "swatch": [
+        0.409,
+        0.428,
+        0.446,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": false,
+      "icon": "",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 3,
+          "input": "steel_ingot",
+          "extra": "screw_bolt",
+          "output": "window_steel",
+          "in_n": 2,
+          "extra_n": 4,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Steel Workbench",
+          "station_kind": "workbench_steel",
+          "station_note": "Steel Workbench and above",
+          "chip": "2 Steel Ingot + 4 Screw & Bolt \u2192 Steel Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_steel"
+    },
+    {
       "id": "workbench_steel",
       "display_name": "Steel Workbench",
-      "description": "Placed object is still a colored box. 2x1 bench. Steel tools, steel plate, pipe, and screw bolt. Half the coal. 400 HP.",
+      "description": "2x1 bench. Steel tools, steel plate, pipe, and screw bolt. Half the coal. 400 HP.",
       "category": "deployable",
       "folder": "deployables",
       "max_stack": 1,
@@ -7417,7 +8251,7 @@
     {
       "id": "stick",
       "display_name": "Stick",
-      "description": "Broken branch.",
+      "description": "Broken branches. Kindling and light framing.",
       "category": "harvest",
       "folder": "harvestable",
       "max_stack": 50,
@@ -7522,7 +8356,7 @@
         },
         {
           "output": "pistol",
-          "output_name": "Pistol",
+          "output_name": "Crude Pistol",
           "family": "bench",
           "tier": 1,
           "role": "input",
@@ -7787,47 +8621,6 @@
       "column": "gather"
     },
     {
-      "id": "door_stone",
-      "display_name": "Stone Door",
-      "description": "Fits a doorway. Opens and closes with F. 800 HP.",
-      "category": "deployable",
-      "folder": "deployables",
-      "max_stack": 1,
-      "weight": 6.0,
-      "swatch": [
-        0.76,
-        0.74,
-        0.68,
-        1.0
-      ],
-      "harvest_kind": "",
-      "harvest_tier": 0,
-      "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
-      "debug": false,
-      "sources": [
-        {
-          "kind": "craft",
-          "family": "bench",
-          "tier": 2,
-          "input": "cut_stone",
-          "extra": "iron_ingot",
-          "output": "door_stone",
-          "in_n": 4,
-          "extra_n": 2,
-          "out_n": 1,
-          "alloy": false,
-          "station": "Iron Workbench",
-          "station_kind": "workbench_iron",
-          "station_note": "Iron Workbench and above",
-          "chip": "4 Cut Stone + 2 Iron Ingot \u2192 Iron Workbench"
-        }
-      ],
-      "used_by": [],
-      "column": "workbench_iron"
-    },
-    {
       "id": "pickaxe_stone",
       "display_name": "Stone Pickaxe",
       "description": "Rough stone head on a stick. Breaks soft rock.",
@@ -7867,47 +8660,6 @@
       ],
       "used_by": [],
       "column": "workbench"
-    },
-    {
-      "id": "window_stone",
-      "display_name": "Stone Window Bars",
-      "description": "Fits a window opening. 800 HP.",
-      "category": "deployable",
-      "folder": "deployables",
-      "max_stack": 1,
-      "weight": 3.0,
-      "swatch": [
-        0.471,
-        0.459,
-        0.422,
-        1.0
-      ],
-      "harvest_kind": "",
-      "harvest_tier": 0,
-      "harvest_power": 0,
-      "has_art": false,
-      "icon": "",
-      "debug": false,
-      "sources": [
-        {
-          "kind": "craft",
-          "family": "bench",
-          "tier": 2,
-          "input": "cut_stone",
-          "extra": "nail",
-          "output": "window_stone",
-          "in_n": 2,
-          "extra_n": 4,
-          "out_n": 1,
-          "alloy": false,
-          "station": "Iron Workbench",
-          "station_kind": "workbench_iron",
-          "station_note": "Iron Workbench and above",
-          "chip": "2 Cut Stone + 4 Nail \u2192 Iron Workbench"
-        }
-      ],
-      "used_by": [],
-      "column": "workbench_iron"
     },
     {
       "id": "stove",
@@ -8113,6 +8865,47 @@
       "column": "gather"
     },
     {
+      "id": "titan_hmg",
+      "display_name": "Titan Heavy Machine Gun",
+      "description": "Man-portable heavy machine gun. Enormous weight, enormous noise. Hold to fire. .50 BMG.",
+      "category": "weapon",
+      "folder": "weapons",
+      "max_stack": 1,
+      "weight": 15.0,
+      "swatch": [
+        0.22,
+        0.24,
+        0.22,
+        1.0
+      ],
+      "harvest_kind": "",
+      "harvest_tier": 0,
+      "harvest_power": 0,
+      "has_art": true,
+      "icon": "assets/icons/titan_hmg.png",
+      "debug": false,
+      "sources": [
+        {
+          "kind": "craft",
+          "family": "bench",
+          "tier": 4,
+          "input": "metal_beam",
+          "extra": "mechanical_component",
+          "output": "titan_hmg",
+          "in_n": 4,
+          "extra_n": 4,
+          "out_n": 1,
+          "alloy": false,
+          "station": "Composite Workbench",
+          "station_kind": "workbench_composite",
+          "station_note": "Composite Workbench and above",
+          "chip": "4 Metal Beam + 4 Mechanical Component \u2192 Composite Workbench"
+        }
+      ],
+      "used_by": [],
+      "column": "workbench_composite"
+    },
+    {
       "id": "upgrade_hammer",
       "display_name": "Upgrade Hammer",
       "description": "Raise a standing piece one tier within 1 m. Costs scrap metal.",
@@ -8284,9 +9077,9 @@
       "max_stack": 1,
       "weight": 6.0,
       "swatch": [
-        0.78,
-        0.6,
-        0.38,
+        0.58,
+        0.4,
+        0.2,
         1.0
       ],
       "harvest_kind": "",
@@ -8325,9 +9118,9 @@
       "max_stack": 1,
       "weight": 3.0,
       "swatch": [
-        0.484,
-        0.372,
-        0.236,
+        0.36,
+        0.248,
+        0.124,
         1.0
       ],
       "harvest_kind": "",
@@ -8360,7 +9153,7 @@
     {
       "id": "workbench",
       "display_name": "Workbench",
-      "description": "2x1 bench. Scrap tools, pistol, building plan, and metal part. One coal. 100 HP.",
+      "description": "2x1 bench. Nail, scrap tools, and metal part. One coal. 100 HP.",
       "category": "deployable",
       "folder": "deployables",
       "max_stack": 1,
@@ -8612,7 +9405,8 @@
     "military",
     "refined",
     "salvage",
-    "tools"
+    "tools",
+    "weapons"
   ],
   "categories": [
     "ammo",

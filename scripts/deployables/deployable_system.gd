@@ -417,9 +417,9 @@ func _opening_fit(kind: String, edge: Vector4i) -> Dictionary:
 	var local: AABB = fitted["local"]
 	var xform: Transform3D = fitted["xform"]
 	var tier := DeployableCatalog.tier_of(kind)
-	var color := BuildingTier.color_for(tier if tier > 0 else BuildingTier.MIN, BuildTypes.Kind.WALL)
+	var color := DeployableCatalog.fitting_color(tier)
 	if DeployableCatalog.is_window(kind):
-		color = color.darkened(0.35)
+		color = color.darkened(0.2)
 	var body := StaticBody3D.new()
 	body.set_script(_FITTING)
 	body.set(&"display_name", DeployableCatalog.display_name(kind))
@@ -428,11 +428,11 @@ func _opening_fit(kind: String, edge: Vector4i) -> Dictionary:
 	body.collision_mask = 0
 	body.transform = xform
 	if DeployableCatalog.is_window(kind):
-		_add_bars(body, float(fitted["span"]), float(fitted["y0"]), float(fitted["y1"]), float(fitted["thick"]), color)
+		_add_bars(body, float(fitted["span"]), float(fitted["y0"]), float(fitted["y1"]), float(fitted["thick"]), color, tier)
 	else:
 		body.set(&"is_door", true)
 		body.set(&"swing_span", float(fitted["span"]))
-		_add_box(body, local, color)
+		_add_box(body, local, color, tier)
 	var collision := CollisionShape3D.new()
 	var hull := BoxShape3D.new()
 	hull.size = local.size
@@ -443,7 +443,7 @@ func _opening_fit(kind: String, edge: Vector4i) -> Dictionary:
 	return {"node": body, "volume": fitted["volume"]}
 
 
-func _add_box(body: Node3D, local: AABB, color: Color) -> void:
+func _add_box(body: Node3D, local: AABB, color: Color, tier: int) -> void:
 	var mesh := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = local.size
@@ -451,15 +451,17 @@ func _add_box(body: Node3D, local: AABB, color: Color) -> void:
 	mesh.position = local.get_center()
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
-	material.roughness = 0.86
+	material.roughness = DeployableCatalog.fitting_roughness(tier)
+	material.metallic = DeployableCatalog.fitting_metallic(tier)
 	mesh.set_surface_override_material(0, material)
 	body.add_child(mesh)
 
 
-func _add_bars(body: Node3D, span: float, y0: float, y1: float, thick: float, color: Color) -> void:
+func _add_bars(body: Node3D, span: float, y0: float, y1: float, thick: float, color: Color, tier: int) -> void:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
-	material.roughness = 0.7
+	material.roughness = DeployableCatalog.fitting_roughness(tier)
+	material.metallic = DeployableCatalog.fitting_metallic(tier)
 	var gap := (y1 - y0) / 4.0
 	for index in 3:
 		var mesh := MeshInstance3D.new()

@@ -5,6 +5,15 @@ const _Icons = preload("res://scripts/items/item_icons.gd")
 const _CraftingMenu = preload("res://scripts/ui/crafting_menu.gd")
 const _UiStyle = preload("res://scripts/ui/ui_style.gd")
 const SLOT_SIZE := 96
+const SLOT_GAP := 4
+## Free space kept around a weapon's drawing inside its slot.
+const WEAPON_PAD := 6.0
+## Height a weapon's trigger is drawn at, so every gun has the same trigger and the icons
+## keep their true size to each other. Set so the longest rifle just fills the tall primary
+## slot. A gun that would not fit its slot at this size is shrunk to fit instead.
+const WEAPON_TRIGGER := 5.6
+## Width every sidearm is drawn at, so all pistols are the same size.
+const SIDEARM_WIDTH := 60.0
 const NAME_DELAY_MSEC := 1000
 ## Open screen and HUD hotbar shrink to fit small windows (never grow past 1:1).
 const SCREEN_MARGIN := 20.0
@@ -23,18 +32,30 @@ var _ui_scale := 1.0
 var _box_panel: PanelContainer
 var _box_title: Label
 var _box_hint: Label
-var _box_grid: GridContainer
+## The crate and the storage rows are laid out by hand so an item can span cells.
+var _box_grid: Control
 var _craft_menu: PanelContainer
 var _progress_station: LootContainer
-var _storage_grid: GridContainer
+var _storage_grid: Control
 var _hotbar_grid: GridContainer
 var _hud_grid: GridContainer
+## Primary and sidearm, beside the storage rows.
+var _weapon_grid: GridContainer
+## Melee, beside the hotbar.
+var _melee_grid: GridContainer
+var _hud_weapon_grid: GridContainer
 var _notice: Label
 var _hud_notice: Label
 var _name_tip: PanelContainer
 var _name_label: Label
 var _hover_started_msec := 0
+## The dragged stack: a box the size of the cells it would take, with the picture in it.
+var _cursor_box: Control
 var _cursor_icon: TextureRect
+var _cursor_shown_id := ""
+## Tint squares over the cells the held stack would cover.
+var _drop_marks: Array[ColorRect] = []
+var _cursor_box_size := Vector2(SLOT_SIZE, SLOT_SIZE)
 var _cursor_qty: Label
 var _buttons: Array[Button] = []
 var _areas: Array[int] = []
@@ -106,10 +127,7 @@ func _ready() -> void:
 	_box_hint.add_theme_color_override(&"font_color", _UiStyle.TEXT_DIM)
 	box_column.add_child(_box_hint)
 	box_column.add_child(HSeparator.new())
-	_box_grid = GridContainer.new()
-	_box_grid.columns = 9
-	_box_grid.add_theme_constant_override(&"h_separation", 4)
-	_box_grid.add_theme_constant_override(&"v_separation", 4)
+	_box_grid = Control.new()
 	box_column.add_child(_box_grid)
 	var bag_panel := PanelContainer.new()
 	_screen.add_child(bag_panel)
@@ -125,17 +143,27 @@ func _ready() -> void:
 	_notice.add_theme_color_override(&"font_color", _UiStyle.ACCENT)
 	column.add_child(_notice)
 	column.add_child(HSeparator.new())
-	_storage_grid = GridContainer.new()
-	_storage_grid.columns = 9
-	_storage_grid.add_theme_constant_override(&"h_separation", 4)
-	_storage_grid.add_theme_constant_override(&"v_separation", 4)
-	column.add_child(_storage_grid)
+	_storage_grid = Control.new()
+	## The weapon slots are the right-hand column of the same panel. The primary is two
+	## rows tall beside the top two storage rows and the sidearm sits beside the third.
+	## The melee slot sits at the end of the hotbar row.
+	var storage_row := HBoxContainer.new()
+	storage_row.add_theme_constant_override(&"separation", SLOT_GAP)
+	column.add_child(storage_row)
+	storage_row.add_child(_storage_grid)
+	_weapon_grid = _weapon_column()
+	storage_row.add_child(_weapon_grid)
 	column.add_child(HSeparator.new())
 	_hotbar_grid = GridContainer.new()
 	_hotbar_grid.columns = 9
 	_hotbar_grid.add_theme_constant_override(&"h_separation", 4)
 	_hotbar_grid.add_theme_constant_override(&"v_separation", 4)
-	column.add_child(_hotbar_grid)
+	var hotbar_row := HBoxContainer.new()
+	hotbar_row.add_theme_constant_override(&"separation", SLOT_GAP)
+	column.add_child(hotbar_row)
+	hotbar_row.add_child(_hotbar_grid)
+	_melee_grid = _weapon_column()
+	hotbar_row.add_child(_melee_grid)
 	_hud = Control.new()
 	_hud.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_hud.offset_top = -160
@@ -152,16 +180,25 @@ func _ready() -> void:
 	_hud_grid.columns = 9
 	_hud_grid.add_theme_constant_override(&"h_separation", 4)
 	_hud_grid.add_theme_constant_override(&"v_separation", 4)
-	_hud_box.add_child(_hud_grid)
+	var hud_row := HBoxContainer.new()
+	hud_row.add_theme_constant_override(&"separation", 28)
+	_hud_box.add_child(hud_row)
+	hud_row.add_child(_hud_grid)
+	_hud_weapon_grid = GridContainer.new()
+	_hud_weapon_grid.columns = NetConfig.WEAPON_SLOT_COUNT
+	_hud_weapon_grid.add_theme_constant_override(&"h_separation", 4)
+	_hud_weapon_grid.add_theme_constant_override(&"v_separation", 4)
+	hud_row.add_child(_hud_weapon_grid)
+	_cursor_box = Control.new()
+	_cursor_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cursor_box.visible = false
+	_cursor_box.z_index = 30
+	add_child(_cursor_box)
 	_cursor_icon = TextureRect.new()
-	_cursor_icon.custom_minimum_size = Vector2(SLOT_SIZE, SLOT_SIZE)
 	_cursor_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_cursor_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	_cursor_icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_cursor_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_cursor_icon.visible = false
-	_cursor_icon.z_index = 30
-	add_child(_cursor_icon)
+	_cursor_box.add_child(_cursor_icon)
 	_cursor_qty = _count_label()
 	_cursor_qty.visible = false
 	_cursor_qty.z_index = 31
@@ -213,6 +250,111 @@ static func _fit(need: Vector2, avail: Vector2) -> float:
 	return clampf(minf(avail.x / need.x, avail.y / need.y), MIN_UI_SCALE, 1.0)
 
 
+## Sizes the dragged stack like it is in the storage grid: one box over every cell the
+## item covers, picture drawn the same way, so you can see how many slots it will take.
+func _layout_cursor(item_id: String) -> void:
+	_cursor_shown_id = item_id
+	var definition := ItemCatalog.get_item(item_id)
+	var span := Inventory.footprint_of(item_id)
+	_cursor_box_size = Vector2(SLOT_SIZE * span.x + SLOT_GAP * (span.x - 1), SLOT_SIZE * span.y + SLOT_GAP * (span.y - 1))
+	_cursor_icon.rotation = 0.0
+	_cursor_icon.pivot_offset = Vector2.ZERO
+	_cursor_icon.texture = _Icons.texture_for(definition)
+	if _cursor_icon.texture != null and not WeaponSpec.slot_of(item_id).is_empty():
+		_fit_weapon_picture(_cursor_icon, definition, _cursor_box_size, false)
+		return
+	_cursor_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if span == Vector2i.ONE else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_cursor_icon.position = Vector2.ZERO
+	_cursor_icon.size = _cursor_box_size
+
+
+## Where the held stack would land if dropped now, while it is held over a footprint grid.
+## The stack is drawn centred on the pointer, so its top-left cell is the one under the
+## top-left of the picture. Empty when the pointer is not over such a grid. Otherwise
+## "area" and "index" name the top-left cell, "column" and "row" place it in the host, and
+## "host" and "bag" are what it sits in.
+func _cursor_anchor() -> Dictionary:
+	if _player == null or _player.cursor_qty <= 0 or _player.cursor_item_id.is_empty():
+		return {}
+	var in_container := _hover_area == SlotOps.AREA_CONTAINER
+	var bag := _player.container_view if in_container else _player.inventory
+	var host := _box_grid if in_container else _storage_grid
+	if not _screen.visible or _hover_index < 0 or bag == null or host == null or not host.is_visible_in_tree() \
+			or _hover_index >= bag.capacity or not bag.in_grid(_hover_index):
+		return {}
+	var columns := NetConfig.GRID_COLUMNS
+	var first := bag.grid_start()
+	var rows := maxi(1, ceili(float(bag.storage_end() - first) / columns))
+	var stride := float(SLOT_SIZE + SLOT_GAP)
+	var s := _ui_scale
+	var mouse := get_viewport().get_mouse_position()
+	var corner := mouse - _cursor_box_size * s * 0.5 + Vector2(SLOT_SIZE, SLOT_SIZE) * s * 0.5
+	var local := host.get_global_transform().affine_inverse() * corner
+	var column := clampi(floori(local.x / stride), 0, columns - 1)
+	var row := clampi(floori(local.y / stride), 0, rows - 1)
+	var index := first + row * columns + column
+	if index >= bag.storage_end():
+		return {}
+	return {"area": _hover_area, "index": index, "column": column, "row": row, "host": host, "bag": bag}
+
+
+## Tints the cells the held stack would cover when dropped: green when free, yellow when it
+## lands on one item, red when it cannot go there. Clears the tint when nothing is held
+## over a grid.
+func _update_drop_marks(s: float) -> void:
+	var held_id := _player.cursor_item_id
+	var anchor := _cursor_anchor()
+	if anchor.is_empty():
+		_hide_drop_marks(0)
+		return
+	var bag: Inventory = anchor["bag"]
+	var host: Control = anchor["host"]
+	var column: int = anchor["column"]
+	var row: int = anchor["row"]
+	var columns := NetConfig.GRID_COLUMNS
+	var rows := maxi(1, ceili(float(bag.storage_end() - bag.grid_start()) / columns))
+	var stride := float(SLOT_SIZE + SLOT_GAP)
+	var hits := bag.footprint_hits(int(anchor["index"]), held_id)
+	var tint := Color(0.95, 0.3, 0.25, 0.45)
+	if bool(hits["fits"]):
+		var holders: Array = hits["anchors"]
+		if holders.is_empty():
+			tint = Color(0.3, 0.85, 0.4, 0.4)
+		elif holders.size() == 1:
+			tint = Color(0.95, 0.85, 0.3, 0.4)
+	var size := Inventory.footprint_of(held_id)
+	var host_xf := host.get_global_transform()
+	var used := 0
+	for dy in size.y:
+		for dx in size.x:
+			if column + dx >= columns or row + dy >= rows:
+				continue
+			var mark := _drop_mark(used)
+			mark.color = tint
+			mark.scale = Vector2(s, s)
+			mark.size = Vector2(SLOT_SIZE, SLOT_SIZE)
+			mark.global_position = host_xf * Vector2((column + dx) * stride, (row + dy) * stride)
+			mark.visible = true
+			used += 1
+	_hide_drop_marks(used)
+
+
+func _drop_mark(index: int) -> ColorRect:
+	while _drop_marks.size() <= index:
+		var mark := ColorRect.new()
+		mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mark.z_index = 29
+		mark.visible = false
+		add_child(mark)
+		_drop_marks.append(mark)
+	return _drop_marks[index]
+
+
+func _hide_drop_marks(from: int) -> void:
+	for i in range(from, _drop_marks.size()):
+		_drop_marks[i].visible = false
+
+
 func _on_screen_visibility() -> void:
 	if _backdrop == null or _screen == null:
 		return
@@ -228,23 +370,30 @@ func _on_screen_visibility() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _player == null or _cursor_icon == null:
+	if _player == null or _cursor_box == null:
 		return
 	var held := _player.cursor_qty > 0 and _player.cursor_item_id != ""
-	_cursor_icon.visible = held
+	_cursor_box.visible = held
 	_cursor_qty.visible = held and _player.cursor_qty > 1
 	if held:
 		var mouse := get_viewport().get_mouse_position()
 		## The dragged stack matches the (possibly shrunk) slot size.
 		var s := _ui_scale if _screen.visible else 1.0
-		_cursor_icon.scale = Vector2(s, s)
-		_cursor_icon.global_position = mouse + Vector2(12, 12)
-		_cursor_icon.texture = _Icons.texture_for(ItemCatalog.get_item(_player.cursor_item_id))
+		if _cursor_shown_id != _player.cursor_item_id:
+			_layout_cursor(_player.cursor_item_id)
+		_cursor_box.scale = Vector2(s, s)
+		_cursor_box.size = _cursor_box_size
+		## The dragged stack stays centred on the mouse cursor.
+		_cursor_box.global_position = mouse - _cursor_box_size * s * 0.5
+		_update_drop_marks(s)
 		if _cursor_qty.visible:
 			_cursor_qty.text = str(_player.cursor_qty)
 			_cursor_qty.size = Vector2(48, 22)
 			_cursor_qty.scale = Vector2(s, s)
-			_cursor_qty.global_position = _cursor_icon.global_position + Vector2(SLOT_SIZE - 48, SLOT_SIZE - 22) * s
+			_cursor_qty.global_position = _cursor_box.global_position + (_cursor_box_size - Vector2(48, 22)) * s
+	else:
+		_cursor_shown_id = ""
+		_hide_drop_marks(0)
 	_update_name_tip()
 	if _screen.visible and _progress_station != null and is_instance_valid(_progress_station):
 		_craft_menu.set_progress(float(_progress_station.call(&"progress")))
@@ -273,6 +422,11 @@ func _input(event: InputEvent) -> void:
 		var whole := event is InputEventKey and (event as InputEventKey).ctrl_pressed
 		_throw(whole)
 		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed(&"cycle_weapon"):
+		if not _screen.visible:
+			_player.cycle_weapon()
+			get_viewport().set_input_as_handled()
 		return
 	for hotbar_slot in NetConfig.HOTBAR_SLOTS:
 		if not event.is_action_pressed(StringName("hotbar_%d" % (hotbar_slot + 1))):
@@ -336,8 +490,10 @@ func _refresh() -> void:
 	## on every hotbar/item change were hitching input.
 	if _screen == null or not _screen.visible:
 		_clear_grid(_hud_grid)
+		_clear_grid(_hud_weapon_grid)
 		for index in mini(NetConfig.HOTBAR_SLOTS, bag.capacity):
 			_add_slot(_hud_grid, SlotOps.AREA_PLAYER, index, true, false)
+		_add_weapon_slots(_hud_weapon_grid, false)
 		if _craft_menu != null and _craft_menu.visible:
 			_craft_menu.clear()
 		return
@@ -347,12 +503,20 @@ func _refresh() -> void:
 	_clear_grid(_storage_grid)
 	_clear_grid(_hotbar_grid)
 	_clear_grid(_hud_grid)
+	_clear_grid(_hud_weapon_grid)
+	_clear_grid(_weapon_grid)
+	_clear_grid(_melee_grid)
 	_clear_grid(_box_grid)
 	for index in mini(NetConfig.HOTBAR_SLOTS, bag.capacity):
 		_add_slot(_hotbar_grid, SlotOps.AREA_PLAYER, index, true, true)
 		_add_slot(_hud_grid, SlotOps.AREA_PLAYER, index, true, false)
-	for index in range(NetConfig.HOTBAR_SLOTS, bag.capacity):
-		_add_slot(_storage_grid, SlotOps.AREA_PLAYER, index, false, true)
+	_fill_cells(_storage_grid, SlotOps.AREA_PLAYER, bag, NetConfig.HOTBAR_SLOTS, bag.storage_end())
+	_weapon_grid.visible = bag.weapon_slot_index(WeaponSpec.SLOT_PRIMARY) >= 0
+	_melee_grid.visible = _weapon_grid.visible
+	_add_weapon_slot(_weapon_grid, WeaponSpec.SLOT_PRIMARY, true, 2)
+	_add_weapon_slot(_weapon_grid, WeaponSpec.SLOT_SIDEARM, true)
+	_add_weapon_slot(_melee_grid, WeaponSpec.SLOT_MELEE, true)
+	_add_weapon_slots(_hud_weapon_grid, false)
 	var crate: Inventory = _player.container_view
 	var station := _open_loot()
 	var station_ui := station is Crafter or station is Smelter
@@ -364,8 +528,30 @@ func _refresh() -> void:
 		_progress_station = null
 		_craft_menu.clear()
 		if crate != null:
-			for index in crate.capacity:
-				_add_slot(_box_grid, SlotOps.AREA_CONTAINER, index, false, true)
+			_fill_cells(_box_grid, SlotOps.AREA_CONTAINER, crate, 0, crate.capacity)
+
+
+## A one-column grid for stacking weapon slots.
+func _weapon_column() -> GridContainer:
+	var grid := GridContainer.new()
+	grid.columns = 1
+	grid.add_theme_constant_override(&"h_separation", SLOT_GAP)
+	grid.add_theme_constant_override(&"v_separation", SLOT_GAP)
+	return grid
+
+
+## The primary, sidearm and melee slots in a row, each captioned while empty.
+func _add_weapon_slots(grid: GridContainer, interactive: bool) -> void:
+	for slot_name in WeaponSpec.SLOTS:
+		_add_weapon_slot(grid, slot_name, interactive)
+
+
+## One weapon slot. `rows` above 1 makes it a tall slot.
+func _add_weapon_slot(grid: GridContainer, slot_name: String, interactive: bool, rows: int = 1) -> void:
+	var index := _player.inventory.weapon_slot_index(slot_name)
+	if index >= 0:
+		## A tall slot stands its weapon upright, muzzle pointing up.
+		_add_slot(grid, SlotOps.AREA_PLAYER, index, true, interactive, SLOT_SIZE, Vector2i(1, rows), rows > 1)
 
 
 func _show_station_menu(station: LootContainer, bag: Inventory) -> void:
@@ -458,6 +644,10 @@ func _style_craft_output_slot(host: Control, station_bag: Inventory, out_index: 
 
 
 func _slot_caption(area: int, index: int) -> String:
+	if area == SlotOps.AREA_PLAYER:
+		if _player == null or _player.inventory == null:
+			return ""
+		return _player.inventory.weapon_slot_for(index).capitalize()
 	if area != SlotOps.AREA_CONTAINER:
 		return ""
 	var station := _open_loot()
@@ -478,9 +668,38 @@ func _open_loot() -> LootContainer:
 	return null
 
 
-func _add_slot(grid: Control, area: int, index: int, hotbar: bool, interactive: bool, size: int = SLOT_SIZE) -> void:
+## Lays the slots first..last-1 of a bag out `GRID_COLUMNS` to a row in a hand-placed host.
+## When the bag has a footprint grid, an item gets one button over every cell it covers
+## and the covered cells get none. Anything else is one cell per slot.
+func _fill_cells(host: Control, area: int, bag: Inventory, first: int, last: int) -> void:
+	var columns := NetConfig.GRID_COLUMNS
+	var stride := SLOT_SIZE + SLOT_GAP
+	var rows := maxi(1, ceili(float(last - first) / columns))
+	host.custom_minimum_size = Vector2(columns * stride - SLOT_GAP, rows * stride - SLOT_GAP)
+	for index in range(first, last):
+		var cell := index - first
+		var column := cell % columns
+		var row := cell / columns
+		var span := Vector2i.ONE
+		var item_id := str(bag.slots[index]["id"])
+		if bag.grid_columns > 0:
+			var holder := bag.anchor_at(index)
+			if holder >= 0 and holder != index:
+				continue
+			if holder == index and int(bag.slots[index]["qty"]) > 0:
+				var size := Inventory.footprint_of(item_id)
+				span = Vector2i(mini(size.x, columns - column), mini(size.y, rows - row))
+		var button := _add_slot(host, area, index, false, true, SLOT_SIZE, span)
+		button.position = Vector2(column * stride, row * stride)
+		button.size = button.custom_minimum_size
+
+
+## `span` makes a slot that covers that many cells of the grid, gaps included. `rotated`
+## lays the picture on its side across a tall slot.
+func _add_slot(grid: Control, area: int, index: int, hotbar: bool, interactive: bool, size: int = SLOT_SIZE, span: Vector2i = Vector2i.ONE, rotated := false) -> Button:
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(size, size)
+	var box := Vector2(size * span.x + SLOT_GAP * (span.x - 1), size * span.y + SLOT_GAP * (span.y - 1))
+	button.custom_minimum_size = box
 	button.focus_mode = Control.FOCUS_NONE
 	button.clip_contents = true
 	var bag := _player.container_view if area == SlotOps.AREA_CONTAINER else _player.inventory
@@ -491,12 +710,16 @@ func _add_slot(grid: Control, area: int, index: int, hotbar: bool, interactive: 
 		button.text = _slot_caption(area, index)
 	else:
 		var picture := TextureRect.new()
-		picture.set_anchors_preset(Control.PRESET_FULL_RECT)
 		picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		picture.texture = _Icons.texture_for(ItemCatalog.get_item(item_id))
+		var definition := ItemCatalog.get_item(item_id)
+		picture.texture = _Icons.texture_for(definition)
+		if not WeaponSpec.slot_of(item_id).is_empty() and picture.texture != null:
+			_fit_weapon_picture(picture, definition, box, rotated)
+		else:
+			picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if span == Vector2i.ONE else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			picture.set_anchors_preset(Control.PRESET_FULL_RECT)
 		button.add_child(picture)
 		if qty > 1:
 			var count := _count_label()
@@ -517,11 +740,42 @@ func _add_slot(grid: Control, area: int, index: int, hotbar: bool, interactive: 
 	if not interactive:
 		button.pressed.connect(_select_hotbar.bind(index))
 		grid.add_child(button)
-		return
+		return button
 	grid.add_child(button)
 	_buttons.append(button)
 	_areas.append(area)
 	_indices.append(index)
+	return button
+
+
+## Sizes a weapon's picture so the drawn part sits inside the slot with WEAPON_PAD of free
+## space on every side, however long or tall the slot is. Guns with a measured trigger are
+## drawn at the same trigger size (WEAPON_TRIGGER) and only shrunk when they would not fit.
+## Sidearms are the exception and share one width (SIDEARM_WIDTH).
+## `rotated` stands the weapon up,
+## muzzle to the top, for a tall slot.
+func _fit_weapon_picture(picture: TextureRect, definition: ItemDefinition, box: Vector2, rotated: bool) -> void:
+	var used := _Icons.content_rect(definition)
+	var texture_size := picture.texture.get_size()
+	# The picture is laid out unrotated, in a frame turned on its side when rotated.
+	var frame := Vector2(box.y, box.x) if rotated else box
+	var room := frame - Vector2(WEAPON_PAD, WEAPON_PAD) * 2.0
+	var scale := minf(room.x / used.size.x, room.y / used.size.y)
+	var trigger := _Icons.trigger_fraction(definition.id)
+	if WeaponSpec.slot_of(definition.id) == WeaponSpec.SLOT_SIDEARM:
+		# Pistols all get the same drawn width, whatever their trigger measures.
+		scale = minf(scale, SIDEARM_WIDTH / used.size.x)
+	elif trigger > 0.0:
+		scale = minf(scale, WEAPON_TRIGGER / (trigger * texture_size.x))
+	picture.stretch_mode = TextureRect.STRETCH_SCALE
+	picture.size = texture_size * scale
+	var middle := (used.position + used.size * 0.5) * scale
+	if rotated:
+		picture.pivot_offset = picture.size * 0.5
+		picture.rotation_degrees = -90.0
+		picture.position = box * 0.5 - picture.size * 0.5 - (middle - picture.size * 0.5).rotated(-PI * 0.5)
+	else:
+		picture.position = box * 0.5 - middle
 
 
 func _active_border() -> Panel:
@@ -541,7 +795,7 @@ func _count_label() -> Label:
 	return count
 
 
-func _clear_grid(grid: GridContainer) -> void:
+func _clear_grid(grid: Control) -> void:
 	for child in grid.get_children():
 		grid.remove_child(child)
 		child.free()
@@ -579,7 +833,7 @@ func _on_slot_input(event: InputEvent, area: int, index: int) -> void:
 func _select_hotbar(index: int) -> void:
 	if _screen.visible:
 		return
-	_player.select_hotbar(index)
+	_player.select_slot(index)
 
 
 func _throw(whole: bool) -> void:
@@ -595,6 +849,11 @@ func _throw(whole: bool) -> void:
 func _add_paint_slot(hit: Dictionary) -> void:
 	if hit.is_empty():
 		return
+	## A stack bigger than one cell lands where its top-left is, not under the pointer.
+	if _player.cursor_qty > 0 and Inventory.footprint_of(_player.cursor_item_id) != Vector2i.ONE:
+		var anchor := _cursor_anchor()
+		if not anchor.is_empty():
+			hit = anchor
 	var area := int(hit["area"])
 	var index := int(hit["index"])
 	for i in _paint_areas.size():

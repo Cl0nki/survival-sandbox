@@ -137,11 +137,20 @@ static func apply_inventory(bag: Inventory, row: Dictionary) -> bool:
 			if slot is Dictionary:
 				ids.append(str(slot.get("id", "")))
 				qtys.append(int(slot.get("qty", 0)))
+	# Saves from before the weapon slots hold only the 36 bag slots. Give them empty weapon slots.
+	if bag.player_layout and ids.size() >= NetConfig.BAG_SLOTS and ids.size() < bag.capacity:
+		while ids.size() < bag.capacity:
+			ids.append("")
+			qtys.append(0)
 	if ids.size() != bag.capacity:
 		bag.resize(ids.size() if ids.size() > 0 else bag.capacity)
 	if ids.size() != bag.capacity:
 		return false
-	return bag.read_snapshot(ids, qtys)
+	if not bag.read_snapshot(ids, qtys):
+		return false
+	# Older saves know nothing of footprints or of weapons staying out of the hotbar.
+	bag.repair_layout()
+	return true
 
 
 static func profile_from(bag: Inventory, player: PlayerController) -> Dictionary:

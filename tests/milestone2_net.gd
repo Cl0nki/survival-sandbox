@@ -451,6 +451,8 @@ func _mirror_dummy(arena: Node, node_name: String) -> Damageable:
 
 
 func _fire(net: GameNet, peer_id: int, aim: Dictionary) -> void:
+	# The debug weapon sits in the primary slot, and a weapon only fires from its own slot.
+	net.debug_player(peer_id).hotbar_index = NetConfig.BAG_SLOTS + 1
 	_fire_seq += 1
 	net._handle_fire(peer_id, _fire_seq, aim.direction, float(aim.yaw), 0.0)
 

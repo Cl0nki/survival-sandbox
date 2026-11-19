@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "pipe"
 display_name = "Pipe"
-description = "Metal pipe"
+description = "Metal pipe lengths."
 max_stack = 30
 weight = 0.5
 category = "component"

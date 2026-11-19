@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "stick"
 display_name = "Stick"
-description = "Broken branch."
+description = "Broken branches. Kindling and light framing."
 max_stack = 50
 weight = 0.08
 category = "harvest"

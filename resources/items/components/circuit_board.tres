@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "circuit_board"
 display_name = "Circuit Board"
-description = "Assembled board from refined electronics."
+description = "Assembled boards from refined electronics."
 max_stack = 20
 weight = 0.15
 category = "component"

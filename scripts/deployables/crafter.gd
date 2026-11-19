@@ -22,6 +22,7 @@ var _remote_left := 0.0
 
 func _ready() -> void:
 	slot_count = CraftRules.SLOTS
+	grid_columns = 0
 	prompt = CraftRules.display_name(station_kind)
 	display_name = prompt
 	slot_labels = PackedStringArray(["Input", "Part", "Fuel", "Out"])

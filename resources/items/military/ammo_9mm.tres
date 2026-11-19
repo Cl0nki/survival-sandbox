@@ -6,7 +6,7 @@
 script = ExtResource("1_item")
 id = "ammo_9mm"
 display_name = "9mm Ammunition"
-description = "World pickup is still a colored box. Pistol and SMG cartridges."
+description = "Pistol and SMG cartridges."
 max_stack = 60
 weight = 0.02
 category = "ammo"

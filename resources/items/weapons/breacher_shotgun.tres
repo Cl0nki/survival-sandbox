@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = "breacher_shotgun"
+display_name = "Breacher Pump Shotgun"
+description = "Pump-action shotgun. Brutal up close, useless past a short run. 12 gauge."
+max_stack = 1
+weight = 3.8
+category = "weapon"
+can_pickup = true
+can_store = true
+grid_w = 2
+grid_h = 1
+swatch = Color(0.4, 0.3, 0.22, 1)
+weapon_kind = "firearm"
+ammo_id = "ammo_12gauge"
+weapon_damage = 14
+weapon_range = 24.0
+weapon_cooldown = 0.85
+weapon_pellets = 8
+weapon_spread_deg = 4.5
+weapon_automatic = false
+weapon_length = 0.78

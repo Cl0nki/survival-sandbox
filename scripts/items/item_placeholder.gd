@@ -39,8 +39,14 @@ static func build(definition: ItemDefinition) -> Node3D:
 			_box(root, Vector3(0.14, 0.02, 0.04), Vector3(0.0, 0.15, 0.0), light)
 			_box(root, Vector3(0.04, 0.02, 0.14), Vector3(0.0, 0.15, 0.0), light)
 		"weapon":
-			_box(root, Vector3(0.5, 0.06, 0.07), Vector3(0.0, 0.04, 0.0), base)
-			_box(root, Vector3(0.09, 0.12, 0.07), Vector3(-0.14, 0.06, 0.0), dark)
+			if definition != null and definition.weapon_kind == WeaponSpec.MELEE:
+				# Blade with a crossguard and a grip.
+				_box(root, Vector3(0.44, 0.02, 0.06), Vector3(0.06, 0.03, 0.0), light)
+				_box(root, Vector3(0.04, 0.04, 0.16), Vector3(-0.16, 0.035, 0.0), dark)
+				_box(root, Vector3(0.12, 0.035, 0.035), Vector3(-0.24, 0.03, 0.0), dark)
+			else:
+				_box(root, Vector3(0.5, 0.06, 0.07), Vector3(0.0, 0.04, 0.0), base)
+				_box(root, Vector3(0.09, 0.12, 0.07), Vector3(-0.14, 0.06, 0.0), dark)
 		"tool":
 			_box(root, Vector3(0.5, 0.04, 0.04), Vector3(0.0, 0.03, 0.0), dark)
 			_box(root, Vector3(0.14, 0.07, 0.05), Vector3(0.22, 0.045, 0.0), base)

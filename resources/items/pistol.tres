@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_item")
 id = "pistol"
-display_name = "Pistol"
+display_name = "Crude Pistol"
 description = "Crude sidearm. Each shot spends one 9mm round."
 max_stack = 1
 weight = 1.2
@@ -13,3 +13,9 @@ category = "weapon"
 can_pickup = true
 can_store = true
 swatch = Color(0.42, 0.44, 0.40, 1)
+weapon_kind = "firearm"
+weapon_slot = "sidearm"
+ammo_id = "ammo_9mm"
+weapon_damage = 34
+weapon_range = 40.0
+weapon_cooldown = 0.35

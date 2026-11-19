@@ -115,7 +115,9 @@ func has_event(event: StringName) -> bool:
 
 
 ## Flat sound, for the player's own actions and for anything with no place in the world.
-func play(event: StringName, gain_db: float = 0.0) -> bool:
+## pitch is multiplied onto the event's own random pitch, so a run can sound a touch
+## quicker than a walk without a second set of files.
+func play(event: StringName, gain_db: float = 0.0, pitch: float = 1.0) -> bool:
 	if not _ready_done:
 		return false
 	var spec := _take(event)
@@ -124,13 +126,13 @@ func play(event: StringName, gain_db: float = 0.0) -> bool:
 	var voice := _voice_2d()
 	voice.stream = spec["stream"]
 	voice.volume_db = float(spec["volume_db"]) + gain_db
-	voice.pitch_scale = float(spec["pitch"])
+	voice.pitch_scale = clampf(float(spec["pitch"]) * pitch, 0.1, 4.0)
 	voice.play()
 	return true
 
 
 ## Sound that comes from a place in the world.
-func play_at(event: StringName, position: Vector3, gain_db: float = 0.0) -> bool:
+func play_at(event: StringName, position: Vector3, gain_db: float = 0.0, pitch: float = 1.0) -> bool:
 	if not _ready_done:
 		return false
 	var spec := _take(event)
@@ -139,7 +141,7 @@ func play_at(event: StringName, position: Vector3, gain_db: float = 0.0) -> bool
 	var voice := _voice_3d()
 	voice.stream = spec["stream"]
 	voice.volume_db = float(spec["volume_db"]) + gain_db
-	voice.pitch_scale = float(spec["pitch"])
+	voice.pitch_scale = clampf(float(spec["pitch"]) * pitch, 0.1, 4.0)
 	voice.max_distance = float(spec["max_distance"])
 	voice.global_position = position
 	voice.play()

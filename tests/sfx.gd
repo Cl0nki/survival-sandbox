@@ -7,9 +7,13 @@ extends SceneTree
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
 const WORK_DIR := "user://sfx_test"
 const EVENT_SOURCES := {
-	"res://scripts/player/player_controller.gd": ["footstep", "hurt"],
-	"res://scripts/combat/hitscan_weapon.gd": ["shot"],
-	"res://scripts/networking/game_net.gd": ["shot"],
+	"res://scripts/player/player_controller.gd": ["hurt"],
+	"res://scripts/world/ground_surface.gd": [
+		"footstep", "footstep_grass", "footstep_forest", "footstep_dirt", "footstep_gravel",
+		"footstep_sand", "footstep_rock", "footstep_asphalt",
+	],
+	"res://scripts/audio/sfx.gd": ["shot", "shot_far", "bullet_impact", "bullet_hit"],
+	"res://scripts/enemies/creature_view.gd": ["hog_grunt", "hog_alert", "hog_charge", "hog_hurt", "hog_die"],
 	"res://scripts/items/loot_container.gd": ["craft_start", "craft_done"],
 	"res://scripts/deployables/crafter.gd": ["craft_start", "craft_done"],
 	"res://scripts/deployables/smelter.gd": ["craft_start", "craft_done"],
@@ -42,7 +46,11 @@ func _run() -> void:
 	_facade()
 	_real_manifest()
 	_tool_matches_game()
+	_ground_surface()
+	_shooting_helpers()
+	_hog_voices()
 	await _footsteps()
+	await _footsteps_follow_the_ground()
 
 
 func _prepare_files() -> void:
@@ -113,6 +121,13 @@ func _manager() -> void:
 	_check(flat.size() == 1, "expected one live flat voice")
 	if flat.size() == 1:
 		_check(is_equal_approx((flat[0] as AudioStreamPlayer).volume_db, -9.0), "gain was not added to the event volume")
+
+	manager.play(&"footstep", 0.0, 2.0)
+	var fast := manager.get_children().filter(func(node: Node) -> bool: return node is AudioStreamPlayer and (node as AudioStreamPlayer).playing)
+	var fastest := 0.0
+	for voice in fast:
+		fastest = maxf(fastest, (voice as AudioStreamPlayer).pitch_scale)
+	_check(fastest >= 1.8 - 0.001 and fastest <= 2.4 + 0.001, "the pitch multiplier was not applied (%f)" % fastest)
 
 	_check(manager.play(&"shot"), "the first shot did not play")
 	_check(not manager.play(&"shot"), "the shot cooldown did not hold")
@@ -198,6 +213,91 @@ func _tool_matches_game() -> void:
 		_check(known.has(id), "the game plays %s but the Sounds tool does not list it" % id)
 	for id in known:
 		_check(played.has(id), "the Sounds tool lists %s but nothing plays it" % id)
+
+
+func _ground_surface() -> void:
+	GroundSurface.clear()
+	_check(GroundSurface.at(Vector3(5, 0, 5)) == &"" and not GroundSurface.is_registered(), "an unpainted map reported a surface")
+	_check(GroundSurface.footstep_event(&"") == &"footstep", "an unknown surface did not fall back to the plain footstep")
+	for surface in [&"grass", &"forest", &"dirt", &"gravel", &"sand", &"rock", &"asphalt"]:
+		_check(GroundSurface.footstep_event(surface) == StringName("footstep_%s" % surface), "%s has the wrong footstep event" % surface)
+
+	var base := [
+		[Vector3(0, 0, 0), 20.0, GroundSplat.LAYER_MEADOW],
+		[Vector3(30, 0, 0), Vector2(10.0, 4.0), GroundSplat.LAYER_ROCK],
+	]
+	var soil := [[Vector3(0, 0, 0), 4.0, GroundSplat.SOIL_GRAVEL], [Vector3(-8, 0, 0), 2.0, GroundSplat.SOIL_SAND], [Vector3(8, 0, 0), 2.0, GroundSplat.SOIL_CLAY]]
+	var asphalt := [[Vector3(0, 0, 0), 2.0, 0]]
+	var forest := [[Vector3(0, 0, 8), 6.0, 0]]
+	GroundSurface.register(base, soil, asphalt, forest, GroundSurface.GRASS)
+	_check(GroundSurface.is_registered(), "register did not register")
+	_check(GroundSurface.at(Vector3(0, 1, 0.5)) == &"asphalt", "asphalt did not win over gravel and meadow")
+	_check(GroundSurface.at(Vector3(1.5, 1, 0)) == &"gravel", "soil did not win over meadow")
+	_check(GroundSurface.at(Vector3(-8, 0, 0)) == &"sand" and GroundSurface.at(Vector3(8, 0, 0)) == &"dirt", "sand or clay is wrong")
+	_check(GroundSurface.at(Vector3(0, 0, 8)) == &"forest", "forest floor was not found")
+	_check(GroundSurface.at(Vector3(0, 0, 3)) == &"grass", "outside the forest was not meadow")
+	_check(GroundSurface.at(Vector3(30, 0, 1)) == &"rock", "a rock region was not found")
+	_check(GroundSurface.at(Vector3(300, 0, 300)) == &"grass", "unpainted ground did not use the map's fallback")
+	GroundSurface.register([], [], [], [], GroundSurface.DIRT)
+	_check(GroundSurface.at(Vector3.ZERO) == &"dirt", "the debug yard fallback is not dirt")
+	GroundSurface.clear()
+
+
+func _shooting_helpers() -> void:
+	# Headless: no sound plays, but the picking logic must still be sound.
+	_check(Sfx.first_with_sound([&"a", &"b"]) == &"b", "first_with_sound did not return the last event when nothing has a sound")
+	_check(Sfx.first_with_sound([]) == &"", "first_with_sound of nothing was not empty")
+	_check(not Sfx.has_sound(&"shot"), "has_sound was true in a headless run")
+	_check(not Sfx.gunshot(Vector3.ZERO, true) and not Sfx.gunshot(Vector3(500, 0, 0), false), "a gunshot played in a headless run")
+	_check(not Sfx.bullet_lands(Vector3.ZERO, Vector3(5, 0, 0), true), "a bullet hit played in a headless run")
+	var weapon := HitscanWeapon.new()
+	_check(Sfx.SHOT_MISS_METERS < weapon.range_meters, "a shot at full range would count as a hit")
+	weapon.free()
+	_check(Sfx.FAR_SHOT_METERS < Sfx.SHOT_MISS_METERS, "the far-shot distance is beyond the weapon's reach")
+
+
+func _hog_voices() -> void:
+	_check(CreatureView.voice_for_state(Hog.S_WINDUP) == &"hog_alert", "windup is not the alert voice")
+	_check(CreatureView.voice_for_state(Hog.S_CHARGE) == &"hog_charge", "charge is not the charge voice")
+	_check(CreatureView.voice_for_state(Hog.S_STUNNED) == &"hog_hurt", "stunned is not the hurt voice")
+	_check(CreatureView.voice_for_state(Creature.S_IDLE) == &"" and CreatureView.voice_for_state(Hog.S_WALK) == &"" and CreatureView.voice_for_state(Hog.S_RECOVER) == &"", "a quiet state has a voice")
+
+	var view := CreatureView.new()
+	root.add_child(view)
+	view.setup(7, 0, 10, 10, Creature.S_IDLE, Vector3.ZERO, 0.0)
+	_check(not view._voiced_death, "a living hog already voiced its death")
+	view.set_health(4)
+	_check(not view._voiced_death and not view.is_dead(), "damage was treated as death")
+	view.set_health(0)
+	_check(view.is_dead() and view._voiced_death, "death was not voiced once")
+	view.queue_free()
+
+	var corpse := CreatureView.new()
+	root.add_child(corpse)
+	corpse.setup(8, 0, 0, 10, Creature.S_DEAD, Vector3.ZERO, 0.0)
+	_check(corpse._voiced_death, "a hog that was dead on arrival voiced its death")
+	corpse.queue_free()
+
+
+func _footsteps_follow_the_ground() -> void:
+	var player := PLAYER_SCENE.instantiate() as PlayerController
+	player.configure_net(PlayerController.NetRole.PUPPET, 92)
+	root.add_child(player)
+	await process_frame
+	player.set_process(false)
+	player.set_physics_process(false)
+	GroundSurface.register([], [[Vector3(0, 0, 0), 400.0, GroundSplat.SOIL_GRAVEL]], [], [], GroundSurface.GRASS)
+	player.global_position = Vector3(0, 0.15, 0)
+	_move(player, PlayerController.WALK_SPEED, 3.0, 0.016)
+	_check(player.last_step_surface == &"gravel", "a step on gravel was recorded as %s" % player.last_step_surface)
+	GroundSurface.register([], [], [], [], GroundSurface.GRASS)
+	_move(player, PlayerController.WALK_SPEED, 3.0, 0.016)
+	_check(player.last_step_surface == &"grass", "a step on grass was recorded as %s" % player.last_step_surface)
+	_check(PlayerController.STEP_CROUCH_PITCH < 1.0 and PlayerController.STEP_RUN_PITCH > 1.0, "speed does not shift the footstep pitch the right way")
+	GroundSurface.clear()
+	player.queue_free()
+	await process_frame
+	await process_frame
 
 
 func _footsteps() -> void:

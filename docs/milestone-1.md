@@ -34,7 +34,7 @@ The mouse is never captured. The OS cursor is the aim point.
 | Deploy | Select a deployable on the hotbar. A blueprint shows the footprint (2x1 for a chest). Left click places it within 5 m. R rotates it. |
 | Zoom | Mouse wheel. |
 | Orbit the camera | Hold the middle mouse button and drag, or hold C. Orbit the other way with Z, or with Y so the key labeled Z works on a German QWERTZ keyboard. |
-| Lean | Q left, E right. |
+| Lean | X left, V right. (Q cycles weapons.) |
 | Crouch | Hold Ctrl. The capsule and the muzzle drop. Crouch movement is slower. |
 | Inventory | Tab opens it. Escape or Tab closes it. |
 
@@ -54,7 +54,7 @@ At startup the camera sits south of the character and looks toward the north wal
 - **RANGE** east: red **Open Dummy**, orange **Covered Dummy**, and the **Military** chest on the south-west corner.
 - **MILLS** west: sawbench over the sawmill, kiln over the kiln shed. A **Mill Stock** chest and the **Refined** chest sit on the south edge.
 - **FOOD** east: campfire and fire pit in the west column, cooking pot and stove in the east column, kitchen centered under them. A **Cook Stock** chest of raw food, stick, log, and coal sits on the south edge.
-- **DEPLOYABLES** south: spawn pads, a **Smelters** chest, a **Crafting** chest (the chest, four workbench tiers, sawbench, sawmill, kiln, kiln shed, chem bench, refinery, machine shop, ammo bench, and armory), a **Cooking** chest (campfire, fire pit, cooking pot, stove, and kitchen), a **Pumps** chest (Water Well, Gas Pump Jack, Crude Pump Jack), and a **Doors and Windows** chest with one door and one set of window bars for every building tier, at half that tier's health. Put one on the hotbar and a blueprint shows where it will sit. Left click places it within 5 m. R rotates a footprint. Doors and window bars fit the matching opening. **F** opens and closes a door, and opens a furnace, crafting station, fire, well, or pump. A station runs one batch at a time and burns fuel. A well fills an empty bucket or water bottle. The gas pump fills a gas bottle. The crude pump fills an oil drum. A footprint that would leave you inside the solid is refused. A shot that spends the last HP destroys the piece. A deployable on an upper floor is also destroyed when that floor falls.
+- **DEPLOYABLES** south: spawn pads, a **Smelters** chest, a **Crafting** chest (the chest, four workbench tiers, sawbench, sawmill, kiln, kiln shed, chem bench, refinery, machine shop, ammo bench, and armory), a **Cooking** chest (campfire, fire pit, cooking pot, stove, and kitchen), a **Pumps** chest (Water Well, Gas Pump Jack, Crude Pump Jack), and a **Doors and Windows** chest with one door and one set of window bars for every tier (Scrap, Wood, Iron, Reinforced Iron, Steel, Composite), at half the matching building tier's health. Put one on the hotbar and a blueprint shows where it will sit. Left click places it within 5 m. R rotates a footprint. Doors and window bars fit the matching opening. **F** opens and closes a door, and opens a furnace, crafting station, fire, well, or pump. A station runs one batch at a time and burns fuel. A well fills an empty bucket or water bottle. The gas pump fills a gas bottle. The crude pump fills an oil drum. A footprint that would leave you inside the solid is refused. A shot that spends the last HP destroys the piece. A deployable on an upper floor is also destroyed when that floor falls.
 - **SUPPLIES** south: the Collectables chest (electronics, chemicals, fuel, battery, and raw meat, fish, potato, mushroom, egg, and corn), plus cloth, food, scrap, and medical pickups.
 - **BENCHES** south: the four workbench tiers in one row, the machine shop centered under them, with a **Bench Stock** chest and the **Parts** chest on the south edge.
 - **CHEM** south-east: chem bench over the refinery, ammo bench over the armory, and a **Chem Stock** chest on the south edge.
@@ -75,7 +75,7 @@ Three hits destroy a dummy (100 HP, 34 damage). It turns dark, the label says `D
 9. From the spawn, aim at the north wall and shoot. The tracer stops on the wall.
 10. Walk to the east **RANGE**. Shoot the red open dummy from its FIRE pad. Its HP drops.
 11. From the covered FIRE pad the orange dummy is behind COVER. Step beside the lane and shoot it. Its HP drops.
-12. Stand in the open and hold Q or E. The tracer leaves the gun from the leaned position, shifted sideways from a shot fired while standing straight. Stand beside the west wall and lean into it. The mesh and the muzzle stop on the near side of the wall. The camera shifts sideways with that same lean.
+12. Stand in the open and hold X or V. The tracer leaves the gun from the leaned position, shifted sideways from a shot fired while standing straight. Stand beside the west wall and lean into it. The mesh and the muzzle stop on the near side of the wall. The camera shifts sideways with that same lean.
 13. Walk up to a wall with the camera zoomed out. The camera pulls in to the near side of that wall.
 14. Press **F1**. White health and yield labels appear on the resource nodes and ground patches. Press **F1** again and they hide.
 15. Escape closes the inventory. It does not quit.
@@ -83,8 +83,8 @@ Three hits destroy a dummy (100 HP, 34 damage). It turns dark, the label says `D
 ## Decisions
 
 - The cursor ray hits the arena, so the weapon aims up and down. Pitch is clamped to about 62 degrees. A straight-up or straight-down direction is rejected.
-- The camera pitch is fixed at −52°. Distance changes with the wheel. Orbit input is middle-mouse drag plus Z/Y and C, because Q and E are lean.
-- Hitscan starts at the weapon muzzle and follows that 3D direction. The muzzle is on the lean pivot, so Q and E move it sideways and Ctrl lowers it with the crouch capsule (1.8 m standing, 1.05 m crouched). Two sideways raycasts keep the body on the near side of cover. If the barrel would start inside a wall, the origin is pulled back to that wall's near face. Standing up is blocked when the standing capsule would intersect the world.
+- The camera pitch is fixed at −52°. Distance changes with the wheel. Orbit input is middle-mouse drag plus Z/Y and C, because X and V are lean.
+- Hitscan starts at the weapon muzzle and follows that 3D direction. The muzzle is on the lean pivot, so X and V move it sideways and Ctrl lowers it with the crouch capsule (1.8 m standing, 1.05 m crouched). Two sideways raycasts keep the body on the near side of cover. If the barrel would start inside a wall, the origin is pulled back to that wall's near face. Standing up is blocked when the standing capsule would intersect the world.
 - Dummies use the world layer and the damageable layer, so they stop movement and can be hit. A destroyed dummy keeps its collision.
 - Camera collision is one ray from the chest to the desired camera position. SpringArm3D is available in 4.7.2 and was left unused so the pull-in stays obvious.
 - On this engine build, `CapsuleShape3D.height` and `CapsuleMesh.height` are the full height. The body is 1.8 m tall with a 0.35 m radius.

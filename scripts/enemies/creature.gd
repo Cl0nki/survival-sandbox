@@ -3,7 +3,7 @@ class_name Creature
 
 ## Server-side base for everything that moves on its own and can be shot.
 ## It owns health, the damage entry point the hitscan already calls, loot, and
-## the state byte that gets replicated. Kinds (Hog now, Swarmer and Brute
+## the state byte that gets replicated. Kinds (Hog now, NEXUS robots
 ## later) override _think() and add their own states from S_KIND_BASE up.
 ##
 ## EnemySystem drives advance() from its own physics tick, so a creature never

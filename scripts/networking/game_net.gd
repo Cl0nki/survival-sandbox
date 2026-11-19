@@ -11,6 +11,9 @@ const _Sight = preload("res://scripts/networking/line_of_sight.gd")
 const _SurvivalField = preload("res://scripts/world/survival_field.gd")
 const DUMMY_NAMES: Array[String] = ["OpenDummy"]
 const SNAPSHOT_STRIDE := 11
+## A shot may land this far before the cooldown ends. Packets arrive unevenly,
+## and an automatic weapon fired at its exact rate would otherwise lose shots.
+const FIRE_JITTER_MSEC := 30
 
 var rejected_inputs := 0
 var rejected_shots := 0
@@ -359,7 +362,7 @@ func request_hotbar_select(index: int) -> void:
 		return
 	var sender := multiplayer.get_remote_sender_id()
 	var player := _players.get(sender) as PlayerController
-	if player == null or index < 0 or index >= NetConfig.HOTBAR_SLOTS:
+	if player == null or not NetConfig.is_selectable_slot(index):
 		return
 	player.hotbar_index = index
 
@@ -586,7 +589,7 @@ func creature_snapshot(tick: int, ids: PackedInt32Array, data: PackedFloat32Arra
 
 
 @rpc("authority", "reliable")
-func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, harvest: bool = false) -> void:
+func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, harvest: bool = false, echo: bool = false) -> void:
 	if multiplayer.is_server():
 		return
 	if multiplayer.get_remote_sender_id() != 1:
@@ -595,9 +598,12 @@ func shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool
 		return
 	# Visual only. Damage arrives through health_update / snapshots.
 	# A harvest swing draws the tracer only while F1 debug mode is on.
-	# A gunshot is heard from the muzzle. The shooter hears their own flat.
-	if not harvest:
-		Sfx.play_at(&"shot", origin, shooter == multiplayer.get_unique_id())
+	# A gunshot is heard from the muzzle (the shooter hears their own flat), then the
+	# bullet lands: a thud where it hit a body, a crack where it hit the world.
+	# An echo is another pellet of the same trigger pull: a tracer, no second bang.
+	if not harvest and not echo:
+		Sfx.gunshot(origin, shooter == multiplayer.get_unique_id())
+		Sfx.bullet_lands(origin, end_point, damaged)
 	last_shot_origin = origin
 	last_shot_end = end_point
 	last_shot_text = "peer %d %s" % [shooter, "hit" if damaged else "impact"]
@@ -642,7 +648,7 @@ func receive_snapshot(tick: int, ids: PackedInt32Array, seqs: PackedInt32Array, 
 			continue
 		player.consume_snapshot(_snapshot_stamp(tick), pos, yaw, lean, hp, velocity, seqs[index], crouch, pitch)
 		if player.net_role == PlayerController.NetRole.PUPPET:
-			player.set_weapon_drawn(drawn > 0.5)
+			player.set_weapon_drawn(drawn > 0.5, drawn > 1.5)
 
 
 func debug_set_view_distance(meters: float) -> void:
@@ -904,8 +910,18 @@ func _handle_input(
 
 
 func _weapon_drawn(peer_id: int) -> bool:
-	var held := _held_item_id(peer_id)
-	return held == "debugweapon" or held == "pistol"
+	return WeaponSpec.is_weapon(_held_item_id(peer_id))
+
+
+## Sent in the snapshot so other players draw the right placeholder:
+## 0 nothing in hand, 1 a gun, 2 a blade.
+func _weapon_style(peer_id: int) -> float:
+	match WeaponSpec.kind_of(_held_item_id(peer_id)):
+		WeaponSpec.FIREARM:
+			return 1.0
+		WeaponSpec.MELEE:
+			return 2.0
+	return 0.0
 
 
 
@@ -920,7 +936,11 @@ func _held_item_id(peer_id: int) -> String:
 	var slot: Dictionary = bag.slots[index]
 	if int(slot.get("qty", 0)) <= 0:
 		return ""
-	return str(slot.get("id", ""))
+	var item_id := str(slot.get("id", ""))
+	# A weapon only counts as held from a weapon slot, never from the hotbar.
+	if not bag.usable_in_hand(index, item_id):
+		return ""
+	return item_id
 
 
 func _is_harvest_tool(item_id: String) -> bool:
@@ -958,10 +978,14 @@ func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: flo
 	if weapon == null:
 		_reject_shot(sender, "weapon")
 		return
+	# Stats come from the item the server found in the shooter's bag, never from the client.
+	var spec := WeaponSpec.for_item(tool_id)
+	if spec != null:
+		weapon.configure(spec)
 	_log_weapon_once(weapon)
 	var now := Time.get_ticks_msec()
 	var next_fire := int(_next_fire_msec.get(sender, 0))
-	if now < next_fire:
+	if now < next_fire - FIRE_JITTER_MSEC:
 		_reject_shot(sender, "cooldown")
 		return
 	var world := player.get_world_3d()
@@ -978,40 +1002,65 @@ func _handle_fire(sender: int, seq: int, aim: Vector3, aim_yaw: float, lean: flo
 	if harvest_tool:
 		_handle_harvest(sender, player, origin, direction, tool_id)
 		return
-	if tool_id == "pistol":
+	if spec == null:
+		_reject_shot(sender, "unarmed")
+		return
+	if spec.uses_ammo():
 		var bag := _inventories.get(sender) as Inventory
-		if bag == null or not bag.take_item("ammo_9mm", 1):
+		if bag == null or not bag.take_item(spec.ammo_id, 1):
 			_reject_shot(sender, "no_ammo")
-			_notice(sender, "No 9mm ammunition.")
+			_notice(sender, spec.no_ammo_notice())
 			return
 		_push_inventory(sender)
-	var result := HitscanWeapon.resolve_shot(
-		world.direct_space_state,
-		origin,
-		direction,
-		weapon.range_meters,
-		[player.get_rid()]
-	)
-	var damaged := false
-	var collider: Object = result["collider"]
-	if collider != null and collider != player and collider.has_method("receive_damage"):
-		if collider.has_method("note_attacker"):
-			collider.call("note_attacker", sender)
-		damaged = bool(collider.call("receive_damage", weapon.damage, result["point"]))
+	var space := world.direct_space_state
+	var skip: Array = [player.get_rid()]
+	var results: Array[Dictionary] = []
+	if spec.is_melee():
+		results.append(HitscanWeapon.resolve_melee(space, origin, direction, weapon.range_meters, skip))
+	else:
+		for pellet_dir in weapon.shot_directions(direction):
+			results.append(HitscanWeapon.resolve_shot(space, origin, pellet_dir, weapon.range_meters, skip))
 	var cooldown_ms := int(round(weapon.cooldown_seconds * 1000.0))
-	_next_fire_msec[sender] = now + maxi(cooldown_ms, 1)
+	# From the later of now and the old deadline, so firing a hair early inside the
+	# jitter allowance does not let a fast client creep ahead of the real rate.
+	_next_fire_msec[sender] = maxi(now, next_fire) + maxi(cooldown_ms, 1)
 	accepted_shots += 1
-	var target := _collider_name(collider)
-	var health_left := _health_of(collider)
-	if damaged:
+	var any_damaged := false
+	var struck: Dictionary = {}
+	var lead_collider: Object = null
+	var lead_damaged := false
+	var sent := 0
+	for result in results:
+		var collider: Object = result["collider"]
+		var damaged := false
+		if collider != null and is_instance_valid(collider) and collider != player and collider.has_method("receive_damage"):
+			if collider.has_method("note_attacker"):
+				collider.call("note_attacker", sender)
+			damaged = bool(collider.call("receive_damage", weapon.damage, result["point"]))
+			if damaged:
+				struck[collider.get_instance_id()] = collider
+		elif collider != null and not is_instance_valid(collider):
+			collider = null
+		if sent == 0 or (damaged and not lead_damaged):
+			lead_collider = collider
+			lead_damaged = damaged
+		any_damaged = any_damaged or damaged
+		# A blade makes no gunshot. Telling clients it is a harvest-style event
+		# gives the hit spark and none of the shot sound. Later pellets of one
+		# trigger pull are tracers only, so a shotgun is one bang.
+		_send_shot_event(sender, origin, result["point"], damaged, collider, spec.is_melee(), sent > 0)
+		sent += 1
+	if any_damaged:
 		confirmed_hits += 1
-		_replicate_collider_health(collider)
-	var end_point: Vector3 = result["point"]
+		for hit in struck.values():
+			_replicate_collider_health(hit)
 	_server_log(
-		"shot peer=%d origin=%s dir=%s result=%s damaged=%s health=%s"
-		% [sender, origin, direction, target, damaged, health_left]
+		"shot peer=%d weapon=%s pellets=%d origin=%s dir=%s result=%s damaged=%s health=%s"
+		% [
+			sender, spec.item_id, results.size(), origin, direction,
+			_collider_name(lead_collider), any_damaged, _health_of(lead_collider),
+		]
 	)
-	_send_shot_event(sender, origin, end_point, damaged, collider)
 
 
 func _handle_harvest(
@@ -1109,7 +1158,7 @@ func _snapshot_for(observer: int) -> Dictionary:
 		data.append(player.velocity.z)
 		data.append(player.get_crouch())
 		data.append(player.get_aim_pitch())
-		data.append(1.0 if _weapon_drawn(id) else 0.0)
+		data.append(_weapon_style(id))
 	return {"ids": ids, "seqs": seqs, "data": data}
 
 
@@ -1203,7 +1252,7 @@ func _push_visibility(observer_id: int, target: PlayerController, visible: bool)
 		hide_player.rpc_id(observer_id, target.network_id)
 
 
-func _send_shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, collider: Object, harvest: bool = false) -> void:
+func _send_shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged: bool, collider: Object, harvest: bool = false, echo: bool = false) -> void:
 	var struck := -1
 	if collider is PlayerController:
 		struck = (collider as PlayerController).network_id
@@ -1214,7 +1263,7 @@ func _send_shot_event(shooter: int, origin: Vector3, end_point: Vector3, damaged
 			continue
 		if struck > 1 and peer_id != shooter and not _is_visible(peer_id, struck):
 			continue
-		shot_event.rpc_id(peer_id, shooter, origin, end_point, damaged, harvest)
+		shot_event.rpc_id(peer_id, shooter, origin, end_point, damaged, harvest, echo)
 
 
 func _spawn_authority(peer_id: int) -> void:
@@ -1236,13 +1285,18 @@ func _spawn_authority(peer_id: int) -> void:
 	_players[peer_id] = player
 	if profile.has("health"):
 		player.apply_authoritative_health(int(profile["health"]))
-	var bag := Inventory.new(NetConfig.INVENTORY_SLOTS)
+	var bag := Inventory.new_player()
 	var map_id := _session_map()
 	if profile.is_empty() or not WorldStore.apply_inventory(bag, profile):
 		bag.grant_loadout(map_id)
 	elif map_id != NetConfig.MAP_SURVIVAL:
 		bag.ensure_item("upgrade_tool")
 	_inventories[peer_id] = bag
+	# A save the bag outgrew (guns got bigger) may hold more than fits. The rest lands at the
+	# player's feet instead of overlapping other items.
+	for stack: Dictionary in bag.overflow:
+		_spawn_drop(str(stack["id"]), int(stack["qty"]), _drop_position(player))
+	bag.overflow.clear()
 	_server_log("spawned player id=%d at=%s" % [peer_id, pos])
 	_refresh_visibility()
 	_sync_world_to(peer_id)

@@ -139,7 +139,14 @@ Open the project in the Godot editor once after approval so it imports the new G
 
 The third page of the dashboard, next to the Workshop and the Codex: `http://127.0.0.1:8765/sounds`, or **Open sounds** in the game launcher. It needs no key and no network.
 
-The game has five sound events: `footstep`, `shot`, `hurt`, `craft_start`, `craft_done`. Each is a column. A column with no file is silent in the game.
+The game has 20 sound events in four groups. Each is a column. A column with no file is silent in the game.
+
+- **Walking:** `footstep` plus one per ground type: `footstep_grass`, `_forest`, `_dirt`, `_gravel`, `_sand`, `_rock`, `_asphalt`. The game looks up the ground under the player's foot (from the same paint the floor shader uses) and plays that column. A ground type with no files falls back to `footstep`. Crouching, walking and running share the files: crouch is quieter and lower, running is louder, higher and has a wider stride.
+- **Shooting:** `shot` (close), `shot_far` (heard from more than 35 m away), `bullet_impact` (hit the world; a shot that flies its full range makes none) and `bullet_hit` (hit a hog or a player).
+- **Hog:** `hog_grunt` (now and then while grazing), `hog_alert` (winds up), `hog_charge`, `hog_hurt` (shot or stunned), `hog_die`.
+- **Damage and Crafting:** `hurt`, `craft_start`, `craft_done`.
+
+Where a column has only one file, widen its pitch range in **Tune** so repeated steps do not sound identical.
 
 1. **Add files.** Drop WAV, OGG, MP3, or a pack ZIP on the drawer. Or use **Scan a folder or ZIP on this PC** with a name filter such as `footstep`. That is the way to work through a big download like the Sonniss bundle. Files over 8 MB are skipped.
 2. **Sort the inbox.** Each file gets a suggested event from its name and, for ZIPs and folders, its parent folder. Pick another event if it is wrong. Press **Add** or drag the row onto a column.

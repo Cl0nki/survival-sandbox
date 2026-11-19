@@ -22,13 +22,15 @@ const REQUIRED := [
 	"demolition_charge", "mine", "rocket_warhead",
 	"chest", "workbench", "furnace_scrap", "smelter_iron", "smelter_steel", "foundry",
 	"water_well", "pump_jack_gas", "pump_jack_oil",
-	"door_scrap", "door_wood", "door_brick", "door_stone", "door_concrete", "door_composite",
-	"window_scrap", "window_wood", "window_brick", "window_stone", "window_concrete", "window_composite",
+	"door_scrap", "door_wood", "door_iron", "door_reinforced", "door_steel", "door_composite",
+	"window_scrap", "window_wood", "window_iron", "window_reinforced", "window_steel", "window_composite",
 	"hatchet_scrap", "hatchet_iron", "hatchet_steel", "hatchet_composite",
 	"pickaxe_stone", "pickaxe_scrap", "pickaxe_iron", "pickaxe_steel", "pickaxe_composite",
 	"shovel_scrap", "shovel_iron", "shovel_steel", "shovel_composite",
 	"crowbar_scrap", "crowbar_iron", "crowbar_steel", "crowbar_composite",
 	"pistol", "building_plan", "repair_trowel", "upgrade_hammer",
+	"courier_pistol", "hornet_pdw", "marshal_pistol", "rattler_smg", "ridgeback_rifle", "hailstorm_lmg",
+	"kodiak_rifle", "falconer_rifle", "breacher_shotgun", "mule_shotgun", "goliath_amr", "titan_hmg", "sword",
 
 	"cloth", "medical_supplies", "canned_food",
 	"raw_meat", "cooked_meat", "raw_fish", "cooked_fish",
@@ -118,6 +120,8 @@ func _run() -> int:
 		return 1
 	if not _crate_filled(arena, "military_crate", LootLayout.MILITARY):
 		return 1
+	if not _crate_filled(arena, "weapons_crate", LootLayout.WEAPONS):
+		return 1
 	if not _crate_filled(arena, "tier_scrap_crate", LootLayout.TIER_SCRAP):
 		return 1
 	if not _crate_filled(arena, "tier_wood_crate", LootLayout.TIER_WOOD):
@@ -140,6 +144,16 @@ func _run() -> int:
 	if not _crate_filled(arena, "pumps_crate", LootLayout.pump_contents()):
 		return 1
 	if not _crate_filled(arena, "doors_crate", LootLayout.opening_contents()):
+		return 1
+	if not _crate_filled(arena, "nexus_container", LootLayout.NEXUS_CONTAINER):
+		return 1
+	if not _crate_filled(arena, "nexus_supply_chest_1", LootLayout.NEXUS_SUPPLY):
+		return 1
+	if not _crate_filled(arena, "nexus_supply_chest_2", LootLayout.NEXUS_SUPPLY):
+		return 1
+	if not _crate_filled(arena, "nexus_parts_chest", LootLayout.NEXUS_PARTS):
+		return 1
+	if not _crate_filled(arena, "nexus_security_lockbox", LootLayout.NEXUS_SECURITY):
 		return 1
 	if not _crate_filled(arena, "tier_composite_crate", LootLayout.TIER_COMPOSITE):
 		return 1

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WorldPropDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/world_prop_definition.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "nexus_parts_chest"
+display_name = "NEXUS Parts Chest"
+description = "A NEXUS CONSTRUCTION maintenance chest. Spare mechanical parts and fasteners for field repairs."
+category = "world_prop"
+kind = "crate"
+deposit_id = ""
+body_size = Vector3(0.9, 1, 0.6)
+swatch = Color(0.46, 0.44, 0.38, 1)

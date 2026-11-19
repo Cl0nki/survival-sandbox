@@ -129,6 +129,8 @@ func _body() -> int:
 	var before := net.debug_player(3).health
 	var shooter := net.debug_player(2)
 	var victim := net.debug_player(3)
+	# The debug weapon sits in the primary slot, and a weapon only fires from its own slot.
+	shooter.hotbar_index = NetConfig.BAG_SLOTS + 1
 	var flat := victim.global_position - shooter.global_position
 	var yaw := atan2(-flat.x, -flat.z)
 	shooter.apply_facing_yaw(yaw)

@@ -49,6 +49,11 @@ class SoundBankTests(unittest.TestCase):
     def test_config_covers_the_four_things_the_game_asks_for(self):
         ids = {event["id"] for event in self.config["events"]}
         self.assertTrue({"footstep", "shot", "hurt", "craft_start", "craft_done"} <= ids)
+        surfaces = {"grass", "forest", "dirt", "gravel", "sand", "rock", "asphalt"}
+        self.assertTrue({f"footstep_{name}" for name in surfaces} <= ids)
+        self.assertTrue({"shot_far", "bullet_impact", "bullet_hit"} <= ids)
+        self.assertTrue({"hog_grunt", "hog_alert", "hog_charge", "hog_hurt", "hog_die"} <= ids)
+        self.assertEqual(len(ids), len(self.config["events"]), "duplicate event id")
         for event in self.config["events"]:
             self.assertLessEqual(event["pitch_min"], event["pitch_max"])
             self.assertTrue(event["keywords"])
@@ -62,7 +67,17 @@ class SoundBankTests(unittest.TestCase):
 
     def test_auto_sort_suggestions(self):
         suggest = lambda name: sound_bank.suggest_event(name, self.config)
-        self.assertEqual(suggest("footsteps_gravel_03.wav"), "footstep")
+        self.assertEqual(suggest("footsteps_gravel_03.wav"), "footstep_gravel")
+        self.assertEqual(suggest("footstep_leaves_02.ogg"), "footstep_forest")
+        self.assertEqual(suggest("steps_on_concrete.wav"), "footstep_asphalt")
+        self.assertEqual(suggest("walk_sand_1.wav"), "footstep_sand")
+        self.assertEqual(suggest("footsteps_01.wav"), "footstep")
+        self.assertEqual(suggest("distant_gunshot_echo.wav"), "shot_far")
+        self.assertEqual(suggest("bullet_impact_wall.ogg"), "bullet_impact")
+        self.assertEqual(suggest("bullet_hit_flesh.ogg"), "bullet_hit")
+        self.assertEqual(suggest("boar_charge_roar.ogg"), "hog_charge")
+        self.assertEqual(suggest("pig_death.mp3"), "hog_die")
+        self.assertEqual(suggest("pig_grunt.mp3"), "hog_grunt")
         self.assertEqual(suggest("pistol_shot_02.ogg"), "shot")
         self.assertEqual(suggest("male_hurt_grunt.mp3"), "hurt")
         self.assertEqual(suggest("anvil_hammer_wood.wav"), "craft_start")
@@ -147,7 +162,7 @@ class SoundBankTests(unittest.TestCase):
         self.assertEqual(len(names), 3)
         self.assertFalse(any((self.temp / "escape").glob("*")))
         suggested = {row["name"]: row["suggest"] for row in sound_bank.inbox_list(self.inbox, self.config)}
-        self.assertEqual(suggested["footsteps_gravel_01.wav"], "footstep")
+        self.assertEqual(suggested["footsteps_gravel_01.wav"], "footstep_gravel")
 
     def test_a_bad_zip_is_reported(self):
         with self.assertRaises(PipelineError):
@@ -248,12 +263,13 @@ class SoundsApiTests(unittest.TestCase):
 
     def test_upload_assign_play_tune_remove(self):
         listing = json.loads(self.get("/api/sounds")[2])
-        self.assertEqual((listing["covered"], listing["total"]), (0, 5))
+        self.assertEqual((listing["covered"], listing["total"]), (0, len(listing["events"])))
+        self.assertGreaterEqual(listing["total"], 20)
         self.assertTrue(listing["sources"])
 
         after_upload = self.upload("boot_gravel_step.wav", wav_bytes())
         self.assertEqual([row["name"] for row in after_upload["inbox"]], ["boot_gravel_step.wav"])
-        self.assertEqual(after_upload["inbox"][0]["suggest"], "footstep")
+        self.assertEqual(after_upload["inbox"][0]["suggest"], "footstep_gravel")
 
         assigned = self.post_json("/api/sounds/assign", {"name": "boot_gravel_step.wav", "event": "footstep"})
         self.assertEqual(assigned["inbox"], [])

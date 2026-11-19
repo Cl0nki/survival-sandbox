@@ -1,0 +1,129 @@
+{
+  "asset_id": "9993dc1477f6",
+  "asset_name": "mule_shotgun",
+  "category": "item_icon",
+  "kind": "texture",
+  "workshop_category": "",
+  "tags": [],
+  "created_at": "2026-11-17T15:55:30+00:00",
+  "provider": "openai",
+  "model": "gpt-image-2.5-flare",
+  "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Mule Sawn-Off Shotgun.. Art direction: Stylized low-poly survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Firearm: one handheld gun only, strict side profile, barrel horizontal and pointing to the right, grip and magazine hanging straight down, sights on top, the whole gun inside the frame, clean readable painted shapes, no hands, no person, no stand, no second object. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+  "negative_prompt": "",
+  "seed": null,
+  "seed_supported": false,
+  "generation_parameters": {
+    "sent_prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Mule Sawn-Off Shotgun.. Art direction: Stylized low-poly survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Firearm: one handheld gun only, strict side profile, barrel horizontal and pointing to the right, grip and magazine hanging straight down, sights on top, the whole gun inside the frame, clean readable painted shapes, no hands, no person, no stand, no second object. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+    "godot_folder": "icons",
+    "roughness": 0.7,
+    "metallic": 0.0,
+    "variation": 1,
+    "quality": "high",
+    "provider_parameters": {
+      "model": "gpt-image-2.5-flare",
+      "size": "1024x1024",
+      "n": 1,
+      "quality": "high",
+      "output_format": "png",
+      "background": "transparent"
+    },
+    "provider_resolution": "1024x1024",
+    "seam_score": 0.0
+  },
+  "original_files": [
+    "original/albedo.png",
+    "original/normal.png",
+    "original/roughness.png",
+    "original/ao.png",
+    "original/metallic.png",
+    "original/height.png"
+  ],
+  "processed_files": [
+    "processed/albedo.png",
+    "processed/normal.png",
+    "processed/roughness.png",
+    "processed/ao.png",
+    "processed/metallic.png",
+    "processed/height.png",
+    "preview/icon.png"
+  ],
+  "polygon_count": null,
+  "dimensions": null,
+  "texture_resolution": 512,
+  "processing_status": "ready_for_review",
+  "approval_status": "approved",
+  "version": 1,
+  "history": [
+    {
+      "event": "created",
+      "at": "2026-11-17T15:55:30+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Mule Sawn-Off Shotgun.. Art direction: Stylized low-poly survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Firearm: one handheld gun only, strict side profile, barrel horizontal and pointing to the right, grip and magazine hanging straight down, sights on top, the whole gun inside the frame, clean readable painted shapes, no hands, no person, no stand, no second object. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "generating",
+      "approval_status": "pending",
+      "original_files": [],
+      "processed_files": []
+    },
+    {
+      "event": "processed",
+      "at": "2026-11-17T15:55:51+00:00",
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-image-2.5-flare",
+      "prompt": "square inventory icon of one object, centered, strict side view in profile, fully transparent background, no text, no number, no frame. Inventory icon of one Mule Sawn-Off Shotgun.. Art direction: Stylized low-poly survival asset with isometric-friendly proportions, a hand-painted surface, subtle PBR response, a strong readable silhouette, slightly exaggerated believable proportions, and clean real-time geometry. Requirements: stylized low-poly or semi-low-poly; modern stylized survival aesthetic; isometric-friendly proportions; hand-painted appearance; subtle PBR material definition; strong readable silhouette; clean geometry; consistent texel density; optimized for real-time 3D. Painted game icon for a 96 pixel inventory slot. One object, centered. Leave about 5 percent empty margin on every side so the object does not touch the edge. Show the object from the side, in profile. The area outside the object is empty alpha. No numbers. Keep the shapes large and painted. This is not a seamless texture. Firearm: one handheld gun only, strict side profile, barrel horizontal and pointing to the right, grip and magazine hanging straight down, sights on top, the whole gun inside the frame, clean readable painted shapes, no hands, no person, no stand, no second object. Match the project's style reference image. Avoid: photorealism, photographs, anime, manga, cartoon outlines, cel shading, toon outlines, excessively saturated colors, inconsistent art styles, extremely detailed realistic textures, watermark, text, logo, frame, border, seamless texture, tiled pattern, number, multiple objects, front view, three-quarter view, top view, solid background, backdrop.",
+      "negative_prompt": "",
+      "seed": null,
+      "processing_status": "ready_for_review",
+      "approval_status": "pending",
+      "original_files": [
+        "original/albedo.png",
+        "original/normal.png",
+        "original/roughness.png",
+        "original/ao.png",
+        "original/metallic.png",
+        "original/height.png"
+      ],
+      "processed_files": [
+        "processed/albedo.png",
+        "processed/normal.png",
+        "processed/roughness.png",
+        "processed/ao.png",
+        "processed/metallic.png",
+        "processed/height.png",
+        "preview/icon.png"
+      ]
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": [],
+  "job_id": "3c173736c3f7",
+  "production_files": [
+    "assets/icons/mule_shotgun/albedo.png",
+    "assets/icons/mule_shotgun/normal.png",
+    "assets/icons/mule_shotgun/roughness.png",
+    "assets/icons/mule_shotgun/ao.png",
+    "assets/icons/mule_shotgun/metallic.png",
+    "assets/icons/mule_shotgun/height.png",
+    "assets/materials/mule_shotgun.tres",
+    "assets/icons/mule_shotgun.png"
+  ],
+  "manual_steps": [],
+  "maps_origin": {
+    "albedo": "openai",
+    "normal": "derived_from_albedo",
+    "roughness": "derived_from_albedo",
+    "ao": "derived_from_albedo",
+    "metallic": "derived_from_albedo",
+    "height": "derived_from_albedo"
+  },
+  "modular": null
+}

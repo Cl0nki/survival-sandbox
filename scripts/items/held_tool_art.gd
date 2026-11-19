@@ -60,7 +60,7 @@ static func mount(host: Node3D, item_id: String, pose: Pose = Pose.HAND) -> bool
 	_strip_collision(root)
 	host.add_child(root)
 	if _is_firearm(item_id):
-		_fit_firearm(root, FIREARM_LENGTH)
+		_fit_firearm(root, _firearm_length(item_id))
 	else:
 		_fit(root, _length_for(item_id))
 	if pose == Pose.GROUND:
@@ -71,10 +71,20 @@ static func mount(host: Node3D, item_id: String, pose: Pose = Pose.HAND) -> bool
 	return true
 
 
+## A gun's own length when its definition sets one, else the pistol default.
+static func _firearm_length(item_id: String) -> float:
+	var definition := ItemCatalog.get_item(item_id)
+	if definition != null and definition.weapon_length > 0.0:
+		return definition.weapon_length
+	return FIREARM_LENGTH
+
+
 static func _is_firearm(item_id: String) -> bool:
 	var id := item_id.to_lower()
 	if id == "build_tool":
 		return true
+	if WeaponSpec.kind_of(item_id) == WeaponSpec.MELEE:
+		return false
 	for word in ["gun", "pistol", "rifle", "revolver", "shotgun", "firearm", "sidearm", "carbine", "blaster"]:
 		if id.contains(word):
 			return true
@@ -84,6 +94,8 @@ static func _is_firearm(item_id: String) -> bool:
 
 static func _length_for(item_id: String) -> float:
 	var definition := ItemCatalog.get_item(item_id)
+	if definition != null and definition.weapon_kind == WeaponSpec.MELEE and definition.weapon_length > 0.0:
+		return definition.weapon_length
 	var kind := "" if definition == null else definition.harvest_kind
 	return float(LENGTH_BY_KIND.get(kind, DEFAULT_LENGTH))
 

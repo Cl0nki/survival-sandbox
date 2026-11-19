@@ -12,8 +12,20 @@ signal shot_resolved(origin: Vector3, end_point: Vector3, did_damage: bool)
 @export var range_meters: float = 40.0
 @export var cooldown_seconds: float = 0.35
 
+## Per-weapon shape, set by configure(). A plain node keeps the pistol defaults.
+var pellets := 1
+var spread_deg := 0.0
+var automatic := false
+var melee := false
+var ammo_id := ""
+
 var last_feedback := "none"
 var _cooldown := 0.0
+var _rng := RandomNumberGenerator.new()
+
+
+func _ready() -> void:
+	_rng.randomize()
 
 
 func _physics_process(delta: float) -> void:
@@ -22,6 +34,51 @@ func _physics_process(delta: float) -> void:
 
 func is_ready() -> bool:
 	return _cooldown <= 0.0
+
+
+## Take the stats of the weapon now in hand. The server calls this before every
+## shot with the item it read from the shooter's own bag.
+func configure(spec: WeaponSpec) -> void:
+	if spec == null:
+		return
+	damage = spec.damage
+	range_meters = spec.range_meters
+	cooldown_seconds = spec.cooldown_seconds
+	pellets = spec.pellets
+	spread_deg = spec.spread_deg
+	automatic = spec.automatic
+	melee = spec.is_melee()
+	ammo_id = spec.ammo_id
+
+
+## One direction per pellet, scattered inside the spread cone. A single accurate
+## shot returns the aim unchanged.
+func shot_directions(direction: Vector3) -> Array[Vector3]:
+	var aim := direction.normalized()
+	var shots: Array[Vector3] = []
+	var count := maxi(pellets, 1)
+	if spread_deg <= 0.0:
+		for _i in count:
+			shots.append(aim)
+		return shots
+	for _i in count:
+		shots.append(scatter(aim, spread_deg, _rng))
+	return shots
+
+
+## A direction inside a cone of half-angle spread_deg around aim, evenly over
+## the cone's disc.
+static func scatter(aim: Vector3, spread_deg: float, rng: RandomNumberGenerator) -> Vector3:
+	var dir := aim.normalized()
+	if spread_deg <= 0.0:
+		return dir
+	var helper := Vector3.UP if absf(dir.dot(Vector3.UP)) < 0.95 else Vector3.RIGHT
+	var side := dir.cross(helper).normalized()
+	var up := side.cross(dir).normalized()
+	var angle := deg_to_rad(spread_deg) * sqrt(rng.randf())
+	var around := rng.randf() * TAU
+	var offset := (side * cos(around) + up * sin(around)) * tan(angle)
+	return (dir + offset).normalized()
 
 
 func try_fire(origin: Vector3, direction: Vector3) -> void:
@@ -38,13 +95,75 @@ func try_fire(origin: Vector3, direction: Vector3) -> void:
 	if world == null:
 		return
 	_cooldown = cooldown_seconds
+	if melee:
+		_swing_local(world, origin, direction)
+		return
 	# Local play only, so the shooter is always this player: flat, not placed in the world.
-	Sfx.play_at(&"shot", origin, true)
-	var result := resolve_shot(world.direct_space_state, origin, direction, range_meters)
+	Sfx.gunshot(origin, true)
+	var space := world.direct_space_state
+	var any_damaged := false
+	var heard_hit := false
+	var heard_impact := false
+	var first_text := ""
+	for pellet_dir in shot_directions(direction):
+		var result := resolve_shot(space, origin, pellet_dir, range_meters)
+		result["damaged"] = _apply_local_damage(result)
+		var damaged := bool(result["damaged"])
+		# One thud and one crack per trigger pull, not one per pellet.
+		if damaged and not heard_hit:
+			heard_hit = true
+			Sfx.bullet_lands(origin, result["point"], true)
+		elif not damaged and not heard_impact:
+			heard_impact = true
+			Sfx.bullet_lands(origin, result["point"], false)
+		if first_text.is_empty() or (damaged and not any_damaged):
+			first_text = _describe(result)
+		any_damaged = any_damaged or damaged
+		ShotVisual.spawn(_visual_parent(), origin, result["point"], damaged)
+		shot_resolved.emit(origin, result["point"], damaged)
+	last_feedback = first_text
+
+
+func _swing_local(world: World3D, origin: Vector3, direction: Vector3) -> void:
+	var result := resolve_melee(world.direct_space_state, origin, direction, range_meters)
 	result["damaged"] = _apply_local_damage(result)
+	if result["damaged"]:
+		Sfx.bullet_lands(origin, result["point"], true)
 	last_feedback = _describe(result)
-	ShotVisual.spawn(_visual_parent(), origin, result["point"], result["damaged"])
-	shot_resolved.emit(origin, result["point"], result["damaged"])
+	shot_resolved.emit(origin, result["point"], bool(result["damaged"]))
+
+
+## A swing hits the nearest damageable thing in a short arc in front of the
+## attacker. Three rays make it forgiving without a wide sweep. Anything that
+## blocks the middle ray first, such as a wall, blocks the swing.
+static func resolve_melee(
+	space: PhysicsDirectSpaceState3D,
+	origin: Vector3,
+	direction: Vector3,
+	reach: float,
+	exclude: Array = []
+) -> Dictionary:
+	var centre := resolve_shot(space, origin, direction, reach, exclude)
+	if direction.length_squared() < 0.000001:
+		return centre
+	var best: Dictionary = centre
+	var best_distance := INF
+	if _is_damageable(centre["collider"]):
+		best_distance = origin.distance_to(centre["point"])
+	var dir := direction.normalized()
+	var wall_distance := INF
+	if centre["collider"] != null and bool(centre["blocked"]):
+		wall_distance = origin.distance_to(centre["point"])
+	for turn in [-1.0, 1.0]:
+		var edge := dir.rotated(Vector3.UP, WeaponSpec.MELEE_ARC_RAD * float(turn))
+		var side := resolve_shot(space, origin, edge, reach, exclude)
+		if not _is_damageable(side["collider"]):
+			continue
+		var distance := origin.distance_to(side["point"])
+		if distance < best_distance and distance < wall_distance:
+			best = side
+			best_distance = distance
+	return best
 
 
 static func resolve_shot(
